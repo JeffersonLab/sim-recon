@@ -10,6 +10,7 @@
 #include "DRandom2.h"
 
 #ifdef HAVE_RCDB
+#define RCDB_MYSQL 1
 #include <RCDB/Connection.h>
 #endif // HAVE_RCDB
 
@@ -45,6 +46,8 @@ class mcsmear_config_t
 	bool IGNORE_SEEDS;
 	double TRIGGER_LOOKBACK_TIME;
 	bool APPLY_EFFICIENCY_CORRECTIONS;
+
+    bool FCAL_ADD_LIGHTGUIDE_HITS;
 	
 	// flags to pass command line info to subdetector classes
 	double BCAL_NO_T_SMEAR;

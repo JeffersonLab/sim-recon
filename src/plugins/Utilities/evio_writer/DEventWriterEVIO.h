@@ -10,12 +10,8 @@
 #include <JANA/JEventLoop.h>
 #include <JANA/JApplication.h>
 
-#if HAVE_EVIO
 #include <DAQ/JEventSource_EVIO.h>
 #include <DAQ/JEventSource_EVIOpp.h>
-#include <evioUtil.hxx>
-#include <evioFileChannel.hxx>
-#endif // HAVE_EVIO
 
 #include <pthread.h>
 #include <stdint.h>

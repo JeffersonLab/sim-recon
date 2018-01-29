@@ -71,6 +71,7 @@ using namespace std;
 #include "PAIR_SPECTROMETER/DPSCTruthHit.h"
 #include "FMWPC/DFMWPCTruthHit.h"
 #include "FMWPC/DFMWPCHit.h"
+#include "PAIR_SPECTROMETER/DPSGeometry.h"
 #include "DResourcePool.h"
 
 class DEventSourceHDDM:public JEventSource
@@ -104,7 +105,6 @@ class DEventSourceHDDM:public JEventSource
       jerror_t Extract_DBCALIncidentParticle(hddm_s::HDDM *record, JFactory<DBCALIncidentParticle> *factory, string tag);
       jerror_t Extract_DBCALTDCDigiHit(hddm_s::HDDM *record, JFactory<DBCALTDCDigiHit> *factory, string tag);
       jerror_t Extract_DMCReaction(hddm_s::HDDM *record, JFactory<DMCReaction> *factory, string tag, JEventLoop *loop);
-      jerror_t Extract_DBeamPhoton(hddm_s::HDDM *record, JFactory<DBeamPhoton> *factory, string tag, JEventLoop *loop);
       jerror_t Extract_DMCThrown(hddm_s::HDDM *record, JFactory<DMCThrown> *factory, string tag);
       jerror_t Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDDM *record, JFactory<DCDCHit> *factory, string tag);
       jerror_t Extract_DFDCHit(hddm_s::HDDM *record, JFactory<DFDCHit> *factory, string tag);
@@ -123,7 +123,7 @@ class DEventSourceHDDM:public JEventSource
 
       jerror_t Extract_DTrackTimeBased(hddm_s::HDDM *record,  JFactory<DTrackTimeBased> *factory, string tag, int32_t runnumber, JEventLoop* locEventLoop);
       string StringToTMatrixFSym(string &str_vals, TMatrixFSym* mat, int Nrows, int Ncols);
-
+      
       jerror_t Extract_DTAGMHit( hddm_s::HDDM *record,  JFactory<DTAGMHit>* factory, string tag);
       jerror_t Extract_DTAGHHit( hddm_s::HDDM *record,  JFactory<DTAGHHit>* factory, string tag);
 
@@ -161,14 +161,13 @@ class DEventSourceHDDM:public JEventSource
       int dRunNumber;
       static thread_local shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
 
-      pthread_mutex_t rt_mutex;
-      map<hddm_s::HDDM*, vector<DReferenceTrajectory*> > rt_by_event;
-      list<DReferenceTrajectory*> rt_pool;
-
       map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
       map<unsigned int, double> dBeamBunchPeriodMap; //unsigned int is run number
 
-	  const DBCALGeometry *dBCALGeom;
+      const DBCALGeometry *dBCALGeom;
+
+      const DPSGeometry * psGeom;
+      
 
       JCalibration *jcalib;
       float uscale[192],vscale[192];

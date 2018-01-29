@@ -16,14 +16,12 @@ map<string, size_t>& DTreeInterface::Get_FundamentalArraySizeMap(TTree* locTree)
 		//This lock is acquired locally: DO NOT CALL THIS FUNCTION WHILE WITHIN A LOCK!!
 	//However, only a file-lock is necessary to read the inner map once it is acquired:
 		//Only the given tree is viewing/modifying it
-
 	japp->WriteLock("DTreeInterface_SizeMap"); //LOCK MAP
 
 	static map<TTree*, map<string, size_t> > locFundamentalArraySizeMap;
 	map<string, size_t>& locTreeSpecificMap = locFundamentalArraySizeMap[locTree];
 
 	japp->Unlock("DTreeInterface_SizeMap"); //UNLOCK MAP
-
 	return locTreeSpecificMap;
 }
 
@@ -63,6 +61,7 @@ DTreeInterface::~DTreeInterface(void)
 	japp->RootWriteLock();
 	{
 		map<string, int>& locNumWritersByFileMap = Get_NumWritersByFileMap();
+
 		--locNumWritersByFileMap[dFileName];
 		if(locNumWritersByFileMap[dFileName] != 0)
 		{
@@ -243,7 +242,6 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 {
 	//MUST CARRY AROUND A REFERENCE TO THIS.  ONLY READ/MODIFY THE MAP WITHIN A FILE LOCK. 
 	map<string, size_t>& locFundamentalArraySizeMap = Get_FundamentalArraySizeMap(dTree);
-
 	japp->WriteLock(dFileName); //LOCK FILE
 	{
 		//loop over branches

@@ -2,6 +2,13 @@
 #include "ANALYSIS/DSourceComboVertexer.h"
 #include "ANALYSIS/DSourceComboTimeHandler.h"
 
+//Abandon all hope, ye who enter here.
+//Seriously, it will take you at LEAST a month to understand this.
+//If you really want to see what's going on, run with -PCOMBO:DEBUG_LEVEL=5000 and prepare to embrace the pain
+
+namespace DAnalysis
+{
+
 /*
 FAQ:
 Q) If an event has the minimum # tracks, how can it fail to create combos for that event?
@@ -17,20 +24,6 @@ FAQ:
 Q) How can I speed this up?
 A) You can try reducing the #z-bins by increasing their widths. However, much sure you also increase the uncertainty on the timing & invariant-mass cuts for photons as well.
 */
-
-//TO COMPARE:
-//Look for "COMPARE:"
-
-//NICE TO HAVE:
-//DSELECTOR: fit hist/cut of pid delta-t's when coming from detached vertex
-//finish comments in Build_ParticleCombos()
-
-namespace DAnalysis
-{
-
-//Abandon all hope, ye who enter here.
-//Seriously, it will take you at LEAST a month to understand this.
-//If you really want to see what's going on, run with -PCOMBO:DEBUG_LEVEL=5000 and prepare to embrace the pain
 
 /****************************************************** COMBOING STRATEGY ******************************************************
 *
@@ -527,7 +520,7 @@ DSourceComboer::DSourceComboer(JEventLoop* locEventLoop)
 			auto locNumBunches = locReaction->Get_NumPlusMinusRFBunches();
 			pair<bool, double> locMaxPhotonRFDeltaT = locReaction->Get_MaxPhotonRFDeltaT(); //DEPRECATED!!!
 			if(locMaxPhotonRFDeltaT.first)
-				locNumBunches = size_t(locMaxPhotonRFDeltaT.second/dSourceComboTimeHandler->Get_BeamBunchPeriod() - 0.499);
+				locNumBunches = size_t(locMaxPhotonRFDeltaT.second/dSourceComboTimeHandler->Get_BeamBunchPeriod() - 0.499999999);
 			dRFBunchCutsByReaction.emplace(locReaction, locNumBunches);
 		}
 	}
@@ -1120,13 +1113,6 @@ void DSourceComboer::Reset_NewEvent(JEventLoop* locEventLoop)
 		cout << "Total # of Combo Vectors Allocated (All threads): " << dResourcePool_SourceComboVector.Get_NumObjectsAllThreads() << endl;
 		Print_NumCombosByUse();
 	}
-/*
-dDebugLevel = (dEventNumber == 1016489) ? 500 : 0;
-dSourceComboTimeHandler->Set_DebugLevel(dDebugLevel);
-dSourceComboP4Handler->Set_DebugLevel(dDebugLevel);
-dSourceComboVertexer->Set_DebugLevel(dDebugLevel);
-dParticleComboCreator->Set_DebugLevel(dDebugLevel);
-*/
 
 	Fill_SurvivalHistograms();
 
@@ -1445,35 +1431,7 @@ DCombosByReaction DSourceComboer::Build_ParticleCombos(const DReactionVertexInfo
 	* While comboing, we want the results to be as re-usable as possible, that's why we use vertex-z bins.
 	* But vertex-z bins are not sufficient for this, so we will cut on invariant masses with massive neutrals later.
 	*
-	*
-	* MIXED STAGE: BEAM BUNCHES
-	* Now, as far s
 	*******************************************************************************************************************************/
-
-	//charged stage: charged only, no neutrals in infos
-
-	//when on mixed stage (existing charged + neutrals, comboing into fully-neutral & mixed):
-	//loop over charged combos: calc vertices, then build/convert FULL combo use with given vertex z-bins
-	//then, just build the whole combo all it once, almost as before. however, some things are different
-		//get charged particles to combo: choice is REDUCED to those from that vertex in the input combo
-		//get charged combos to combo: if sub-combo is fully-charged, choice is REDUCED to be the input charged combo contents (almost always size 1)
-			//thus we don't use ANY of the saved charged combos any more
-			//and when we retrieve mixed combos for further comboing, they are specific (temporary) to this charged combo
-				//Mixed results are saved in: unordered_map<mixed_use, unordered_map<charged_combo, vector<mixed_combo>>> (where the keys are the charged contents of the mixed-use step)
-				//So that way we can re-use between channels
-				//But how to RETRIEVE from here?, we need to get the charged combo from the given use //tricky, but we can do it
-		//we do these because we don't want to rebuild the charged combos from scratch: wastes time, choices are restricted by vertex-z, we don't want to recompute vertex-z, we don't want dupe combos
-
-	//combo the mixed stage in two stages:
-	//FCAL showers only: z-bin any
-	//All showers
-		//here, they are comboed with uses having a specific vertex-z set
-		//fully-neutral combos saved-to/retrieved-from charged-independent area for re-use (use already contains specific vertex-z bin)
-		//first grab fcal combo results from fcal-only use area (or mixed area), first setting the z-bin to -1
-
-	//Massive neutrals:
-		//Just combo at the same time with the rest of the neutrals, but hold off on both mass cuts and timing cuts
-		//They must be done with a specific vertex-z, rather than just a z-bin
 
 	//MUST BEWARE DUPLICATE COMBOS
 	//let's say a combo of charged tracks has 2 valid RF bunches

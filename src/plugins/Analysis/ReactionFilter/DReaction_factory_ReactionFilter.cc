@@ -20,7 +20,7 @@
  *
  * -PReaction3=1_14__14_8_9_7 #g, p -> p, pi+, pi-, pi0
  * -PReaction3:Decay1=7__2_3_1 # pi0 -> e+, e-, g
- * -PReaction3:Flags=F1_B2_T4_M7  #Fit enum 1 (p4-only (includes mass)), +/- 2 RF bunches, 4 extra tracks, don't constrain mass on pi0 (can have any number) # Can list these in any order
+ * -PReaction3:Flags=F1_B2_T4_M7_U1  #Fit enum 1 (p4-only (includes mass)), +/- 2 RF bunches, 4 extra tracks, don't constrain mass on pi0 (can have any number), save unused tracks # Can list these in any order
  *    Fit enums are defined in DReaction.h (d_P4AndVertexFit is 4 and is the default)
  * -PReaction3:Name=my_pi0_channel
  *
@@ -87,8 +87,8 @@ void DReaction_factory_ReactionFilter::Set_Flags(DReaction* locReaction, string 
 	locReaction->Set_NumPlusMinusRFBunches(1); // +/- 1 bunch for sideband subtraction
 	locReaction->Set_MaxExtraGoodTracks(3);
 
+	bool locSaveUnusedHypotheses = false;
 	string locTreeFileName = string("tree_") + locReaction->Get_ReactionName() + string(".root");
-	locReaction->Enable_TTreeOutput(locTreeFileName, false); //true/false: do/don't save unused hypotheses
 
 	//Parse user input
 	while(locRemainingFlagString != "")
@@ -106,6 +106,8 @@ void DReaction_factory_ReactionFilter::Set_Flags(DReaction* locReaction, string 
 		if(locIStream.fail())
 		{
 			cout << "BUILDING DREACTION, FLAG " << locThisFlagString << " NOT RECOGNIZED." << endl;
+			if(locUnderscoreIndex == string::npos)
+				break;
 			continue;
 		}
 
@@ -119,6 +121,9 @@ void DReaction_factory_ReactionFilter::Set_Flags(DReaction* locReaction, string 
 				break;
 			case 'T': //# extra tracks
 				locReaction->Set_MaxExtraGoodTracks(locFlagArg);
+				break;
+			case 'U': //# save unused hypotheses
+				locSaveUnusedHypotheses = (locFlagArg == 0) ? false : true;
 				break;
 			case 'M': //pid to not constrain mass of during kinfit
 				for(auto& locStep : locReaction->Get_ReactionSteps())
@@ -137,6 +142,8 @@ void DReaction_factory_ReactionFilter::Set_Flags(DReaction* locReaction, string 
 			break;
 		locRemainingFlagString = locRemainingFlagString.substr(locUnderscoreIndex + 1);
 	}
+
+	locReaction->Enable_TTreeOutput(locTreeFileName, locSaveUnusedHypotheses); //true/false: do/don't save unused hypotheses
 }
 
 //------------------
@@ -504,6 +511,7 @@ bool DReaction_factory_ReactionFilter::Convert_StringToPID(string locString, Par
 string DReaction_factory_ReactionFilter::Create_StepNameString(const DReactionStepTuple& locStepTuple, bool locFirstStepFlag)
 {
 	string locNameString = "";
+	auto locFirstStepTargetPID = locFirstStepFlag ? std::get<1>(locStepTuple) : Unknown;
 	if(!locFirstStepFlag)
 	{
 		locNameString = ShortName(std::get<0>(locStepTuple));
@@ -513,14 +521,14 @@ string DReaction_factory_ReactionFilter::Create_StepNameString(const DReactionSt
 		locNameString += "_";
 	}
 	for(auto& locFinalPID : std::get<2>(locStepTuple))
+	{
+		if(locFinalPID == locFirstStepTargetPID)
+			continue; //target PID is understood
 		locNameString += ShortName(locFinalPID);
+	}
 	auto locMissFinalPID = std::get<3>(locStepTuple);
 	if(locMissFinalPID != Unknown)
-	{
 		locNameString += string("miss") + ShortName(locMissFinalPID);
-		if(locMissFinalPID == Proton)
-			locNameString += "p"; //the ShortName is "" because it is understood, but add "p" here to indicate what is missing
-	}
 
 	if(std::get<4>(locStepTuple) == DReactionStep::Get_ParticleIndex_Inclusive())
 		locNameString += "inc";

@@ -293,13 +293,13 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 		void Fill_MatchingHists(JEventLoop* locEventLoop, bool locIsTimeBased);
 
-		const DReferenceTrajectory* Get_ReferenceTrajectory(const DKinematicData* locTrack) const
-		{
-			const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
-			const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
-			if((locTrackTimeBased == NULL) && (locTrackWireBased == NULL))
-				return NULL;
-			return (locTrackTimeBased != NULL) ? locTrackTimeBased->rt : locTrackWireBased->rt;
+		bool Get_Extrapolations(const DKinematicData* locTrack,map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >&extrapolations) const{
+		  const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
+		  const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
+		  if((locTrackTimeBased == NULL) && (locTrackWireBased == NULL))
+		    return false;
+		  (locTrackTimeBased != NULL) ? (extrapolations=locTrackTimeBased->extrapolations) : (extrapolations=locTrackWireBased->extrapolations);
+		  return true;
 		}
 
 		double TOF_E_THRESHOLD;
@@ -711,9 +711,9 @@ class DHistogramAction_TrackShowerErrors : public DAnalysisAction
 		DHistogramAction_TrackShowerErrors(const DReaction* locReaction, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_TrackShowerErrors", false, locActionUniqueString),
 		dMinPIDFOM(5.73303E-7), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
-		dNum2DXYErrorBins(200), dNum2DZErrorBins(400), dNum2DPxyErrorBins(200), dNum2DPzErrorBins(400), dNum2DEErrorBins(200), dNum2DTErrorBins(200),
+		dNum2DXYErrorBins(300), dNum2DZErrorBins(400), dNum2DShowerZErrorBins(300), dNum2DPxyErrorBins(200), dNum2DPzErrorBins(400), dNum2DEErrorBins(200), dNum2DTErrorBins(200),
 		dMinP(0.0), dMaxP(10.0), dMaxPBCAL(2.0), dMinTheta(0.0), dMinThetaBCAL(10.0), dMaxTheta(140.0), dMaxThetaFCAL(15.0), dMinPhi(-180.0), dMaxPhi(180.0),
-		dMaxPxyError(0.5), dMaxPzError(5.0), dMaxXYError(5.0), dMaxZError(50.0), dMaxEError(3.0), dMaxTError(10.0),
+		dMaxPxyError(0.1), dMaxPzError(0.5), dMaxXYError(1.5), dMaxZError(10.0), dMaxShowerZError(15.0), dMaxEError(0.5), dMaxTError(2.0),
 		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(Proton);
@@ -722,9 +722,9 @@ class DHistogramAction_TrackShowerErrors : public DAnalysisAction
 		DHistogramAction_TrackShowerErrors(string locActionUniqueString) :
 		DAnalysisAction(NULL, "Hist_TrackShowerErrors", false, locActionUniqueString),
 		dMinPIDFOM(5.73303E-7), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
-		dNum2DXYErrorBins(200), dNum2DZErrorBins(400), dNum2DPxyErrorBins(200), dNum2DPzErrorBins(400), dNum2DEErrorBins(200), dNum2DTErrorBins(200),
+		dNum2DXYErrorBins(300), dNum2DZErrorBins(400), dNum2DShowerZErrorBins(300), dNum2DPxyErrorBins(200), dNum2DPzErrorBins(400), dNum2DEErrorBins(200), dNum2DTErrorBins(200),
 		dMinP(0.0), dMaxP(10.0), dMaxPBCAL(2.0), dMinTheta(0.0), dMinThetaBCAL(10.0), dMaxTheta(140.0), dMaxThetaFCAL(15.0), dMinPhi(-180.0), dMaxPhi(180.0),
-		dMaxPxyError(0.5), dMaxPzError(5.0), dMaxXYError(5.0), dMaxZError(50.0), dMaxEError(3.0), dMaxTError(10.0),
+		dMaxPxyError(0.1), dMaxPzError(0.5), dMaxXYError(1.5), dMaxZError(10.0), dMaxShowerZError(15.0), dMaxEError(0.5), dMaxTError(2.0),
 		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(Proton);
@@ -733,19 +733,19 @@ class DHistogramAction_TrackShowerErrors : public DAnalysisAction
 		DHistogramAction_TrackShowerErrors(void) :
 		DAnalysisAction(NULL, "Hist_TrackShowerErrors", false, ""),
 		dMinPIDFOM(5.73303E-7), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180),
-		dNum2DXYErrorBins(200), dNum2DZErrorBins(400), dNum2DPxyErrorBins(200), dNum2DPzErrorBins(400), dNum2DEErrorBins(200), dNum2DTErrorBins(200),
+		dNum2DXYErrorBins(300), dNum2DZErrorBins(400), dNum2DShowerZErrorBins(300), dNum2DPxyErrorBins(200), dNum2DPzErrorBins(400), dNum2DEErrorBins(200), dNum2DTErrorBins(200),
 		dMinP(0.0), dMaxP(10.0), dMaxPBCAL(2.0), dMinTheta(0.0), dMinThetaBCAL(10.0), dMaxTheta(140.0), dMaxThetaFCAL(15.0), dMinPhi(-180.0), dMaxPhi(180.0),
-		dMaxPxyError(0.5), dMaxPzError(5.0), dMaxXYError(5.0), dMaxZError(50.0), dMaxEError(3.0), dMaxTError(10.0),
+		dMaxPxyError(0.1), dMaxPzError(0.5), dMaxXYError(1.5), dMaxZError(10.0), dMaxShowerZError(15.0), dMaxEError(0.5), dMaxTError(2.0),
 		dTrackSelectionTag("NotATag"), dShowerSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(Proton);
 		}
 
 		double dMinPIDFOM;
-		unsigned int dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNum2DXYErrorBins, dNum2DZErrorBins;
+		unsigned int dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNum2DXYErrorBins, dNum2DZErrorBins, dNum2DShowerZErrorBins;
 		unsigned int dNum2DPxyErrorBins, dNum2DPzErrorBins, dNum2DEErrorBins, dNum2DTErrorBins;
 		double dMinP, dMaxP, dMaxPBCAL, dMinTheta, dMinThetaBCAL, dMaxTheta, dMaxThetaFCAL, dMinPhi, dMaxPhi;
-		double dMaxPxyError, dMaxPzError, dMaxXYError, dMaxZError, dMaxEError, dMaxTError;
+		double dMaxPxyError, dMaxPzError, dMaxXYError, dMaxZError, dMaxShowerZError, dMaxEError, dMaxTError;
 		string dTrackSelectionTag, dShowerSelectionTag; //In Initialize, will default to "PreSelect" unless otherwise specified
 
 		deque<Particle_t> dFinalStatePIDs;

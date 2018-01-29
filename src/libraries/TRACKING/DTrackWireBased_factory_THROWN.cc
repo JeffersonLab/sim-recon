@@ -116,7 +116,7 @@ jerror_t DTrackWireBased_factory_THROWN::evnt(JEventLoop *loop, uint64_t eventnu
       if(locNumInitialReferenceTrajectories == rt_pool.size()) //didn't create a new one
         rt->Reset();
       rt->q = track->charge();
-		track->rt = rt;
+	       
 		DVector3 pos = track->position();
 		DVector3 mom = track->momentum();
 		rt->SetMass(thrown->mass());

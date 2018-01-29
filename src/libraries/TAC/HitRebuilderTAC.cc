@@ -12,7 +12,7 @@ using namespace std;
 
 using namespace std;
 
-jerror_t HitRebuilderTAC::readCCDB( JEventLoop* eventLoop) {
+jerror_t HitRebuilderTAC::readCCDB( jana::JEventLoop* eventLoop) {
 	cout << "In HitRebuilderTAC::readCCDB() , reading calibration constants" << endl;
 	// load scale factors
 	map<string, double> scaleFactors;
@@ -132,7 +132,7 @@ vector<DTACHit*> HitRebuilderTAC::operator()(
 		//	cout << "Raw data for " << baseHit << " is at " << rawData << endl;
 		// Check that no hit has already been made out of this raw data. This means that only
 		// one rebuild hit will be produced out of one window data. The fact that we sort the
-		// hits in the begining should guarantee us that the useful hit is copied. This can be
+		// hits in the beginning should guarantee us that the useful hit is copied. This can be
 		// reprogrammed differently at a later time.
 		double newTime = baseHit->getT();
 		if (rawDataPtrSet.find(rawData) == rawDataPtrSet.end()) {

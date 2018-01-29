@@ -61,7 +61,7 @@ jerror_t DReaction_factory_p2pi0_hists::init(void)
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 2.004 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	/**************************************************** p2pi0_hists Analysis Actions ****************************************************/
 

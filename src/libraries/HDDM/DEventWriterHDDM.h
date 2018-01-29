@@ -20,6 +20,7 @@
 #include <TAGGER/DTAGHHit.h>
 #include <TAGGER/DTAGMHit.h>
 #include <TPOL/DTPOLHit.h>
+#include <RF/DRFTime.h>
 using namespace std;
 using namespace jana;
 

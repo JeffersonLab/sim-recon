@@ -99,7 +99,7 @@ class DEventWriterROOT : public JObject
 		//TREE INTERFACES, FILL OBJECTS
 		//The non-thrown objects are created during the constructor, and thus the maps can remain const
 		//The thrown objects are created later by the user (so they can specify file name), when the object is const, so they are declared mutable
-		mutable DTreeInterface* dThrownTreeInterface;
+		mutable DTreeInterface* dThrownTreeInterface = nullptr;
 		mutable DTreeFillData dThrownTreeFillData;
 		map<const DReaction*, DTreeInterface*> dTreeInterfaceMap;
 		map<const DReaction*, DTreeFillData*> dTreeFillDataMap;
@@ -130,7 +130,7 @@ class DEventWriterROOT : public JObject
 				ULong64_t& locNumPIDThrown_FinalState, ULong64_t& locPIDThrown_Decaying) const;
 		void Group_ThrownParticles(const vector<const DMCThrown*>& locMCThrowns_FinalState, const vector<const DMCThrown*>& locMCThrowns_Decaying,
 				vector<const DMCThrown*>& locMCThrownsToSave, map<const DMCThrown*, unsigned int>& locThrownIndexMap) const;
-		void Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
+		void Fill_ThrownInfo(DTreeFillData* locTreeFillData, const DMCReaction* locMCReaction, const DBeamPhoton* locTaggedMCGenBeam, const vector<const DMCThrown*>& locMCThrowns,
 				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying,
 				const DMCThrownMatching* locMCThrownMatching = NULL) const;
 		void Fill_ThrownParticleData(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DMCThrown* locMCThrown, 

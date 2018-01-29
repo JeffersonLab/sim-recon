@@ -24,12 +24,15 @@
 #include "DVector3.h"
 #include "HDGEOMETRY/DGeometry.h"
 #include "DANA/DApplication.h"
+#include "DANA/DStatusBits.h"
+#include "TRIGGER/DL1Trigger.h"
 
 #include <TDirectory.h>
 #include <TH2F.h>
 #include <TH1I.h>
 #include <TH2I.h>
 #include <TProfile.h>
+#include <TProfile2D.h>
 
 using namespace std;
 using namespace jana;
@@ -97,7 +100,7 @@ jerror_t JEventProcessor_FCAL_online::init(void) {
 			 100, -0.5, 99.5 );
   m_digN = new TH1I( "digN", "FCAL Number of Raw Hits per Event; Number of Hits; Events / 5", 600, 0, 3000 );
   m_digPeakV = new TH1I( "digPeakV", "FCAL Pulse Peak; Peak Sample [Volts]; Pulses / 10 mV", 210, 0, 2.1 );
-  m_digPeakV2D = new TH2F( "digPeakV2D", "FCAL Pulse Peak [Volts]; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5 );
+  m_digPeakV2D = new TProfile2D( "digPeakV2D", "FCAL Pulse Peak [Volts]; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5 );
   m_digOcc2D = new TH2F( "digOcc2D", "FCAL Pulse Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5 );
   m_digIntVsPeak = new TH2I( "digIntVsPeak", "FCAL Pulse Integral vs. Peak Sample; Peak Sample [ADC Units]; Integral [ADC Units]", 200, 0, 4000, 200, 0, 40000 );
   m_digIntToPeak = new TH1I( "digIntToPeak", "Pedestal Subtracted Integral to Peak Ratio (Peak > 200); Ratio; Pulses / 0.1", 200, 0, 20 );
@@ -131,7 +134,7 @@ jerror_t JEventProcessor_FCAL_online::init(void) {
   m_clusXYLow = new TH2I( "clusXYLow", "FCAL Cluster Positions (E < 200 MeV); x [cm]; y [cm]", 100, -150, 150, 100, -150, 150 );
   m_clusPhi = new TH1I( "clusPhi", "FCAL Cluster #phi; #phi [rad]; Clusters / 62.8 mrad", 100, -3.14, 3.14 );
   m_clusPhi->SetMinimum( 0 );
-  m_clus2GMass = new TH1I( "clus2GMass", "FCAL 2 Cluster Invariant Mass E > 1 GeV; Invariant Mass [GeV]", 500, 0.0, 1.0 );
+  m_clus2GMass = new TH1I( "clus2GMass", "FCAL 2 Cluster Invariant Mass E > 1 GeV; Invariant Mass [GeV]", 500, 0.0, 0.6 );
 
   //
   // these with "show" are after energy dependent non-linear correction
@@ -184,6 +187,29 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
   vector< const DFCALHit*      > hits;
   vector< const DFCALCluster*  > clusterVec;
   vector< const DFCALShower*   > showerVec;
+
+  // First check that this is not a font panel trigger or no trigger
+  bool goodtrigger=1;
+  
+  const DL1Trigger *trig = NULL;
+  try {
+      eventLoop->GetSingle(trig);
+  } catch (...) {}
+  if (trig) {
+      if (trig->fp_trig_mask){
+          goodtrigger=0;
+      }
+  } else {
+      // HDDM files are from simulation, so keep them even though they have no trigger
+      bool locIsHDDMEvent = eventLoop->GetJEvent().GetStatusBit(kSTATUS_HDDM);
+      if (!locIsHDDMEvent) goodtrigger=0;		
+  }
+	
+  if (!goodtrigger) {
+      return NOERROR;
+  }
+
+
   eventLoop->Get( geomVec );
   eventLoop->Get( digiHits );
   eventLoop->Get( hits );
@@ -405,11 +431,14 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
 
     if( hits.size() > 1 )
       m_hitTmT0->Fill( locTime );
-
+    
+    if (fabs(locTime) < 20){
+      m_hitTmT02D->Fill( hit.column, hit.row, locTime );
+      m_hitTmT0Sq2D->Fill( hit.column, hit.row, locTime*locTime );
+      m_hitOcc2D->Fill( hit.column, hit.row );
+    }
+    
     m_hitE2D->Fill( hit.column, hit.row, hit.E*k_to_MeV );
-    m_hitTmT02D->Fill( hit.column, hit.row, locTime );
-    m_hitTmT0Sq2D->Fill( hit.column, hit.row, locTime*locTime );
-    m_hitOcc2D->Fill( hit.column, hit.row );
   }
 
 //  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK

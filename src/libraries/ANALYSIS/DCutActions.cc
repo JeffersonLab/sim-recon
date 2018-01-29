@@ -535,7 +535,6 @@ void DCutAction_TrueCombo::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-
 #ifdef VTRACE
 	VT_TRACER("DCutAction_TrueCombo::Perform_Action()");
 #endif
@@ -550,8 +549,7 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 		return false; //not the thrown topology: bail
 
 	//Do we need to pick the beam photon? If so, look for it
-	Particle_t locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialPID();
-	if(locPID == Gamma)
+	if(DAnalysis::Get_IsFirstStepBeam(Get_Reaction()))
 	{
 		if(!(*dCutAction_TrueBeamParticle)(locEventLoop, locParticleCombo))
 			return false; //needed the true beam photon, didn't have it
@@ -656,10 +654,10 @@ DCutAction_TrueCombo::~DCutAction_TrueCombo(void)
 
 bool DCutAction_TrueBeamParticle::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
-	locEventLoop->Get(locMCThrownMatchingVector);
-	if(locMCThrownMatchingVector.empty())
-		return false; //not a simulated event
+	vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons, "TAGGEDMCGEN");
+	if(locBeamPhotons.empty())
+		return false; //true not tagged
 
 	const DKinematicData* locKinematicData = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured();
 	if(locKinematicData == NULL)
@@ -669,7 +667,8 @@ bool DCutAction_TrueBeamParticle::Perform_Action(JEventLoop* locEventLoop, const
 	if(locBeamPhoton == NULL)
 		return false; //dunno how could be possible ...
 
-	return (locBeamPhoton == locMCThrownMatchingVector[0]->Get_ReconMCGENBeamPhoton());
+	double locDeltaT = fabs(locBeamPhoton->time() - locBeamPhotons[0]->time());
+	return ((locBeamPhoton->dSystem == locBeamPhotons[0]->dSystem) && (locBeamPhoton->dCounter == locBeamPhotons[0]->dCounter) && (locDeltaT < 1.0));
 }
 
 bool DCutAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)

@@ -42,7 +42,7 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 		//locIncludeDecayingToReactionFlag should be true UNLESS you are explicitly checking all possible reactions that could decay to your channel in your BDT
 			//e.g. could kinfit to g, p -> pi+, pi0, K0, Lambda and include it as a BDT variable
 
-	if(dParticleComboCreator == nullptr)
+	if(dParticleComboCreator == nullptr) //Can't create in constructor: infinite recursion
 		dParticleComboCreator = new DParticleComboCreator(locEventLoop, nullptr, nullptr, nullptr);
 	DReaction_factory_Thrown* dThrownReactionFactory = static_cast<DReaction_factory_Thrown*>(locEventLoop->GetFactory("DReaction", "Thrown"));
 
@@ -356,7 +356,7 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, co
 
 	//note, if you decay a final state particle (e.g. k+, pi+) in your input DReaction*, a match will NOT be found: the thrown reaction/combo is truncated
 	//if locExclusiveMatchFlag = false, then allow the input DReaction to be a subset of the thrown
-	if(dParticleComboCreator == nullptr)
+	if(dParticleComboCreator == nullptr) //Can't create in constructor: infinite recursion
 		dParticleComboCreator = new DParticleComboCreator(locEventLoop, nullptr, nullptr, nullptr);
 	auto locThrownCombo = dParticleComboCreator->Build_ThrownCombo(locEventLoop);
 
@@ -383,7 +383,6 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DReaction* locThrownRe
 
 	if(locThrownCombo == NULL)
 		return false;
-
 	if(locExclusiveMatchFlag)
 	{
 		if(locReaction->Get_NumReactionSteps() != locThrownCombo->Get_NumParticleComboSteps())
@@ -438,8 +437,9 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DReaction* locThrownRe
 			const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_j);
 			if(locMatchedInputStepIndices.find(loc_j) != locMatchedInputStepIndices.end())
 				continue; //this step was already accounted for
+
 			//when not exact match: allow user step to have a missing unknown particle
-			if(DAnalysis::Check_ChannelEquality(locThrownReaction->Get_ReactionStep(loc_i), locReactionStep, false, !locExclusiveMatchFlag))
+			if(!DAnalysis::Check_ChannelEquality(locThrownReaction->Get_ReactionStep(loc_i), locReactionStep, false, !locExclusiveMatchFlag))
 				continue; //particles aren't the same
 
 			//ok, now check to make sure that the parent particle in this step was produced the same way in both thrown & locReaction
@@ -470,6 +470,7 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DReaction* locThrownRe
 			locMatchFoundFlag = true;
 			break;
 		}
+
 		if((!locMatchFoundFlag) && (locPossibleMatchIndex != -1))
 		{
 			//need to use the possible match

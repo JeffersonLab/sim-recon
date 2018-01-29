@@ -40,6 +40,19 @@ void DTrackHitSelector::GetCDCHits(fit_type_t fit_type, const DReferenceTrajecto
 }
 
 //---------------------
+// GetCDCHits
+//---------------------
+void DTrackHitSelector::GetCDCHits(double Bz, double q,const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DCDCTrackHit*> &cdchits_in, DTrackFitter *fitter,int N) const
+{
+	/// Get all hits from the CDC and add them to the specified DTrackFitter object
+
+	vector<const DCDCTrackHit*> cdchits_out;
+	GetCDCHits(Bz,q,extrapolations, cdchits_in, cdchits_out,N);
+	sort(cdchits_out.begin(), cdchits_out.end(), CDCSortByRincreasing);
+	for(unsigned int i=0; i<cdchits_out.size(); i++)fitter->AddHit(cdchits_out[i]);
+}
+
+//---------------------
 // GetFDCHits
 //---------------------
 void DTrackHitSelector::GetFDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, DTrackFitter *fitter,int N) const
@@ -48,6 +61,18 @@ void DTrackHitSelector::GetFDCHits(fit_type_t fit_type, const DReferenceTrajecto
 
 	vector<const DFDCPseudo*> fdchits_out;
 	GetFDCHits(fit_type, rt, fdchits_in, fdchits_out,N);
+	sort(fdchits_out.begin(), fdchits_out.end(), FDCSortByZincreasing);
+	for(unsigned int i=0; i<fdchits_out.size(); i++)fitter->AddHit(fdchits_out[i]);
+}
+//---------------------
+// GetFDCHits
+//---------------------
+void DTrackHitSelector::GetFDCHits(double Bz,double q,const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DFDCPseudo*> &fdchits_in, DTrackFitter *fitter,int N) const
+{
+	/// Get all hits from the FDC and add them to the specified DTrackFitter object
+
+	vector<const DFDCPseudo*> fdchits_out;
+	GetFDCHits(Bz,q,extrapolations, fdchits_in, fdchits_out,N);
 	sort(fdchits_out.begin(), fdchits_out.end(), FDCSortByZincreasing);
 	for(unsigned int i=0; i<fdchits_out.size(); i++)fitter->AddHit(fdchits_out[i]);
 }

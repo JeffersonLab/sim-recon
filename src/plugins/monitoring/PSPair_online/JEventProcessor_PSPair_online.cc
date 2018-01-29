@@ -443,8 +443,8 @@ jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnum
         if (fpairs.size()>=1) {
             pspair_num_events->Fill(1);
             // take pair with smallest time difference from sorted vector
-            const DPSHit* flhit = fpairs[0]->ee.first;  // left hit in fine PS
-            const DPSHit* frhit = fpairs[0]->ee.second; // right hit in fine PS
+            const DPSPair::PSClust* flhit = fpairs[0]->ee.first;  // left hit in fine PS
+            const DPSPair::PSClust* frhit = fpairs[0]->ee.second; // right hit in fine PS
             double E_pair = flhit->E+frhit->E;
             hPS_PSCIDLeftVsIDRight->Fill(crhit->module,clhit->module);
             hPS_PSIDLeftVsIDRight->Fill(frhit->column,flhit->column);

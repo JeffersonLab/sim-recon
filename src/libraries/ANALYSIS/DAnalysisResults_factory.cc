@@ -257,7 +257,7 @@ jerror_t DAnalysisResults_factory::evnt(JEventLoop* locEventLoop, uint64_t event
 
 	//RESET
 	dSourceComboer->Reset_NewEvent(locEventLoop);
-	dKinFitUtils->Reset_NewEvent(locEventLoop->GetJEvent().GetEventNumber());
+	dKinFitUtils->Reset_NewEvent();
 	dKinFitter->Reset_NewEvent();
 	dConstraintResultsMap.clear();
 	dPreToPostKinFitComboMap.clear();
@@ -411,7 +411,8 @@ const DParticleCombo* DAnalysisResults_factory::Handle_ComboFit(const DReactionV
 
 	//A given combo can be used for multiple DReactions, each with a different fit type or update-cov flag
 	auto locUpdateCovMatricesFlag = locReaction->Get_KinFitUpdateCovarianceMatricesFlag();
-	auto locComboKinFitTuple = std::make_tuple(locParticleCombo, locKinFitType, locUpdateCovMatricesFlag);
+	auto locNoConstrainMassSteps = DAnalysis::Get_NoConstrainMassSteps(locReaction);
+	auto locComboKinFitTuple = std::make_tuple(locParticleCombo, locKinFitType, locUpdateCovMatricesFlag, locNoConstrainMassSteps);
 
 	//Check if same fit with this combo already done. If so, return it.
 	auto locComboIterator = dPreToPostKinFitComboMap.find(locComboKinFitTuple);

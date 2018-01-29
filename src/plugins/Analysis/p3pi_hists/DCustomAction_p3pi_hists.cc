@@ -40,6 +40,8 @@ void DCustomAction_p3pi_hists::Initialize(JEventLoop* locEventLoop)
 		dDeltaE_M3pi_ProtonTag = GetOrCreate_Histogram<TH2I>("dDeltaE_M3pi_ProtonTag", "#Delta E vs M_{#pi^{+}#pi^{-}#pi^{0}}: Proton Tag; M_{#pi^{+}#pi^{-}#pi^{0}}; #Delta E (tagger - p#pi^{+}#pi^{-}#pi^{0})", 200, 0.0, 2.0, 200, -5., 5.);
 		dMM2_DeltaE_ProtonTag = GetOrCreate_Histogram<TH2I>("dMM2_DeltaE_ProtonTag", "MM^{2} vs #Delta E: Proton Tag; #Delta E (tagger - p#pi^{+}#pi^{-}#pi^{0}); MM^{2}", 200, -5., 5., 200, -1., 1.);
 		
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }

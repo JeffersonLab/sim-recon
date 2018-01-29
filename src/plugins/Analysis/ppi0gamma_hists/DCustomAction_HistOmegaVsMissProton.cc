@@ -30,6 +30,9 @@ void DCustomAction_HistOmegaVsMissProton::Initialize(JEventLoop* locEventLoop)
 		string locHistTitle = ";#it{#gamma}#it{p}#rightarrow#it{#pi}^{+}#it{#pi}^{-}#it{#gamma}#it{#gamma} Missing Mass (GeV/c^{2})";
 		locHistTitle += string(";#it{#pi}^{+}#it{#pi}^{-}#it{#gamma}#it{#gamma} Invariant Mass (GeV/c^{2})");
 		dHist_OmegaVsMissProton = GetOrCreate_Histogram<TH2I>("OmegaVsMissProton", locHistTitle, 325, 0.3, 1.6, 300, 0.5, 1.1);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }

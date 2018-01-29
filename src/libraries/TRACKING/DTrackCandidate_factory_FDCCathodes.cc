@@ -486,7 +486,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
     
     if (circle_center_diff2<circle_center_diff2_min){
       circle_center_diff2_min=circle_center_diff2;
-      if (circle_center_diff2_min<4.0){
+      if (circle_center_diff2_min<9.0){
 	match=segment2;
 	match_id=j;
       }

@@ -13,6 +13,8 @@ using namespace jana;
 #include "DPSGeometry_factory.h"
 #include "DPSCPair_factory.h"
 #include "DPSPair_factory.h"
+#include "DLumi_factory.h"
+
 
 jerror_t PAIR_SPECTROMETER_init(JEventLoop *loop)
 {
@@ -28,6 +30,7 @@ jerror_t PAIR_SPECTROMETER_init(JEventLoop *loop)
   loop->AddFactory(new JFactory<DPSTruthHit>());
   loop->AddFactory(new DPSCPair_factory());
   loop->AddFactory(new DPSPair_factory());
+  loop->AddFactory(new DLumi_factory());
 
   return NOERROR;
 }

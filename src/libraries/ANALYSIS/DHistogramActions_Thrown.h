@@ -68,6 +68,7 @@ THROWN_ONLY:
 		DHistogramAction_ParticleComboGenReconComparison
 		DHistogramAction_TruePID
 	INDEPENDENT:
+		DHistogramAction_TOFHitStudy
 		DHistogramAction_ThrownParticleKinematics
 		DHistogramAction_ReconnedThrownKinematics
 		DHistogramAction_GenReconTrackComparison
@@ -94,7 +95,6 @@ class DHistogramAction_ParticleComboGenReconComparison : public DAnalysisAction
 		void Initialize(JEventLoop* locEventLoop);
 		void Reset_NewEvent(void)
 		{
-			DAnalysisAction::Reset_NewEvent();
 			dPreviouslyHistogrammedParticles.clear();
 			dPreviouslyHistogrammedBeamParticles.clear();
 		}
@@ -197,8 +197,6 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 
 		void Initialize(JEventLoop* locEventLoop);
 
-//so: in multi-thread, make direct call. in the main func, no check!
-	//in single-thread, call pre-func to check flag
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
@@ -399,6 +397,57 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 		map<Particle_t, TH2I*> dHistMap_TimePullVsP_FCAL;
 };
 
+class DHistogramAction_TOFHitStudy : public DAnalysisAction
+{
+	public:
+		DHistogramAction_TOFHitStudy(const DReaction* locReaction, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Hist_TOFHitStudy", false, locActionUniqueString), 
+		dNumDeltaTBins(400), dNumDeltaXBins(400), dNumdEBins(400), dNum2DPBins(250),
+		dMinDeltaT(-1.0), dMaxDeltaT(1.0), dMinDeltaX(-6.0), dMaxDeltaX(6.0), dMindE(3.0), dMaxdE(20.0), dMinP(0.0), dMaxP(10.0)
+		{
+			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
+			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+		}
+
+		DHistogramAction_TOFHitStudy(string locActionUniqueString) : 
+		DAnalysisAction(NULL, "Hist_TOFHitStudy", false, locActionUniqueString), 
+		dNumDeltaTBins(400), dNumDeltaXBins(400), dNumdEBins(400), dNum2DPBins(250),
+		dMinDeltaT(-1.0), dMaxDeltaT(1.0), dMinDeltaX(-6.0), dMaxDeltaX(6.0), dMindE(3.0), dMaxdE(20.0), dMinP(0.0), dMaxP(10.0)
+		{
+			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
+			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+		}
+
+		DHistogramAction_TOFHitStudy(void) : 
+		DAnalysisAction(NULL, "Hist_TOFHitStudy", false, ""), 
+		dNumDeltaTBins(400), dNumDeltaXBins(400), dNumdEBins(400), dNum2DPBins(250),
+		dMinDeltaT(-1.0), dMaxDeltaT(1.0), dMinDeltaX(-6.0), dMaxDeltaX(6.0), dMindE(3.0), dMaxdE(20.0), dMinP(0.0), dMaxP(10.0)
+		{
+			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
+			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+		}
+
+		unsigned int dNumDeltaTBins, dNumDeltaXBins, dNumdEBins, dNum2DPBins;
+		double dMinDeltaT, dMaxDeltaT, dMinDeltaX, dMaxDeltaX, dMindE, dMaxdE, dMinP, dMaxP;
+
+		deque<Particle_t> dFinalStatePIDs;
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
+
+		map<Particle_t, TH1I*> dHistMap_DeltaT;
+		map<Particle_t, TH1I*> dHistMap_DeltaX;
+		map<Particle_t, TH1I*> dHistMap_DeltaY;
+		map<Particle_t, TH1I*> dHistMap_dE;
+
+		map<Particle_t, TH2I*> dHistMap_DeltaTVsP;
+		map<Particle_t, TH2I*> dHistMap_DeltaXVsP;
+		map<Particle_t, TH2I*> dHistMap_DeltaYVsP;
+		map<Particle_t, TH2I*> dHistMap_dEVsP;
+};
+
 class DHistogramAction_TruePID : public DAnalysisAction
 {
 	public:
@@ -413,11 +462,7 @@ class DHistogramAction_TruePID : public DAnalysisAction
 		double dMinP, dMaxP, dMinTheta, dMaxTheta;
 
 		void Initialize(JEventLoop* locEventLoop);
-		void Reset_NewEvent(void)
-		{
-			DAnalysisAction::Reset_NewEvent();
-			dPreviouslyHistogrammedParticles.clear();
-		}
+		void Reset_NewEvent(void){dPreviouslyHistogrammedParticles.clear();}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -435,4 +480,3 @@ class DHistogramAction_TruePID : public DAnalysisAction
 };
 
 #endif // _DHistogramActions_Thrown_
-

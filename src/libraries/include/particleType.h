@@ -475,7 +475,7 @@ inline static char* ShortName(Particle_t locPID)
   case Neutron:
 	return (char*)"n";
   case Proton:
-	return (char*)""; //understood
+	return (char*)"prot";
   case AntiProton:
 	return (char*)"antip";
   case KShort:
@@ -1650,5 +1650,34 @@ inline static int Is_CorrectCharge(Particle_t locPID, Charge_t locCharge)
 			return 0;
 	}
 }
+
+// Deduce particle type from charge and mass
+inline static Particle_t IDTrack(float locCharge, float locMass)
+{
+        float locMassTolerance = 0.010;
+        if (locCharge > 0.1) // Positive particles
+        {
+                if (fabs(locMass - ParticleMass(Proton)) < locMassTolerance) return Proton;
+                if (fabs(locMass - ParticleMass(PiPlus)) < locMassTolerance) return PiPlus;
+                if (fabs(locMass - ParticleMass(KPlus)) < locMassTolerance) return KPlus;
+                if (fabs(locMass - ParticleMass(Positron)) < locMassTolerance) return Positron;
+                if (fabs(locMass - ParticleMass(MuonPlus)) < locMassTolerance) return MuonPlus;
+        }
+        else if(locCharge < -0.1) // Negative particles
+        {
+                if (fabs(locMass - ParticleMass(PiMinus)) < locMassTolerance) return PiMinus;
+                if (fabs(locMass - ParticleMass(KMinus)) < locMassTolerance) return KMinus;
+                if (fabs(locMass - ParticleMass(MuonMinus)) < locMassTolerance) return MuonMinus;
+                if (fabs(locMass - ParticleMass(Electron)) < locMassTolerance) return Electron;
+                if (fabs(locMass - ParticleMass(AntiProton)) < locMassTolerance) return AntiProton;
+        }
+        else //Neutral Track
+        {
+                if (fabs(locMass - ParticleMass(Gamma)) < locMassTolerance) return Gamma;
+                if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
+        }
+        return Unknown;
+}
+
 
 #endif

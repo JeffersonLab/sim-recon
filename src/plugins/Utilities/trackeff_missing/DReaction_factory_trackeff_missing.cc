@@ -56,20 +56,22 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction = new DReaction("TrackEff_MissingPiMinus_4pi");
 	locReaction->Add_ReactionStep(new DReactionStep(Gamma, Proton, {PiPlus, PiPlus, PiMinus, Proton}, PiMinus));
 	locReactions.push_back(locReaction);
-
+/*
 	//g, p -> omega, p
 	//FYI: omega (3pi) with missing proton is hopeless
 	locReaction = new DReaction("TrackEff_MissingPiMinus_3pi");
 	locReaction->Add_ReactionStep(new DReactionStep(Gamma, Proton, {omega, Proton}));
 	locReaction->Add_ReactionStep(new DReactionStep(omega, {PiPlus, Pi0}, PiMinus));
 	locReaction->Add_ReactionStep(new DReactionStep(Pi0, {Gamma, Gamma}));
+	locReactions.push_back(locReaction);
 
 	//g, p -> omega, p
 	locReaction = new DReaction("TrackEff_MissingPiPlus_3pi");
 	locReaction->Add_ReactionStep(new DReactionStep(Gamma, Proton, {omega, Proton}));
 	locReaction->Add_ReactionStep(new DReactionStep(omega, {PiMinus, Pi0}, PiPlus));
 	locReaction->Add_ReactionStep(new DReactionStep(Pi0, {Gamma, Gamma}));
-
+	locReactions.push_back(locReaction);
+*/
 	//Loop over reactions and do setup
 	for(auto& locReaction : locReactions)
 	{
@@ -82,6 +84,9 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 		locReaction->Set_NumPlusMinusRFBunches(1); // +/- 1 bunch for sideband subtraction
 
 		/**************************************************** Analysis Actions ****************************************************/
+
+		//Cut Pi0 tighter (if present)
+//		locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, 0.12, 0.15));
 
 		//TRACK PURITY
 		locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 12));
@@ -99,7 +104,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 //		locReaction->Add_AnalysisAction(new DCustomAction_CutExtraShowers(locReaction, 0.5));
 
 		// KINEMATIC FIT
-		locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+		locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05, true)); //5% confidence level cut on pull histograms only //true: hist 2d dependence
 
 		//POST-KINFIT PID CUTS
 		Add_PostKinfitTimingCuts(locReaction);

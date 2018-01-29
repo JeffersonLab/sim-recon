@@ -76,6 +76,8 @@ void DCustomAction_p2k_hists::Initialize(JEventLoop* locEventLoop)
 		dKplus_P_Theta_RhoTag = GetOrCreate_Histogram<TH2I>("Kplus_P_Theta_RhoTag","K+ p vs #theta; #theta; p (GeV)",180,0,180,200,0.,10.);
 		dKminus_P_Theta_RhoTag = GetOrCreate_Histogram<TH2I>("Kminus_P_Theta_RhoTag","K- p vs #theta; #theta; p (GeV)",180,0,180,200,0.,10.);
 
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }

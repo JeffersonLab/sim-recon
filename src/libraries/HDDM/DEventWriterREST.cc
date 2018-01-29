@@ -64,6 +64,9 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	std::vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
 
+	std::vector<const DBeamPhoton*> locBeamPhotons_TAGGEDMCGEN;
+	locEventLoop->Get(locBeamPhotons_TAGGEDMCGEN, "TAGGEDMCGEN");
+
 	std::vector<const DFCALShower*> fcalshowers;
 	locEventLoop->Get(fcalshowers);
 
@@ -174,6 +177,23 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			hddm_r::TaghBeamPhotonList locTaghBeamPhotonList = res().addTaghBeamPhotons(1);
 			locTaghBeamPhotonList().setT(locBeamPhotons[loc_i]->time());
 			locTaghBeamPhotonList().setE(locBeamPhotons[loc_i]->energy());
+		}
+	}
+	for(size_t loc_i = 0; loc_i < locBeamPhotons_TAGGEDMCGEN.size(); ++loc_i)
+	{
+		if(locBeamPhotons_TAGGEDMCGEN[loc_i]->dSystem == SYS_TAGM)
+		{
+			hddm_r::TagmBeamPhotonList locTagmBeamPhotonList = res().addTagmBeamPhotons(1);
+			locTagmBeamPhotonList().setJtag("TAGGEDMCGEN");
+			locTagmBeamPhotonList().setT(locBeamPhotons_TAGGEDMCGEN[loc_i]->time());
+			locTagmBeamPhotonList().setE(locBeamPhotons_TAGGEDMCGEN[loc_i]->energy());
+		}
+		else if(locBeamPhotons_TAGGEDMCGEN[loc_i]->dSystem == SYS_TAGH)
+		{
+			hddm_r::TaghBeamPhotonList locTaghBeamPhotonList = res().addTaghBeamPhotons(1);
+			locTaghBeamPhotonList().setJtag("TAGGEDMCGEN");
+			locTaghBeamPhotonList().setT(locBeamPhotons_TAGGEDMCGEN[loc_i]->time());
+			locTaghBeamPhotonList().setE(locBeamPhotons_TAGGEDMCGEN[loc_i]->energy());
 		}
 	}
 

@@ -29,6 +29,7 @@ using namespace jana;
 #include "DCAEN1290TDCConfig.h"
 #include "DCAEN1290TDCHit.h"
 #include "DCODAEventInfo.h"
+#include "DCODAControlEvent.h"
 #include "DCODAROCInfo.h"
 #include "DTSscalers.h"
 #include "DEPICSvalue.h"
@@ -74,6 +75,7 @@ jerror_t DAQ_init(JEventLoop *loop)
 	loop->AddFactory(new JFactory<DCAEN1290TDCConfig>());
 	loop->AddFactory(new JFactory<DCAEN1290TDCHit>());
 	loop->AddFactory(new JFactory<DCODAEventInfo>());
+	loop->AddFactory(new JFactory<DCODAControlEvent>());
 	loop->AddFactory(new JFactory<DCODAROCInfo>());
 	loop->AddFactory(new JFactory<DTSscalers>());
 	loop->AddFactory(new JFactory<DEPICSvalue>());

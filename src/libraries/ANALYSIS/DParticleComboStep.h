@@ -84,6 +84,23 @@ class DParticleComboStep : public DResettable
 		DLorentzVector dSpacetimeVertex;
 };
 
+inline void Print(const DParticleComboStep* locStep)
+{
+	auto locInit = locStep->Get_InitialParticle();
+	if(locInit != nullptr)
+	{
+		auto locP3 = locInit->momentum();
+		cout << "init: pid, p, theta, phi = " << locInit->PID() << ", " << locP3.Mag() << ", " << locP3.Theta()*180.0/TMath::Pi() << ", " << locP3.Phi()*180.0/TMath::Pi() << "\n";
+	}
+	for(auto locParticle : locStep->Get_FinalParticles())
+	{
+		if(locParticle == nullptr)
+			continue;
+		auto locP3 = locParticle->momentum();
+		cout << "init: pid, p, theta, phi = " << locParticle->PID() << ", " << locP3.Mag() << ", " << locP3.Theta()*180.0/TMath::Pi() << ", " << locP3.Phi()*180.0/TMath::Pi() << "\n";
+	}
+}
+
 const JObject* Get_FinalParticle_SourceObject(const DKinematicData* locParticle);
 
 inline const DKinematicData* DParticleComboStep::Get_InitialParticle_Measured(void) const
@@ -131,7 +148,7 @@ inline const DKinematicData* DParticleComboStep::Get_FinalParticle_Measured(size
 inline const DKinematicData* DParticleComboStep::Get_MissingParticle(const DReactionStep* locReactionStep) const
 {
 	int locMissingParticleIndex = locReactionStep->Get_MissingParticleIndex();
-	if(locMissingParticleIndex == -1)
+	if(locMissingParticleIndex == DReactionStep::Get_ParticleIndex_None())
 		return nullptr;
 	return dFinalParticles[locMissingParticleIndex];
 }

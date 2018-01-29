@@ -4068,21 +4068,44 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
                     // opposed to the new firmware that puts the same infomation
                     // into a single data type. The emulation framework is also
                     // being revamped.
-                    objs->hit_objs.push_back( new Df125FDCPulse(rocid, slot, channel, itrigger
-                                , pulse_number        // NPK
-                                , pulse_time          // le_time
-                                , quality_factor      // time_quality_bit
-                                , overflow_count      // overflow_count
-                                , pedestal            // pedestal
-                                , sum                 // integral
-                                , pulse_peak          // peak_amp
-                                , peak_time           // peak_time
-                                , word1               // word1
-                                , word2               // word2
-                                , nsamples_pedestal   // nsamples_pedestal
-                                , nsamples_integral   // nsamples_integral
-                                , false)              // emulated
-                            );
+						  
+						  // hard-cod destination object CDC/FDC based on rocid
+						  
+						  if( rocid < 30 ){
+
+                  	  objs->hit_objs.push_back( new Df125CDCPulse(rocid, slot, channel, itrigger
+                              	  , pulse_number        // NPK
+                              	  , pulse_time          // le_time
+                              	  , quality_factor      // time_quality_bit
+                              	  , overflow_count      // overflow_count
+                              	  , pedestal            // pedestal
+                              	  , sum                 // integral
+                              	  , pulse_peak          // peak_amp
+                              	  , word1               // word1
+                              	  , word2               // word2
+                              	  , nsamples_pedestal   // nsamples_pedestal
+                              	  , nsamples_integral   // nsamples_integral
+                              	  , false)              // emulated
+                           	 );
+						  
+						  }else{
+						  
+                  	  objs->hit_objs.push_back( new Df125FDCPulse(rocid, slot, channel, itrigger
+                              	  , pulse_number        // NPK
+                              	  , pulse_time          // le_time
+                              	  , quality_factor      // time_quality_bit
+                              	  , overflow_count      // overflow_count
+                              	  , pedestal            // pedestal
+                              	  , sum                 // integral
+                              	  , pulse_peak          // peak_amp
+                              	  , peak_time           // peak_time
+                              	  , word1               // word1
+                              	  , word2               // word2
+                              	  , nsamples_pedestal   // nsamples_pedestal
+                              	  , nsamples_integral   // nsamples_integral
+                              	  , false)              // emulated
+                           	 );
+							}
                 }
 
                 // n.b. We don't record last_slot, last_channel, etc... here since those

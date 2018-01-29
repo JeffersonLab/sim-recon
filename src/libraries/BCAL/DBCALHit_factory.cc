@@ -227,7 +227,7 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 							pedestal,nsamples_pedestal,single_sample_ped,totalpedestal,gain,hit_E*1000);
       if ( hit_E <= 0 ) continue;  // Throw away negative energy hits  
 
-      int pulse_peak_pedsub = digihit->pulse_peak - (int)single_sample_ped;
+      int pulse_peak_pedsub = (int)digihit->pulse_peak - (int)single_sample_ped;
  
       // Calculate time for channel
       double pulse_time        = (double)digihit->pulse_time;
