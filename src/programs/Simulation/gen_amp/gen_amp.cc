@@ -21,7 +21,6 @@
 #include "AMPTOOLS_AMPS/BreitWigner3body.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
-#include "AMPTOOLS_MCGEN/GammaPToXYP.h"
 #include "AMPTOOLS_MCGEN/GammaPToNPartP.h"
 
 #include "IUAmpTools/AmpToolsInterface.h"
@@ -166,7 +165,7 @@ int main( int argc, char* argv[] ){
 	bool foundResonance = false;
 	for (vector<ConfigFileLine>::const_iterator it=configFileLines.begin(); it!=configFileLines.end(); it++) {
 	  if ((*it).keyword() == "define") {
-	    if ((*it).arguments()[0] == "rho" || (*it).arguments()[0] == "omega" || (*it).arguments()[0] == "phi" || (*it).arguments()[0] == "b1"){
+	    if ((*it).arguments()[0] == "rho" || (*it).arguments()[0] == "omega" || (*it).arguments()[0] == "phi" || (*it).arguments()[0] == "b1" || (*it).arguments()[0] == "a1"){
 	      if ( (*it).arguments().size() != 3 )
 		continue;
 	      resonance[0]=atof((*it).arguments()[1].c_str());
@@ -198,9 +197,8 @@ int main( int argc, char* argv[] ){
 		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
 
 	// generate over a range of mass
-	//GammaPToXYP resProd( lowMass, highMass, ParticleMass(Particles[2]), ParticleMass(Particles[3]), beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope, seed );
 	GammaPToNPartP resProd( threshold, highMass, childMasses, beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope, seed );
-	
+		
 	// seed the distribution with a sum of noninterfering Breit-Wigners
 	// we can easily compute the PDF for this and divide by that when
 	// doing accept/reject -- improves efficiency if seeds are picked well
