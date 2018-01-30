@@ -24,6 +24,7 @@
 #define MAX_WB_PASSES 20
 #define MAX_P 12.0
 #define ALPHA 1./137.
+#define CHISQ_DELTA 0.01
 
 
 // Local boolean routines for sorting
@@ -2567,7 +2568,8 @@ jerror_t DTrackFitterKalmanSIMD::StepStateAndCovariance(DVector2 &xy,
 
    // New covariance matrix
    // C=J C J^T
-   C=C.SandwichMultiply(J);
+   //C=C.SandwichMultiply(J);
+   C=J*C*J.Transpose();
 
    return NOERROR;
 }
@@ -3322,6 +3324,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	saved_extrapolations=extrapolations;
 	ClearExtrapolations();
       }
+      bool save_IsSmoothed=IsSmoothed;
 
       // Chi-squared, degrees of freedom, and probability
       double forward_prob=0.;
@@ -3331,6 +3334,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       // Parameters at "vertex"
       double phi=phi_,q_over_pt=q_over_pt_,tanl=tanl_,x=x_,y=y_,z=z_;
       vector< vector <double> > fcov_save;
+      vector<pull_t>pulls_save;
+      pulls_save.assign(pulls.begin(),pulls.end());     
       if (!fcov.empty()){
          fcov_save.assign(fcov.begin(),fcov.end());
       }
@@ -3394,6 +3399,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 		  if (!saved_extrapolations.empty()){
 		    extrapolations=saved_extrapolations;
 		  }
+		  IsSmoothed=save_IsSmoothed;
+		  pulls.assign(pulls_save.begin(),pulls_save.end());
 		  
                   //                         _DBG_ << endl;
                   return NOERROR;
@@ -3412,7 +3419,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
             tanl=tanl_;
             q_over_pt=q_over_pt_;
             fcov_save.assign(fcov.begin(),fcov.end());	
-
+	    pulls_save.assign(pulls.begin(),pulls.end());
+	    save_IsSmoothed=IsSmoothed;
 	    if (!extrapolations.empty()){
 	      saved_extrapolations=extrapolations;
 	      ClearExtrapolations();
@@ -3480,7 +3488,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
             chisq_=chisq_forward;
             ndf_= ndof_forward;
             fcov.assign(fcov_save.begin(),fcov_save.end());
-
+	    pulls.assign(pulls_save.begin(),pulls_save.end());
+	    IsSmoothed=save_IsSmoothed;
 	    if (!saved_extrapolations.empty()){
 	      extrapolations=saved_extrapolations;
 	    }
@@ -3508,7 +3517,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	 if (!saved_extrapolations.empty()){
 	   extrapolations=saved_extrapolations;
 	 }
-
+	 IsSmoothed=save_IsSmoothed;
+	 pulls.assign(pulls_save.begin(),pulls_save.end());
          cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());	
 
          // We did not end up using any fdc hits...
@@ -3953,7 +3963,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
       // Update the actual state vector and covariance matrix
       Sc=S0+J*(Sc-S0_);
       // Cc=J*(Cc*JT)+Q;   
-      Cc=Q.AddSym(Cc.SandwichMultiply(J));
+      // Cc=Q.AddSym(Cc.SandwichMultiply(J));
+      Cc=Q.AddSym(J*Cc*J.Transpose());
 
       // Save the current state and covariance matrix in the deque
       if (fit_type==kTimeBased){
@@ -4005,6 +4016,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                _DBG_ << " Good Hit Ring " << my_cdchits[cdc_index]->hit->wire->ring << " Straw " << my_cdchits[cdc_index]->hit->wire->straw << endl;
                _DBG_ << " doca " << sqrt(doca2) << endl;
             }
+
             // Save values at end of current step
             DVector2 xy0=central_traj[k].xy;
 
@@ -4020,95 +4032,46 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
             //double qrc_old=qpt/fabs(qBr2p*bfield->GetBz(pos.x(),pos.y(),pos.z()));
             double qrc_old=qpt/fabs(qBr2p*central_traj[k].B);
             double qrc_plus_D=D+qrc_old;
-            double lambda=atan(Sc(state_tanl));
-            double cosl=cos(lambda); 
-            double sinl=sin(lambda);
 
-            // wire direction variables
+            // wire direction variable
             double ux=dir.X();
             double uy=dir.Y();
             double cosstereo=my_cdchits[cdc_index]->cosstereo;
             // Variables relating wire direction and track direction
-            double my_ux=ux*sinl-cosl*cosphi;
-            double my_uy=uy*sinl-cosl*sinphi;
-            double denom=my_ux*my_ux+my_uy*my_uy;
+            //double my_ux=ux*sinl-cosl*cosphi;
+            //double my_uy=uy*sinl-cosl*sinphi;
+            //double denom=my_ux*my_ux+my_uy*my_uy;
             // distance variables
             DVector2 diff,dxy1;
 
-            // if the step size is small relative to the radius of curvature,
-            // use a linear approximation to find ds2
-            bool do_brent=false;
-            double step1=mStepSizeS;
-            double step2=mStepSizeS;
-            if (k>=2){
-               step1=-central_traj[k].s+central_traj[k_minus_1].s;
-               step2=-central_traj[k_minus_1].s+central_traj[k-2].s;
-            }
-            //printf("step1 %f step 2 %f \n",step1,step2);
-            double two_step=step1+step2;
-            if (two_step*cosl/fabs(qrc_old)<0.05 && denom>EPS){
-               double z=Sc(state_z);
-               double dzw=z-z0w;
-               ds2=((xy.X()-origin.X()-ux*dzw)*my_ux
-                     +(xy.Y()-origin.Y()-uy*dzw)*my_uy)/denom;
+	    // use Brent's algorithm to find the poca to the wire
+	    // See Numerical Recipes in C, pp 404-405
 
-               if (ds2<0.0){
-                  do_brent=true;
-               }
-               else{
-                  if (fabs(ds2)<two_step){
-                     double my_z=Sc(state_z)+ds2*sinl;
-                     if(my_z<cdc_origin[2]){
-                        ds2=(cdc_origin[2]-z)/sinl;
-                     }
-                     else if (my_z>endplate_z){
-                        ds2=(endplate_z-z)/sinl;
-                     }
-                  }
-                  else{
-                     do_brent=true;
-                  }
-               }
-            }
-            else do_brent=true;
-            if (do_brent){
-               if (DEBUG_LEVEL>9) _DBG_ << "Using Brent's Algorithm" << endl; 
-               // ... otherwise, use Brent's algorithm.
-               // See Numerical Recipes in C, pp 404-405
+	    // dEdx for current position along trajectory
+	    double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));            
+	    if (CORRECT_FOR_ELOSS){
+	      dedx=GetdEdx(q_over_p, central_traj[k].K_rho_Z_over_A,
+			   central_traj[k].rho_Z_over_A,
+			   central_traj[k].LnI,central_traj[k].Z);
+	    }
 
-               // dEdx for current position along trajectory
-               double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));            
-               if (CORRECT_FOR_ELOSS){
-                  dedx=GetdEdx(q_over_p, central_traj[k].K_rho_Z_over_A,
-                        central_traj[k].rho_Z_over_A,
-                        central_traj[k].LnI,central_traj[k].Z);
-               }
+	    if (BrentCentral(dedx,xy,z0w,origin,dir,Sc,ds2)!=NOERROR) return MOMENTUM_OUT_OF_RANGE;
 
-               if (BrentCentral(dedx,xy,z0w,origin,dir,Sc,ds2)!=NOERROR) return MOMENTUM_OUT_OF_RANGE;
+	    //Step along the reference trajectory and compute the new covariance matrix
+	    StepStateAndCovariance(xy0,ds2,dedx,S0,J,Cc);
 
-               //Step along the reference trajectory and compute the new covariance matrix
-               StepStateAndCovariance(xy0,ds2,dedx,S0,J,Cc);
+	    // Compute the value of D (signed distance to the reference trajectory)
+	    // at the doca to the wire
+	    dxy1=xy0-central_traj[k].xy;
+	    double rc=sqrt(dxy1.Mod2()
+			   +2.*qrc_plus_D*(dxy1.X()*sinphi-dxy1.Y()*cosphi)
+			   +qrc_plus_D*qrc_plus_D);
+	    Sc(state_D)=q*rc-qrc_old;
 
-               // Compute the value of D (signed distance to the reference trajectory)
-               // at the doca to the wire
-               dxy1=xy0-central_traj[k].xy;
-               double rc=sqrt(dxy1.Mod2()
-                     +2.*qrc_plus_D*(dxy1.X()*sinphi-dxy1.Y()*cosphi)
-                     +qrc_plus_D*qrc_plus_D);
-               Sc(state_D)=q*rc-qrc_old;
-
-               // wire position
-               wirexy=origin;
-               wirexy+=(Sc(state_z)-z0w)*dir;
-               diff=xy-wirexy;
-            }
-            else{
-               // wire position
-               wirexy=origin;
-               wirexy+=(Sc(state_z)+ds2*sinl-z0w)*dir;
-               DVector2 dxy(ds2*cosl*cosphi,ds2*cosl*sinphi);
-               diff=xy+dxy-wirexy;
-            }
+	    // wire position
+	    wirexy=origin;
+	    wirexy+=(Sc(state_z)-z0w)*dir;
+	    diff=xy-wirexy;
 
             // prediction for measurement  
             double doca=diff.Mod()+EPS;
@@ -4159,25 +4122,16 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
             H_T(state_phi)
                =-Sc(state_D)*cosstereo_over_doca*(dx*cosphi+dy*sinphi);
             H_T(state_z)=-cosstereo_over_doca*(dx*ux+dy*uy);
-            if (do_brent==false){
-               H_T(state_phi)+=ds2*cosl*cosstereo_over_doca
-                  *(dy*cosphi-dx*sinphi);
-               H_T(state_tanl)-=cosl*cosl*ds2*cosstereo_over_doca
-                  *(dx*(ux*cosl+sinl*cosphi)+dy*(uy*cosl+sinl*sinphi));
-               H(state_tanl)=H_T(state_tanl);
-            }
-            else{
-               H(state_tanl)=0.;
-               H_T(state_tanl)=0.;
-            }
+	    H(state_tanl)=0.;
+	    H_T(state_tanl)=0.;
             H(state_D)=H_T(state_D);
             H(state_z)=H_T(state_z);
             H(state_phi)=H_T(state_phi);
 
-
             // Difference and inverse of variance
             //InvV=1./(V+H*(Cc*H_T));
-            double Vproj=Cc.SandwichMultiply(H_T);
+            //double Vproj=Cc.SandwichMultiply(H_T);
+	    double Vproj=H*Cc*H_T;
             InvV=1./(V+Vproj);
             double dm=measurement-prediction;
 
@@ -4268,28 +4222,15 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
             }
 
-            // If we used Brent's algorithm to find the doca, we need to 
-            // move back to the right step along the reference trajectory.
-            if (do_brent){
-               // Get the field and gradient at the point (x0,y0,z0) on the reference
-               // trajectory
-               bfield->GetFieldAndGradient(xy0.X(),xy0.Y(),S0(state_z),Bx,By,Bz,
-                     dBxdx,dBxdy,dBxdz,dBydx,
-                     dBydy,dBydz,dBzdx,dBzdy,dBzdz);
-               // Compute the Jacobian matrix
-               StepJacobian(xy0,(-1.)*dxy1,-ds2,S0,dedx,J);
-
-               // Update covariance matrix
-               //Cc=J*Cc*J.Transpose();
-               Cc=Cc.SandwichMultiply(J);
-
-               // Step to the next point on the trajectory
-               Sc=S0_+J*(Sc-S0);
-            }
+            // Move back to the right step along the reference trajectory.
+	    StepStateAndCovariance(xy,-ds2,dedx,Sc,J,Cc);
 
             //  Save state and covariance matrix to update vector
             cdc_updates[cdc_index].S=Sc;
             cdc_updates[cdc_index].C=Cc;
+
+	    //Sc.Print();
+	    //Cc.Print();
 
             // update position on current trajectory based on corrected doca to 
             // reference trajectory
@@ -4494,7 +4435,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 
 
       //C=J*(C*J_T)+Q;   
-      C=Q.AddSym(C.SandwichMultiply(J));
+      //C=Q.AddSym(C.SandwichMultiply(J));
+      C=Q.AddSym(J*C*J.Transpose());
 
       // Save the current state and covariance matrix in the deque
       forward_traj[k].Skk=S;
@@ -4764,7 +4706,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                         S.Print();
                      }
                   }
-                  C=C.SandwichMultiply(sum)+sum2;  
+		  // C=C.SandwichMultiply(sum)+sum2;  
+		  C=sum2.AddSym(sum*C*sum.Transpose());
 
                   if (DEBUG_LEVEL > 25) { jout << " C: " << endl; C.Print();}
                }
@@ -4962,8 +4905,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 
                         // propagate error matrix to z-position of hit
                         StepJacobian(my_z,newz,S0,dedx,J);
-                        //C=J*C*J.Transpose();
-                        C=C.SandwichMultiply(J);
+                        C=J*C*J.Transpose();
+                        //C=C.SandwichMultiply(J);
 
                         // Step reference trajectory by my_dz
                         Step(my_z,newz,dedx,S0); 
@@ -4978,8 +4921,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 
                      // propagate error matrix to z-position of hit
                      StepJacobian(my_z,newz,S0,dedx,J);
-                     //C=J*C*J.Transpose();
-                     C=C.SandwichMultiply(J);
+                     C=J*C*J.Transpose();
+                     //C=C.SandwichMultiply(J);
 
                      // Step reference trajectory by dz3
                      Step(my_z,newz,dedx,S0); 	    
@@ -4992,8 +4935,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 
                      // propagate error matrix to z-position of hit
                      StepJacobian(z,newz,S0,dedx,J);
-                     //C=J*C*J.Transpose();
-                     C=C.SandwichMultiply(J);
+                     C=J*C*J.Transpose();
+                     //C=C.SandwichMultiply(J);
 
                      // Step reference trajectory by dz
                      Step(z,newz,dedx,S0); 
@@ -5091,7 +5034,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 
                // inverse variance including prediction
                //double InvV1=1./(Vc+H*(C*H_T));
-               double Vproj=C.SandwichMultiply(Hc_T);
+               //double Vproj=C.SandwichMultiply(Hc_T);
+	       double Vproj=Hc*C*Hc_T;
                double InvV1=1./(Vc+Vproj);
                if (InvV1<0.){
                   if (DEBUG_LEVEL>0)
@@ -5171,8 +5115,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                   if (num_steps==0){
                      // Step C back to the z-position on the reference trajectory
                      StepJacobian(newz,z,S0,dedx,J);
-                     //C=J*C*J.Transpose();
-                     C=C.SandwichMultiply(J);
+                     C=J*C*J.Transpose();
+                     //C=C.SandwichMultiply(J);
 
                      // Step S to current position on the reference trajectory
                      Step(newz,z,dedx,S);
@@ -5187,8 +5131,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 
                         // Step C along z
                         StepJacobian(my_z,z,S0,dedx,J);
-                        //C=J*C*J.Transpose();
-                        C=C.SandwichMultiply(J);
+                        C=J*C*J.Transpose();
+                        //C=C.SandwichMultiply(J);
 
                         // Step S along z
                         Step(my_z,z,dedx,S); 
@@ -5202,8 +5146,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 
                      // Step C back to the z-position on the reference trajectory
                      StepJacobian(my_z,z,S0,dedx,J);
-                     //C=J*C*J.Transpose();
-                     C=C.SandwichMultiply(J);
+                     C=J*C*J.Transpose();
+                     //C=C.SandwichMultiply(J);
 
                      // Step S to current position on the reference trajectory
                      Step(my_z,z,dedx,S);
@@ -5251,9 +5195,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
          double newz=z_+my_dz;
          // Step C along z
          StepJacobian(z_,newz,S,0.,J);
-
-         //C=J*C*J.Transpose();
-         C=C.SandwichMultiply(J);
+         C=J*C*J.Transpose();
+         //C=C.SandwichMultiply(J);
 
          // Step S along z
          Step(z_,newz,0.,S);
@@ -5263,9 +5206,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 
       // Step C along z
       StepJacobian(z_,TARGET_Z,S,0.,J);
-
-      //C=J*C*J.Transpose();
-      C=C.SandwichMultiply(J);
+      C=J*C*J.Transpose();
+      //C=C.SandwichMultiply(J);
 
       // Step S along z
       Step(z_,TARGET_Z,0.,S);
@@ -5526,8 +5468,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
 
       //C=J*(C*J_T)+Q;   
-      //C=Q.AddSym(J*C*J_T);
-      C=Q.AddSym(C.SandwichMultiply(J));
+      C=Q.AddSym(J*C*J.Transpose());
+      //C=Q.AddSym(C.SandwichMultiply(J));
 
       // Save the current state of the reference trajectory
       S0_=S0;
@@ -5639,8 +5581,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
                      // propagate error matrix to z-position of hit
                      StepJacobian(my_z,newz,S0,dedx,J);
-                     //C=J*C*J.Transpose();
-                     C=C.SandwichMultiply(J);
+                     C=J*C*J.Transpose();
+                     //C=C.SandwichMultiply(J);
 
                      // Step reference trajectory by my_dz
                      Step(my_z,newz,dedx,S0); 
@@ -5655,8 +5597,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
                   // propagate error matrix to z-position of hit
                   StepJacobian(my_z,newz,S0,dedx,J);
-                  //C=J*C*J.Transpose();
-                  C=C.SandwichMultiply(J);	  
+                  C=J*C*J.Transpose();
+                  //C=C.SandwichMultiply(J);	  
 
                   // Step reference trajectory by dz3
                   Step(my_z,newz,dedx,S0); 
@@ -5668,8 +5610,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
                   // propagate error matrix to z-position of hit
                   StepJacobian(z,newz,S0,dedx,J);
-                  //C=J*C*J.Transpose();
-                  C=C.SandwichMultiply(J);  
+                  C=J*C*J.Transpose();
+                  //C=C.SandwichMultiply(J);  
 
                   // Step reference trajectory by dz
                   Step(z,newz,dedx,S0); 
@@ -5762,7 +5704,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
             // inverse of variance including prediction
             //InvV=1./(V+H*(C*H_T));
-            double Vproj=C.SandwichMultiply(H_T);
+            //double Vproj=C.SandwichMultiply(H_T);
+	    double Vproj=H*C*H_T;
             double InvV=1./(V+Vproj);
             if (InvV<0.){
                if (DEBUG_LEVEL>0)
@@ -5845,8 +5788,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                if (num_steps==0){
                   // Step C back to the z-position on the reference trajectory
                   StepJacobian(newz,z,S0,dedx,J);
-                  //C=J*C*J.Transpose();
-                  C=C.SandwichMultiply(J);
+                  C=J*C*J.Transpose();
+                  //C=C.SandwichMultiply(J);
 
                   // Step S to current position on the reference trajectory=
                   Step(newz,z,dedx,S);
@@ -5861,8 +5804,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
                      // Step C along z
                      StepJacobian(my_z,z,S0,dedx,J);
-                     //C=J*C*J.Transpose();
-                     C=C.SandwichMultiply(J);
+                     C=J*C*J.Transpose();
+                     //C=C.SandwichMultiply(J);
 
                      // Step S along z
                      Step(my_z,z,dedx,S);
@@ -5876,8 +5819,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
                   // Step C back to the z-position on the reference trajectory
                   StepJacobian(my_z,z,S0,dedx,J);
-                  //C=J*C*J.Transpose();
-                  C=C.SandwichMultiply(J);
+                  C=J*C*J.Transpose();
+                  //C=C.SandwichMultiply(J);
 
                   // Step S to current position on the reference trajectory
                   Step(my_z,z,dedx,S);
@@ -6073,8 +6016,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
          StepJacobian(z,z_,S,dEdx,J);  
 
          // Propagate the covariance matrix
-         //C=Q.AddSym(J*C*J.Transpose());
-         C=C.SandwichMultiply(J);
+         C=J*C*J.Transpose();
+         //C=C.SandwichMultiply(J);
 
          // Step to the position of the doca
          Step(z,z_,dEdx,S);
@@ -6094,8 +6037,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
          StepJacobian(z,newz,S,dEdx,J);  
 
          // Propagate the covariance matrix
-         //C=Q.AddSym(J*C*J.Transpose());
-         C=C.SandwichMultiply(J);
+         C=J*C*J.Transpose();
+         //C=C.SandwichMultiply(J);
 
          S2=S;
          S=S1;
@@ -6113,8 +6056,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
          StepJacobian(z,newz,S,dEdx,J);  
 
          // Propagate the covariance matrix
-         //C=Q.AddSym(J*C*J.Transpose());
-         C=C.SandwichMultiply(J);
+         C=J*C*J.Transpose();
+         //C=C.SandwichMultiply(J);
 
          S1=S;
          S=S2;
@@ -6200,8 +6143,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       StepJacobian(z,newz,S,dEdx,J);  
 
       // Propagate the covariance matrix
-      //C=Q.AddSym(J*C*J.Transpose());
-      C=Q.AddSym(C.SandwichMultiply(J));
+      C=Q.AddSym(J*C*J.Transpose());
+      //C=Q.AddSym(C.SandwichMultiply(J));
 
       // Step through field
       Step(z,newz,dEdx,S);
@@ -6228,7 +6171,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
          // Propagate the covariance matrix
          //C=J*C*J.Transpose()+(dz/(newz-z))*Q;
          //C=((dz/newz-z)*Q).AddSym(C.SandwichMultiply(J));
-         C=C.SandwichMultiply(J);
+         //C=C.SandwichMultiply(J);
+	 C=J*C*J.Transpose();
 
          // update internal variables
          x_=S(state_x);
@@ -6478,7 +6422,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
 
          // Propagate the covariance matrix
          //Cc=Jc*Cc*Jc.Transpose()+(my_ds/ds_old)*Q;
-         Cc=((my_ds/ds_old)*Q).AddSym(Cc.SandwichMultiply(Jc));
+         //Cc=((my_ds/ds_old)*Q).AddSym(Cc.SandwichMultiply(Jc));
+	 Cc=((my_ds/ds_old)*Q).AddSym(Jc*Cc*Jc.Transpose());
 
          break;
       }
@@ -7175,7 +7120,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
          double new_reduced_chisq=chisq/my_ndf;
          double old_reduced_chisq=chisq_forward/last_ndf;
          if (new_reduced_chisq>old_reduced_chisq 
-               || fabs(new_reduced_chisq-old_reduced_chisq)<0.1) break;
+               || fabs(new_reduced_chisq-old_reduced_chisq)<CHISQ_DELTA) break;
 
          chisq_forward=chisq; 
          last_ndf=my_ndf;
@@ -7184,8 +7129,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
          last_z=z_;
 
          forward_pulls.clear();
-         if(fit_type==kTimeBased &&  SmoothForward(forward_pulls) == NOERROR){
-	   IsSmoothed = true;
+         if(fit_type==kTimeBased){
+	   if (SmoothForward(forward_pulls) == NOERROR){
+	     IsSmoothed = true;
+	   }
 	   last_forward_pulls.assign(forward_pulls.begin(),forward_pulls.end());
 	 }
          else  IsSmoothed = false; 
@@ -7222,9 +7169,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       }
    }
    // fill pull vector
-   if (IsSmoothed){
-     pulls.assign(last_forward_pulls.begin(),last_forward_pulls.end());
-   }
+   pulls.assign(last_forward_pulls.begin(),last_forward_pulls.end());
 
    // fill vector of extrapolations
    ClearExtrapolations();
@@ -7452,12 +7397,14 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
          double new_reduced_chisq=chisq/my_ndf;
          double old_reduced_chisq=chisq_forward/last_ndf;
          if (new_reduced_chisq>old_reduced_chisq 
-               || fabs(new_reduced_chisq-old_reduced_chisq)<0.1) break;
+               || fabs(new_reduced_chisq-old_reduced_chisq)<CHISQ_DELTA) break;
 
          // Run the smoother
          cdc_pulls.clear();
-         if(fit_type==kTimeBased && SmoothForwardCDC(cdc_pulls) == NOERROR){
-	   IsSmoothed = true;
+         if(fit_type==kTimeBased){
+	   if (SmoothForwardCDC(cdc_pulls) == NOERROR){
+	     IsSmoothed = true;
+	   }
 	   last_cdc_pulls.assign(cdc_pulls.begin(),cdc_pulls.end());
 	 }
          else IsSmoothed = false; 
@@ -7494,9 +7441,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       }
    }  
    // output pulls vector
-   if (IsSmoothed){
-     pulls.assign(last_cdc_pulls.begin(),last_cdc_pulls.end());
-   }
+   pulls.assign(last_cdc_pulls.begin(),last_cdc_pulls.end());
 
    // Fill extrapolation vector
    ClearExtrapolations();
@@ -7705,7 +7650,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
          double new_reduced_chisq=chisq/my_ndf;
          double old_reduced_chisq=chisq_iter/last_ndf;
          if (new_reduced_chisq>old_reduced_chisq 
-               || fabs(new_reduced_chisq-old_reduced_chisq)<0.1) break;
+               || fabs(new_reduced_chisq-old_reduced_chisq)<CHISQ_DELTA) break;
 
 
          // Save the current state vector and covariance matrix
@@ -7717,9 +7662,11 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 
          // Run smoother and fill pulls vector
          cdc_pulls.clear();
-         if(fit_type==kTimeBased && SmoothCentral(cdc_pulls) == NOERROR){
-	   IsSmoothed = true;
-	   last_cdc_pulls.assign(cdc_pulls.begin(),cdc_pulls.end());
+         if(fit_type==kTimeBased){
+	   if (SmoothCentral(cdc_pulls) == NOERROR){
+	     IsSmoothed = true;
+	   }
+	   last_cdc_pulls.assign(cdc_pulls.begin(),cdc_pulls.end()); 
 	 }
          else IsSmoothed = false;
 
@@ -7758,9 +7705,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
       }
    }
    // output the pull information
-   if (IsSmoothed){
-     pulls.assign(last_cdc_pulls.begin(),last_cdc_pulls.end());
-   }
+   pulls.assign(last_cdc_pulls.begin(),last_cdc_pulls.end());
 
    // Track Parameters at "vertex"
    phi_=Sclast(state_phi);
@@ -7778,7 +7723,8 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
    // lab 
    DMatrix5x5 Jc=I5x5;
    Jc(state_D,state_D)=(y_*cosphi-x_*sinphi)/D_;
-   Cclast=Cclast.SandwichMultiply(Jc);
+   //Cclast=Cclast.SandwichMultiply(Jc);
+   Cclast=Jc*Cclast*Jc.Transpose();
 
    if (!isfinite(x_) || !isfinite(y_) || !isfinite(z_) || !isfinite(phi_) 
          || !isfinite(q_over_pt_) || !isfinite(tanl_)){
@@ -8141,29 +8087,25 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(vector<pull_t>&cdc_pulls){
    DMatrix5x5 JT=central_traj[max].J.Transpose();
    DMatrix5x1 Ss=S;
    DMatrix5x5 Cs=C;
-   DMatrix5x5 A,AT,dC;
+   DMatrix5x5 A,dC;
 
    if (DEBUG_LEVEL>1) {
       _DBG_ << " S C JT at start of smoothing " << endl;
       S.Print(); C.Print(); JT.Print();
    }
 
-   bool firstHit=false;
-   for (unsigned int m=max-1;m>0;m--){
-      if (central_traj[m].h_id>0){
+   for (unsigned int m=max-1;m>0;m--){    
+     if (central_traj[m].h_id>0){
          unsigned int id=central_traj[m].h_id-1;
          if (DEBUG_LEVEL>1) _DBG_ << " Encountered Hit ID " << id << " At trajectory position " << m << "/" << max << endl;
          if (cdc_used_in_fit[id] && my_cdchits[id]->status == good_hit){
-            firstHit=true;
             if (DEBUG_LEVEL>1) _DBG_ << " SmoothCentral CDC Hit ID " << id << " used in fit " << endl;
 
             A=cdc_updates[id].C*JT*C.InvertSym();
-            AT=A.Transpose();
-
+	    dC=Cs-C;
             Ss=cdc_updates[id].S+A*(Ss-S);
-            dC=Cs-C;
-            Cs=cdc_updates[id].C+dC.SandwichMultiply(AT);
-
+	    Cs=cdc_updates[id].C+A*dC*A.Transpose();
+	    
             if (!Ss.IsFinite()){
                if (DEBUG_LEVEL>5) 
                   _DBG_ << "Invalid values for smoothed parameters..." << endl;
@@ -8171,7 +8113,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(vector<pull_t>&cdc_pulls){
             }
             if (!Cs.IsPosDef()){
                if (DEBUG_LEVEL>5){
-                  _DBG_ << "Covariance Matrix not PosDef... Ckk dC A" << endl;
+		 cout /*      _DBG_ */<< "Covariance Matrix not PosDef... Ckk dC A" << endl;
                   cdc_updates[id].C.Print(); dC.Print(); A.Print();
                }
                return VALUE_OUT_OF_RANGE;
@@ -8491,9 +8433,15 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(vector<pull_t>&cdc_pulls){
             H_T(state_phi)
                =-myS(state_D)*cosstereo2_over_doca*(dx*cosphi+dy*sinphi);
             H_T(state_z)=-cosstereo2_over_doca*(dx*dir.X()+dy*dir.Y());
+	    DMatrix1x5 H;
+	    H(state_D)=H_T(state_D);
+	    H(state_phi)=H_T(state_phi);
+	    H(state_z)=H_T(state_z);	    
 
             double Vhit=cdc_updates[id].variance;
-            double Vtrack = Cs.SandwichMultiply(Jc*H_T);
+	    Cs=Jc*Cs*Jc.Transpose();
+            //double Vtrack = Cs.SandwichMultiply(Jc*H_T);
+	    double Vtrack=H*Cs*H_T;
             double VRes;
 
             bool skip_ring=(my_cdchits[id]->hit->wire->ring==RING_TO_SKIP);
@@ -8512,17 +8460,15 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(vector<pull_t>&cdc_pulls){
             cdc_pulls.push_back(thisPull);
          }
          else{
-            if (firstHit) A=central_traj[m].Ckk*JT*C.InvertSym();
-            else A=JT;
-            Ss=central_traj[m].Skk+A*(Ss-S);
-            Cs=central_traj[m].Ckk+A*(Cs-C)*A.Transpose();      
+	   A=central_traj[m].Ckk*JT*C.InvertSym();
+	   Ss=central_traj[m].Skk+A*(Ss-S);
+	   Cs=central_traj[m].Ckk+A*(Cs-C)*A.Transpose();      
          }
       }
       else{
-         if (firstHit) A=central_traj[m].Ckk*JT*C.InvertSym();
-         else A=JT;
-         Ss=central_traj[m].Skk+A*(Ss-S);
-         Cs=central_traj[m].Ckk+A*(Cs-C)*A.Transpose();      
+	A=central_traj[m].Ckk*JT*C.InvertSym();
+	Ss=central_traj[m].Skk+A*(Ss-S);
+	Cs=central_traj[m].Ckk+A*(Cs-C)*A.Transpose();      
       }
       S=central_traj[m].Skk;
       C=central_traj[m].Ckk;
@@ -8909,14 +8855,18 @@ jerror_t DTrackFitterKalmanSIMD::FillPullsVectorEntry(const DMatrix5x1 &Ss,
    double cosstereo2_over_d=cosstereo*cosstereo/d;
    H_T(state_x)=diff.X()*cosstereo2_over_d;
    H_T(state_y)=diff.Y()*cosstereo2_over_d;
+   DMatrix1x5 H;
+   H(state_x)=H_T(state_x);
+   H(state_y)=H_T(state_y);
 
    // Find the variance for this hit
 
    bool skip_ring=(hit->hit->wire->ring==RING_TO_SKIP);
 
    double V=update.variance;
-   if (skip_ring) V+=myC.SandwichMultiply(Jc*H_T);
-   else V-=myC.SandwichMultiply(Jc*H_T);
+   myC=Jc*myC*Jc.Transpose();
+   if (skip_ring) V+=H*myC*H_T;
+   else V-=H*myC*H_T;
 
    if (DEBUG_LEVEL>1 && (!isfinite(V) || V < 0.0) ) _DBG_ << " Problem: V is " << V << endl;
 
@@ -9272,7 +9222,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 
   // Deal with points within fiducial volume of chambers
   unsigned int fdc_plane=0;
-  for (unsigned int k=intersected_start_counter?index_beyond_start_counter:inner_index;k>1;k--){
+  for (int k=intersected_start_counter?index_beyond_start_counter:inner_index;k>=0;k--){
     double z=forward_traj[k].z;
     double t=forward_traj[k].t*TIME_UNIT_CONVERSION;
     double s=forward_traj[k].s;
@@ -9284,10 +9234,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     double phi=atan2(S(state_ty),S(state_tx)); 
     
     //multiple scattering terms
-    s_theta_ms_sum+=sqrt(fabs(forward_traj[k].Q(state_x,state_x)));  
-    double ds=(k>1)?(forward_traj[k].s-forward_traj[k-1].s):1.;
-    theta2ms_sum+=3.*fabs(forward_traj[k].Q(state_x,state_x))/(ds*ds);
-
+    if (k>0){
+      s_theta_ms_sum+=sqrt(fabs(forward_traj[k].Q(state_x,state_x)));  
+      double ds=forward_traj[k].s-forward_traj[k-1].s;
+      theta2ms_sum+=3.*fabs(forward_traj[k].Q(state_x,state_x))/(ds*ds);
+    }
     // Extrapolations in CDC region
     if (z<endplate_z){
       DVector3 position(S(state_x),S(state_y),z);
@@ -9373,6 +9324,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 
     // Check if we have passed into the BCAL
     double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+    if (r2>89.*89. && z<400.) return VALUE_OUT_OF_RANGE;
     if (r2>64.9*64.9 && r2<89.*89.){
       if (extrapolations.at(SYS_BCAL).size()>299){
 	return VALUE_OUT_OF_RANGE;
@@ -9412,15 +9364,13 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 			    chi2c_factor,chi2a_factor,chi2a_corr,
 			    last_material_map,&s_to_boundary)
 	  !=NOERROR){
-      if (DEBUG_LEVEL>0){
+      if (DEBUG_LEVEL>0)
+	{
 	_DBG_ << "Material error in ExtrapolateForwardToOuterDetectors!"<< endl;
 	_DBG_ << " Position (x,y,z)=("<<pos.x()<<","<<pos.y()<<","<<pos.z()<<")"
 	      <<endl;
       }
-      // ignore material effects -- we are most likely somewhere in the air at 
-      // at high-X or y at this stage...
-      rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.,Z=0.;
-      chi2c_factor=0.,chi2a_factor=0.,chi2a_corr=0.;
+      return VALUE_OUT_OF_RANGE;
     }
     
     // Get dEdx for the upcoming step
@@ -9655,7 +9605,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   
   // Deal with points within fiducial volume of chambers
   unsigned int fdc_plane=0;
-  for (unsigned int k=index_beyond_start_counter;k>1;k--){ 
+  for (int k=index_beyond_start_counter;k>=0;k--){ 
     S=central_traj[k].S;
     xy=central_traj[k].xy;
     double t=central_traj[k].t*TIME_UNIT_CONVERSION; // convert to ns
@@ -9665,10 +9615,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     double phi=S(state_phi); 
 
     //multiple scattering terms
-    s_theta_ms_sum+=sqrt(fabs(central_traj[k].Q(state_D,state_D)));  
-    double ds=(k>1)?(central_traj[k].s-central_traj[k-1].s):1.;
-    theta2ms_sum+=3.*fabs(central_traj[k].Q(state_x,state_x))/(ds*ds);
-    
+    if (k>0){
+      s_theta_ms_sum+=sqrt(fabs(central_traj[k].Q(state_D,state_D)));  
+      double ds=central_traj[k].s-central_traj[k-1].s;
+      theta2ms_sum+=3.*fabs(central_traj[k].Q(state_x,state_x))/(ds*ds);
+    }
     if (S(state_z)<endplate_z){
       DVector3 position(xy.X(),xy.Y(),S(state_z));
       DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl); 
