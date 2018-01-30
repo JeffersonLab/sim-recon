@@ -149,7 +149,8 @@ int main( int argc, char* argv[] ){
 	double threshold = 0;
 	for (unsigned int i = 0; i < reaction->particleList().size(); i++){
 	  Particle_t locEnum = ParticleEnum(reaction->particleList()[i].c_str());
-	  if (locEnum == 0)
+	  // Beam particle is always photon
+	  if (locEnum == 0 && i > 0)
 	    cout << "ConfigFileParser WARNING:  unknown particle type \"" << reaction->particleList()[i] << "\"" << endl;
 	  Particles.push_back(ParticleEnum(reaction->particleList()[i].c_str()));
 	  if (i>1){
