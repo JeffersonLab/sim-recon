@@ -183,7 +183,8 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		//Predict ST Surface Hit Location
 		DVector3 locPredictedSurfacePosition;
 		bool locProjBarrelRegion = false;
-		unsigned int locPredictedSCSector = locParticleID->PredictSCSector(locTrackTimeBased->rt, &locPredictedSurfacePosition, &locProjBarrelRegion);
+		vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased->extrapolations.at(SYS_START);
+		unsigned int locPredictedSCSector = locParticleID->PredictSCSector(extrapolations, &locPredictedSurfacePosition, &locProjBarrelRegion);
 
 		//Save for hist if is matched
 		pair<int, double> locHitPair(locPredictedSCSector, locPredictedSurfacePosition.Z());
@@ -220,7 +221,7 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 			const DSCHit* locSCHit = locSCHits[loc_i];
 
 			shared_ptr<DSCHitMatchParams> locSCHitMatchParams;
-			if(!locParticleID->Distance_ToTrack(locTrackTimeBased->rt, locSCHit, locTrackTimeBased->t0(), locSCHitMatchParams))
+			if(!locParticleID->Distance_ToTrack(extrapolations, locSCHit, locTrackTimeBased->t0(), locSCHitMatchParams))
 				continue;
 
 			double locDeltaT = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime - locChargedTrackHypothesis->time();

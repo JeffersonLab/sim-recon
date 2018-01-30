@@ -16,7 +16,7 @@ using namespace jana;
 #include "WaveformSpikeFunctor.h"
 #include "WaveformErfcFunctor.h"
 
-jerror_t TAC_init(JEventLoop *loop) {
+jerror_t TAC_init(jana::JEventLoop *loop) {
 	/// Create and register TAC data factories
 	loop->AddFactory(new JFactory<DTACDigiHit>());
 	loop->AddFactory(new JFactory<DTACTDCDigiHit>());

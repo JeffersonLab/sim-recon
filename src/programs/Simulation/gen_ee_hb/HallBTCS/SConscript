@@ -1,0 +1,13 @@
+
+import os
+import sbms
+
+# get env object and clone it
+Import('*')
+
+env = env.Clone()
+	
+sbms.AddHDDM(env)
+sbms.AddROOT(env)
+sbms.executable(env, 'ee_mc_hb')
+#sbms.executable(env)

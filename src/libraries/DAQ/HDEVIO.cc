@@ -491,7 +491,9 @@ bool HDEVIO::readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool al
 		ifs.clear();
 		ifs.read((char*)&bh, sizeof(bh));
 		if(!ifs.good()){
-			err_mess << "Error reading EVIO block header (truncated?)";
+			err_mess << "Error reading EVIO block header (truncated?)"<<endl;
+			err_mess << "words_left_in_file (before read): " << words_left_in_file << endl;
+			err_mess << "total_size_bytes: " << total_size_bytes << "   tellg: " << ifs.tellg();
 			err_code = HDEVIO_FILE_TRUNCATED;
 			return false;
 		}

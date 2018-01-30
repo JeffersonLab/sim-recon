@@ -33,9 +33,9 @@
 // hnamepath: /highlevel/NumTriggers
 //
 // e-mail: davidl@jlab.org
-// e-mail: pmatt@jlab.org
 // e-mail: staylor@jlab.org
 // e-mail: sdobbs@jlab.org
+// e-mail: tbritton@jlab.org
 //
 
 {

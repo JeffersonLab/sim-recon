@@ -36,8 +36,6 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	unsigned int run_number = (loop->GetJEvent()).GetRunNumber();
 	DEBUG_LEVEL=0;
 
-	loop->GetSingle(dParticleID);
-
 	CORRECT_FOR_ELOSS=true;
 	gPARMS->SetDefaultParameter("TRKFIT:CORRECT_FOR_ELOSS",CORRECT_FOR_ELOSS);
 
@@ -48,7 +46,6 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 		return;
 	}
 	bfield = dapp->GetBfield(run_number); 
-	lorentz_def=dapp->GetLorentzDeflections(run_number);
 	geom = dapp->GetDGeometry(run_number);
 
 	RootGeom=NULL;
@@ -57,6 +54,23 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	if(MATERIAL_MAP_MODEL=="DRootGeom"){
 	  RootGeom = dapp->GetRootGeom(run_number);
 	}
+	// Create the extrapolation vectors
+	vector<Extrapolation_t>myvector;
+	extrapolations.emplace(SYS_BCAL,myvector);
+	extrapolations.emplace(SYS_TOF,myvector);
+	extrapolations.emplace(SYS_FCAL,myvector);
+	extrapolations.emplace(SYS_FDC,myvector);
+	extrapolations.emplace(SYS_CDC,myvector);
+	extrapolations.emplace(SYS_START,myvector);	
+
+	extrapolations[SYS_TOF].reserve(1);
+	extrapolations[SYS_BCAL].reserve(300);
+	extrapolations[SYS_FCAL].reserve(2);
+	extrapolations[SYS_FDC].reserve(24);
+	extrapolations[SYS_CDC].reserve(200);
+	extrapolations[SYS_START].reserve(1);
+	
+	pulls.reserve(30);
 
 #ifdef PROFILE_TRK_TIMES
 	// Use a special entry to hold how many tracks we fit
@@ -88,6 +102,9 @@ void DTrackFitter::Reset(void)
 	Ndof=0;
 	cdchits_used_in_fit.clear();
 	fdchits_used_in_fit.clear();
+	ClearExtrapolations();
+	pulls.clear();
+      
 	fit_status = kFitNotDone;
 	
 #ifdef PROFILE_TRK_TIMES
@@ -142,7 +159,7 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVe
 
 	input_params.setPosition(pos);
 	input_params.setMomentum(mom);
-	input_params.setPID(dParticleID->IDTrack(q, mass));
+	input_params.setPID(IDTrack(q, mass));
 	input_params.setTime(t0);
 	input_params.setT0(t0,0.,t0_det);
 
@@ -173,7 +190,79 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DTrackingData &starting_
 
 	return status;
 }
+//-------------------
+// FindHitsAndFitTrack
+//-------------------
+DTrackFitter::fit_status_t 
+DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params, 
+				  const map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >&extrapolations,
+				  JEventLoop *loop, 
+				  double mass,int N,double t0,
+				  DetectorSystem_t t0_det){
+  // Reset fitter saving the type of fit we're doing
+  fit_type_t save_type = fit_type;
+  Reset();
+  fit_type = save_type;
+	
+  // If a mass<0 is passed in, get it from starting_params instead
+  if(mass<0.0)mass = starting_params.mass();
+  // charge of the track
+  double q=starting_params.charge();
 
+  // Get pointer to DTrackHitSelector object
+  vector<const DTrackHitSelector *> hitselectors;
+  loop->Get(hitselectors);
+  if(hitselectors.size()<1){
+    _DBG_<<"Unable to get a DTrackHitSelector object! NO Charged track fitting will be done!"<<endl;
+    return fit_status = kFitNotDone;
+  }
+  const DTrackHitSelector * hitselector = hitselectors[0];
+
+  // Get hits to be used for the fit
+  vector<const DCDCTrackHit*> cdctrackhits;
+  vector<const DFDCPseudo*> fdcpseudos;
+  loop->Get(cdctrackhits);
+  loop->Get(fdcpseudos);
+
+  // Get Bfield at the position at the middle of the extrapolations, i.e. the 
+  // region where we actually have measurements...
+  bool got_hits=false;
+  if (extrapolations.at(SYS_CDC).size()>0){
+    vector<Extrapolation_t>extraps=extrapolations.at(SYS_CDC);
+    DVector3 mypos=extraps[extraps.size()/2].position;
+    double Bz=GetDMagneticFieldMap()->GetBz(mypos.x(),mypos.y(),mypos.z());
+    hitselector->GetCDCHits(Bz,q,extraps,cdctrackhits,this,N);
+    got_hits=true;
+  }
+  if (extrapolations.at(SYS_FDC).size()>0){
+    vector<Extrapolation_t>extraps=extrapolations.at(SYS_FDC);
+    DVector3 mypos=extraps[extraps.size()/2].position;
+    double Bz=GetDMagneticFieldMap()->GetBz(mypos.x(),mypos.y(),mypos.z());
+    hitselector->GetFDCHits(Bz,q,extraps,fdcpseudos,this,N);	
+    got_hits=true;
+  }
+  if (got_hits==false){
+    return fit_status = kFitNotDone;
+  }
+
+  // In case the subclass doesn't actually set the mass ....
+  fit_params.setPID(IDTrack(q, mass));
+  
+#ifdef PROFILE_TRK_TIMES
+  start_time.TimeDiffNow(prof_times, "Find Hits");
+#endif
+  
+  // Do the fit 
+  DVector3 pos = starting_params.position();
+  DVector3 mom = starting_params.momentum();
+  fit_status = FitTrack(pos, mom,q, mass,t0,t0_det);
+  
+#ifdef PROFILE_TRK_TIMES
+  start_time.TimeDiffNow(prof_times, "Find Hits and Fit Track");
+#endif
+  
+  return fit_status;
+}
 //-------------------
 // FindHitsAndFitTrack
 //-------------------
@@ -270,7 +359,7 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 	
 
 	// In case the subclass doesn't actually set the mass ....
-	fit_params.setPID(dParticleID->IDTrack(q, mass));
+	fit_params.setPID(IDTrack(q, mass));
 
 #ifdef PROFILE_TRK_TIMES
 	start_time.TimeDiffNow(prof_times, "Find Hits");
@@ -397,6 +486,127 @@ double DTrackFitter::CalcDensityEffect(double betagamma,
     delta= 4.606*X-Cbar;  
   return delta;
 }
+
+
+// Extrapolate to a radius R given two extrapolation points before and after 
+bool DTrackFitter::ExtrapolateToRadius(double R,
+				       const vector<Extrapolation_t>&extraps,
+				       DVector3 &pos,DVector3 &mom,double &t,
+				       double &s) const{
+  if (extraps.size()<2) return false;
+
+  for (unsigned int j=1;j<extraps.size();j++){
+    if (extraps[j].position.Perp()>R){
+      // At this point, the location where the track intersects the cyclinder 
+      // is somewhere between extrapolated point and the previous one.  For
+      // simplicity, we're going to just find the intersection of the cylinder 
+      // with the line that joins the 2 positions. We do this by working in 
+      // the X/Y plane only and finding the value of "alpha" which is the 
+      // fractional distance the intersection point is between our two 
+      // extrapolations.  We'll then apply the alpha found in the 2D X/Y space 
+      // to the 3D x/y/Z space to find the actual intersection point.
+      Extrapolation_t extrap=extraps[j];
+      Extrapolation_t prev=extraps[j-1];
+      pos=extrap.position;
+      mom=extrap.momentum;
+      t=extrap.t;
+      s=extrap.s;
+      // The next part of the code refines the extrapolation
+      DVector3 prevpos=prev.position;
+      DVector2 x1(pos.X(),pos.Y());
+      DVector2 x2(prevpos.X(),prevpos.Y());
+      DVector2 dx = x2-x1;
+      double A = dx.Mod2();
+      double B = 2.0*(x1.X()*dx.X() + x1.Y()*dx.Y());
+      double C = x1.Mod2() - R*R;
+      
+      double sqrt_D=sqrt(B*B-4.0*A*C);
+      double one_over_denom=0.5/A;
+      double alpha1 = (-B + sqrt_D)*one_over_denom;
+      double alpha2 = (-B - sqrt_D)*one_over_denom;
+      double alpha = alpha1;
+      if(alpha1<0.0 || alpha1>1.0)alpha=alpha2;
+      if (isfinite(alpha)){
+	DVector3 delta = prevpos - pos;
+	pos+=alpha*delta;
+	// Flight time and path length (approximate)
+	double ds=(1.-alpha)*delta.Mag();
+	double v=(extrap.s-prev.s)/(extrap.t-prev.t);
+	s-=ds;
+	t-=ds/v;
+
+	return true;
+      }
+      break;
+    }
+  }
+  return false;
+}
+			
+bool DTrackFitter::ExtrapolateToRadius(double R,
+				       const vector<Extrapolation_t>&extraps,
+				       DVector3 &pos) const{
+  double s=0,t=0;
+  DVector3 mom;
+  return ExtrapolateToRadius(R,extraps,pos,mom,s,t);
+}
+
+// Loop through extrapolations to find the distance of closest approach to a 
+// wire.
+double DTrackFitter::DistToWire(const DCoordinateSystem *wire,
+				const vector<Extrapolation_t>&extrapolations,
+				DVector3 *pos, DVector3 *mom,
+				DVector3 *position_along_wire) const{
+  if (extrapolations.size()<3) return 1000.;
+
+  // Wire info
+  double z0w=wire->origin.z();
+  double ux=wire->udir.x();
+  double uy=wire->udir.y();
+  double uz=wire->udir.z();
+
+  double doca_old=1000.,doca=1000.;
+  for (unsigned int i=1;i<extrapolations.size();i++){
+    DVector3 trackpos=extrapolations[i].position;
+    double z=trackpos.z();
+    double dzw=z-z0w;
+    DVector3 wirepos=wire->origin+(dzw/uz)*wire->udir;    
+    doca=(wirepos-trackpos).Perp();
+    if (doca>doca_old){
+      DVector3 trackdir=extrapolations[i-1].momentum;
+      trackdir.SetMag(1.);
+      // Variables relating wire direction and track direction
+      double lambda=M_PI_2-trackdir.Theta();
+      double sinl=sin(lambda);
+      double cosl=cos(lambda);
+      double phi=trackdir.Phi();
+      double sinphi=sin(phi);
+      double cosphi=cos(phi);
+      double my_ux=ux*sinl-cosl*cosphi;
+      double my_uy=uy*sinl-cosl*sinphi;
+      double denom=my_ux*my_ux+my_uy*my_uy;
+      double ds=((trackpos.X()-wire->origin.X()-ux*dzw)*my_ux
+		 +(trackpos.Y()-wire->origin.Y()-uy*dzw)*my_uy)/denom;
+      if (fabs(ds)<2.*fabs(extrapolations[i].s-extrapolations[i-1].s)){
+	trackpos+=ds*trackdir;
+	wirepos=wire->origin+((trackpos.z()-z0w)/uz)*wire->udir;
+	double cosstereo=wire->udir.Dot(DVector3(0.,0.,1.));
+	doca=(wirepos-trackpos).Perp()*cosstereo;
+
+	if (pos!=NULL) *pos=trackpos;
+	if (mom!=NULL) *mom=extrapolations[i-1].momentum;
+	if (position_along_wire!=NULL) *position_along_wire=wirepos;
+      }
+      break;
+    }
+    
+    doca_old=doca;
+  }
+
+  return doca;
+}
+
+
 
 //------------------
 // GetProfilingTimes

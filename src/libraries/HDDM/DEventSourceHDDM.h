@@ -123,7 +123,7 @@ class DEventSourceHDDM:public JEventSource
 
       jerror_t Extract_DTrackTimeBased(hddm_s::HDDM *record,  JFactory<DTrackTimeBased> *factory, string tag, int32_t runnumber, JEventLoop* locEventLoop);
       string StringToTMatrixFSym(string &str_vals, TMatrixFSym* mat, int Nrows, int Ncols);
-
+      
       jerror_t Extract_DTAGMHit( hddm_s::HDDM *record,  JFactory<DTAGMHit>* factory, string tag);
       jerror_t Extract_DTAGHHit( hddm_s::HDDM *record,  JFactory<DTAGHHit>* factory, string tag);
 
@@ -160,10 +160,6 @@ class DEventSourceHDDM:public JEventSource
       bool initialized;
       int dRunNumber;
       static thread_local shared_ptr<DResourcePool<TMatrixFSym>> dResourcePool_TMatrixFSym;
-
-      pthread_mutex_t rt_mutex;
-      map<hddm_s::HDDM*, vector<DReferenceTrajectory*> > rt_by_event;
-      list<DReferenceTrajectory*> rt_pool;
 
       map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
       map<unsigned int, double> dBeamBunchPeriodMap; //unsigned int is run number

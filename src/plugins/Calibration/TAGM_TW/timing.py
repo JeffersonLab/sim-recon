@@ -128,18 +128,21 @@ def main():
 			offset = float(tdc_assignment.constant_set.data_table[channel][2]) + new_offset
 			if (abs(offset) > 50):
 				errorfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
+				tdcfile.write(' 0\t' + str(i) + '\t' + '10.0' + '\n')
 			else:
 				tdcfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
 		elif (calib_type == 'rf'):
 			offset = float(fadc_assignment.constant_set.data_table[channel][2]) + new_offset
 			if (abs(offset) > 50):
 				errorfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
+				adcfile.write(' 0\t' + str(i) + '\t' + '10.0' + '\n')
 			else:
 				adcfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
 
 			offset = float(tdc_assignment.constant_set.data_table[channel][2]) + tdc_offset + new_offset
 			if (abs(offset) > 50):
 				errorfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
+				tdcfile.write(' 0\t' + str(i) + '\t' + '10.0' + '\n')
 			else:
 				tdcfile.write(' 0\t' + str(i) + '\t' + str(offset) + '\n')
 			offset_file.write(' 0\t' + str(i) + '\t' + str(tdc_offset + new_offset) + '\n')
@@ -196,13 +199,25 @@ def main():
 				# Write offset to file
 				if (calib_type == 'self'):
 					offset = float(tdc_assignment.constant_set.data_table[channel][2]) + new_offset
-					tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+					if (abs(offset) > 50):
+						errorfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+						tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + '10.0' + '\n')
+					else:
+						tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
 				elif (calib_type == 'rf'):
 					offset = float(fadc_assignment.constant_set.data_table[channel][2]) + new_offset
-					adcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+					if (abs(offset) > 50):
+						errorfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+						adcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + '10.0' + '\n')
+					else:
+						adcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
 
 					offset = float(tdc_assignment.constant_set.data_table[channel][2]) +tdc_offset + new_offset
-					tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+					if (abs(offset) > 50):
+						errorfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
+						tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + '10.0' + '\n')
+					else:
+						tdcfile.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(offset) + '\n')
 					offset_file.write(' ' + str(j+1) + '\t' + str(i) + '\t' + str(tdc_offset + new_offset) + '\n')
 
 				channel += 1
@@ -224,6 +239,8 @@ def GetRFTiming(hist,beamPeriod):
 	if (hist.GetMaximum() < 5):
 		print 'Insufficient number of entries for histogram ' + histname
 		return 0
+	if (hist.GetEntries() < 10000):
+		hist.RebinX(4)
 	maximum = GetMaximum(hist)
 	try:
 		if (maximum < -0.5):
@@ -260,6 +277,8 @@ def GetSelfTiming(hist):
 		print 'Insufficient number of entries for histogram ' + histname
 		return 0
 	maximum = GetMaximum(hist)
+	if (hist.GetEntries() < 10000):
+		hist.RebinX(4)
 	try:
 		FitResult = hist.Fit("gaus","sRWq","",maximum-0.5,maximum+0.5)
 		offset = FitResult.Parameters()[1]

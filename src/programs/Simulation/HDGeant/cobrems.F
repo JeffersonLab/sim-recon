@@ -159,20 +159,32 @@ C  define the crystal->lab rotation matrix
       real function dNcdx(x)
       real x
       include 'cobrems.inc'
-      real phi
-      phi=REAL(dpi/4)
-      dNcdx=REAL(2*dpi*dNcdxdp(x,phi))
+      integer npoints,n
+      real phi,S
+      S=0
+      npoints=2
+      do n=1,npoints
+        phi=REAL((n-0.5)*dpi/(2*npoints))
+        S=S+REAL(dNcdxdp(x,phi))
+      enddo
+      dNcdx=REAL(2*dpi*S/npoints)
       end
 
       real function dNcdx3(x,dRadCol,diamCol)
       real x,dRadCol,diamCol
       include 'cobrems.inc'
-      real phi
+      integer npoints,n
+      real phi,S
       if (dRadCol.gt.0) D=dRadCol
       if (diamCol.gt.0) collim=diamCol
       if (diamCol.lt.0) collim=-2*D*diamCol*me/E
-      phi=REAL(dpi/4)
-      dNcdx3=REAL(2*dpi*dNcdxdp(x,phi))
+      S=0
+      npoints=2
+      do n=1,npoints
+        phi=REAL((n-0.5)*dpi/(2*npoints))
+        S=S+REAL(dNcdxdp(x,phi))
+      enddo
+      dNcdx3=REAL(2*dpi*S/npoints)
       end
 
       real function dNcdxdp(x,phi)
@@ -369,12 +381,14 @@ c  This formula was taken from Eq. A5 of Kaune, Miller, et.al.
 c  PhysRevD.11.479, but it has been averaged over phi already.
 c  8/30/2017 - replacing this with the full phi-dependent
 c              expression below, based on Eq. A4.
-c     paverage=2*(1-x)/((1+theta2)**2*((1-x)**2+1) - 4*theta2*(1-x))
+c      paverage=2*(1-x)/((1+theta2)**2*((1-x)**2+1) - 4*theta2*(1-x))
 
       Npara = 0.5*(2-x)**2*(1+theta2)**2 - 8*theta2*(1-x)*cos(phi)**2 -
      +        8*theta2**2*(1-x)*(cos(phi)*sin(phi))**2
       Nperp = 0.5*x**2*(1+theta2)**2 +
      +        8*theta2**2*(1-x)*(cos(phi)*sin(phi))**2
+c     write(6,*) 'Npara,Nperp,pol,asym=',Npara,Nperp,paverage,
+c    +           real(Npara - Nperp) / real(Npara + Nperp)
       polarization = (Npara - Nperp) / (Npara + Nperp)
       end
 

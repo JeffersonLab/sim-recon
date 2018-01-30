@@ -8,6 +8,8 @@
 #ifndef _JEventProcessor_syncskim_
 #define _JEventProcessor_syncskim_
 
+#include <atomic>
+
 #include <JANA/JEventProcessor.h>
 
 #include <TTree.h>
@@ -29,6 +31,11 @@ class JEventProcessor_syncskim:public jana::JEventProcessor{
 		double sum_y;
 		double sum_xy;
 		double sum_x2;
+		
+		// Some TAC runs were taken without sync events. For these we use the 
+		// CODA control events as a backup
+		std::atomic<double> last_control_event_t;
+		std::atomic<double> last_physics_event_t;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.

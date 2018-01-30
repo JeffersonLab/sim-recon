@@ -526,7 +526,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
                        const DFDCCathodeDigiHit *udigihit;
                        u[upeaks[i].cluster]->members[1]->GetSingle(udigihit);
                        if (vdigihit!=NULL && udigihit!=NULL){
-                          int dt=udigihit->pulse_time-vdigihit->pulse_time;
+                          int dt=int(udigihit->pulse_time)-int(vdigihit->pulse_time);
                           // printf("%d %d\n",udigihit->pulse_time,vdigihit->pulse_time);
                           uv_dt_vs_u->Fill(uid,dt);
                           uv_dt_vs_v->Fill(vid,dt);

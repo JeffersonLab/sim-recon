@@ -10,7 +10,9 @@
 
 #include <vector>
 #include <set>
+#include <stdexcept>
 
+#include <JANA/jerror.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JFactory.h>
 #include <DAQ/Df250WindowRawData.h>
@@ -36,7 +38,7 @@ protected:
 	virtual double getTimeFromRawData(const std::vector<uint16_t>& samples) override ;
 	virtual const Df250WindowRawData* getRawData(const DTACHit* baseHit) override ;
 
-	jerror_t readCCDB( JEventLoop* eventLoop );
+	jerror_t readCCDB( jana::JEventLoop* eventLoop );
 
 //	static std::string& setTagString( std::string tag ) { return (tagString = tag ); }
 public:
@@ -44,7 +46,7 @@ public:
 //			timeScaleADC(timeScale), adcTimeOffset(timeOffset), timeBaseADC(
 //					timeBase) {
 //	}
-	HitRebuilderTAC( JEventLoop* eventLoop ) : HitRebuilderInterfaceTAC() {
+	HitRebuilderTAC( jana::JEventLoop* eventLoop ) : HitRebuilderInterfaceTAC() {
 		HitRebuilderTAC::readCCDB( eventLoop );
 	}
 
