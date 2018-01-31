@@ -114,9 +114,6 @@ jerror_t JEventProcessor_TPOL_tree::brun(JEventLoop *eventLoop, int32_t runnumbe
 	readout_thresholdStr += p;
 
     readout_threshold = atof(readout_thresholdStr.c_str());
-    cout<<readout_threshold<<endl;
-
-    //cout<<GetSector(14,14)<<endl;
 
     // This is called whenever the run number changes
     return NOERROR;
@@ -237,7 +234,6 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
                 }
                 w_time[hit] = 0.0625*GetPulseTime(samplesvector,w_min[hit],w_max[hit],33.0);
                 sector[hit] = GetSector(slot[hit],channel[hit]);
-                cout<<"Sector: "<<sector[hit]<<" Slot: "<< slot[hit]<<" Channel: " <<channel[hit]<<endl;
                 phi[hit] = GetPhi(sector[hit]);
                 if (nsamples==100) {
                     for (uint16_t c_samp=100; c_samp<150; c_samp++) waveform[hit][c_samp] = 0;
