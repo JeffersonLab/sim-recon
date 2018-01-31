@@ -68,14 +68,13 @@
 		tagh_tdc_occ->SetBarOffset(0);
 		tagh_tdc_occ->SetFillColor(kBlack);
 		tagh_tdc_occ->SetStats(0);
-		tagm_tdc_occ->SetTitle("TAGH column occupancy");
+		tagh_tdc_occ->SetTitle("TAGH column occupancy");
 		tagh_tdc_occ->SetXTitle("Column number");
 		tagh_tdc_occ->SetYTitle("fADC/TDC occupancy");
 		tagh_tdc_occ->SetTitleSize(0.05,"X");
 		tagh_tdc_occ->GetXaxis()->CenterTitle();
 		tagh_tdc_occ->SetTitleSize(0.05,"Y");
 		tagh_tdc_occ->GetYaxis()->CenterTitle();
-		tagh_tdc_occ->GetYaxis()->SetRangeUser(0.0, tagh_adc_occ->GetMaximum());
 	}
 	
 	if(tagh_adc_occ){
@@ -83,6 +82,13 @@
 		tagh_adc_occ->SetBarOffset(0.5);
 		tagh_adc_occ->SetFillColor(kGreen);
 		tagh_adc_occ->SetStats(0);
+		tagh_adc_occ->SetTitle("TAGH column occupancy");
+		tagh_adc_occ->SetXTitle("Column number");
+		tagh_adc_occ->SetYTitle("fADC/TDC occupancy");
+		tagh_adc_occ->SetTitleSize(0.05,"X");
+		tagh_adc_occ->GetXaxis()->CenterTitle();
+		tagh_adc_occ->SetTitleSize(0.05,"Y");
+		tagh_adc_occ->GetYaxis()->CenterTitle();
 	}
 	
 	legend_sa->AddEntry(tagh_adc_occ,"fADC","f");
@@ -100,7 +106,6 @@
 		tagm_tdc_occ->GetXaxis()->CenterTitle();
 		tagm_tdc_occ->SetTitleSize(0.05,"Y");
 		tagm_tdc_occ->GetYaxis()->CenterTitle();
-		tagm_tdc_occ->GetYaxis()->SetRangeUser(0.0, tagm_adc_occ->GetMaximum());
 	}
 	
 	if(tagm_adc_occ){
@@ -108,10 +113,23 @@
 		tagm_adc_occ->SetBarOffset(0.5);
 		tagm_adc_occ->SetFillColor(kBlue);
 		tagm_adc_occ->SetStats(0);
+		tagm_adc_occ->SetTitle("TAGM column occupancy");
+		tagm_adc_occ->SetXTitle("Column number");
+		tagm_adc_occ->SetYTitle("fADC/TDC occupancy");
+		tagm_adc_occ->SetTitleSize(0.05,"X");
+		tagm_adc_occ->GetXaxis()->CenterTitle();
+		tagm_adc_occ->SetTitleSize(0.05,"Y");
+		tagm_adc_occ->GetYaxis()->CenterTitle();
 	}
 
 	legend_s->AddEntry(tagm_adc_occ,"fADC","f");
 	legend_n->AddEntry(tagm_tdc_occ,"TDC","f");
+
+	char nevents_str[256];
+	sprintf(nevents_str,"%0.0f events", Nevents);
+	TLatex lat;
+	lat.SetTextAlign(22);
+	lat.SetTextSize(0.035);
 
 	// Just for testing
 	if(gPad == NULL){
@@ -128,53 +146,49 @@
 
 	c1->Divide(1,2);
 
+	// ----------------- TAGM ----------------------
 	TVirtualPad *pad1 = c1->cd(1);
 	pad1->SetTicks();
 	pad1->SetGridy();
-	if(tagm_adc_occ && tagm_tdc_occ){
-		if( tagm_adc_occ->GetMaximum()> tagm_tdc_occ->GetMaximum()){
-			tagm_adc_occ->Draw("BAR");
-			tagm_tdc_occ->Draw("BAR same");
-		}else{
-			tagm_tdc_occ->Draw("BAR");
-			tagm_adc_occ->Draw("BAR same");
-		}
-	}else{
-		if(tagm_adc_occ) tagm_tdc_occ->Draw("BAR");
-		if(tagm_tdc_occ) tagm_adc_occ->Draw("BAR");
+	double ymax = 1.0;
+	if(tagm_adc_occ) ymax = tagm_adc_occ->GetMaximum();
+	if(tagm_tdc_occ){
+		if(tagm_tdc_occ->GetMaximum() > ymax) ymax = tagm_tdc_occ->GetMaximum();
+	}
+	if(tagm_adc_occ){
+		tagm_adc_occ->GetYaxis()->SetRangeUser(0.0, 1.05*ymax);
+		tagm_adc_occ->Draw("BAR");
+	}
+	if(tagm_tdc_occ){
+		tagm_tdc_occ->GetYaxis()->SetRangeUser(0.0, 1.05*ymax);
+		tagm_tdc_occ->Draw( tagm_adc_occ==NULL ? "BAR":"BAR same" );
 	}
 
 	legend_s->Draw();
 	legend_n->Draw();
+	lat.DrawLatex(85.0, 1.075*ymax, nevents_str);
 
+	// ----------------- TAGH ----------------------
 	pad1 = c1->cd(2);
 	pad1->SetTicks();
 	pad1->SetGridy();
-	if(tagh_adc_occ && tagh_tdc_occ){
-		if( tagh_adc_occ->GetMaximum()> tagh_tdc_occ->GetMaximum()){
-			tagh_adc_occ->Draw("BAR");
-			tagh_tdc_occ->Draw("BAR same");
-		}else{
-			tagh_tdc_occ->Draw("BAR");
-			tagh_adc_occ->Draw("BAR same");
-		}
-	}else{
-		if(tagh_adc_occ) tagh_tdc_occ->Draw("BAR");
-		if(tagh_tdc_occ) tagh_adc_occ->Draw("BAR");
+	ymax = 1.0;
+	if(tagh_adc_occ) ymax = tagh_adc_occ->GetMaximum();
+	if(tagh_tdc_occ){
+		if(tagh_tdc_occ->GetMaximum() > ymax) ymax = tagh_tdc_occ->GetMaximum();
 	}
-
+	if(tagh_adc_occ){
+		tagh_adc_occ->GetYaxis()->SetRangeUser(0.0, 1.05*ymax);
+		tagh_adc_occ->Draw("BAR");
+	}
+	if(tagh_tdc_occ){
+		tagh_tdc_occ->GetYaxis()->SetRangeUser(0.0, 1.05*ymax);
+		tagh_tdc_occ->Draw( tagh_adc_occ==NULL ? "BAR":"BAR same" );
+	}
+	
 	legend_sa->Draw();
 	legend_na->Draw();
-
-	if(tagm_adc_occ){
-		c1->cd(1);		
-		char str[256];
-		sprintf(str,"%0.0f events", Nevents);
-		TLatex lat(85.0, 1.075*tagm_adc_occ->GetMaximum(), str);
-		lat.SetTextAlign(22);
-		lat.SetTextSize(0.035);
-		lat.Draw();
-	}
+	lat.DrawLatex(225.0, 1.075*ymax, nevents_str);
 
 }
 
