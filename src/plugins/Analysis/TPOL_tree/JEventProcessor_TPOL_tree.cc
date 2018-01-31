@@ -4,6 +4,7 @@
 // Created: Thu Feb  4 16:11:54 EST 2016
 // Creator: nsparks (on Linux cua2.jlab.org 3.10.0-327.4.4.el7.x86_64 x86_64)
 //
+#include <iostream>
 #include <cmath>
 #include <stdint.h>
 #include "JEventProcessor_TPOL_tree.h"
@@ -23,6 +24,8 @@ const double SECTOR_DIVISION = DTPOLHit_factory::SECTOR_DIVISION;
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
+#include "RCDB/Connection.h"
+#include "RCDB/ConfigParser.h"
 extern "C"{
     void InitPlugin(JApplication *app){
         InitJANAPlugin(app);
@@ -94,6 +97,24 @@ jerror_t JEventProcessor_TPOL_tree::init(void)
 //------------------
 jerror_t JEventProcessor_TPOL_tree::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
+    rcdb::Connection connection("mysql://rcdb@hallddb/rcdb");
+    auto rtvsCondition = connection.GetCondition(runnumber, "rtvs");
+    auto json = rtvsCondition->ToJsonDocument();
+    string fileName(json["%(config)"].GetString());
+    auto file = connection.GetFile(runnumber, fileName);
+    if(!file) {
+        jerr<<"No trigger configuration file exists for this run number"<<endl;
+    }
+    string fileContent = file->GetContent();
+    vector<string> SectionNames = {"TPOL"};
+    auto result = rcdb::ConfigParser::Parse(fileContent, SectionNames);
+    
+    string readout_thresholdStr = "";	
+    for (const auto &p : result.Sections["TPOL"].NameValues["FADC250_READ_THR"])
+	readout_thresholdStr += p;
+
+    readout_threshold = atof(readout_thresholdStr.c_str());
+
     // This is called whenever the run number changes
     return NOERROR;
 }
@@ -197,7 +218,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
                 nsamples = samplesvector.size();
                 // loop over the samples to calculate integral, min, max
                 if (nsamples==0) jerr << "Raw samples vector is empty." << endl;
-                if (samplesvector[0] > 133.0) continue; // require first sample below readout threshold
+                if (samplesvector[0] > readout_threshold) continue; // require first sample below readout threshold
                 for (uint16_t c_samp=0; c_samp<nsamples; c_samp++) {
                     waveform[hit][c_samp] = samplesvector[c_samp];
                     if (c_samp==0) {  // use first sample for initialization
