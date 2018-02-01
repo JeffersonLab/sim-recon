@@ -74,15 +74,20 @@ jerror_t DEventProcessor_CLcomp_CustomBranch::evnt(jana::JEventLoop* locEventLoo
 	//REQUIRED: To run an analysis, You MUST call one at least of the below code fragments. 
 		//JANA is on-demand, so if you don't call one of these, then your analysis won't run. 
 
-	/*
 	//Recommended: Write surviving particle combinations (if any) to output ROOT TTree
 		//If no cuts are performed by the analysis actions added to a DReaction, then this saves all of its particle combinations. 
 		//The event writer gets the DAnalysisResults objects from JANA, performing the analysis. 
 	// string is DReaction factory tag: will fill trees for all DReactions that are defined in the specified factory
+	
+	// Original lines
+	/*
 	const DEventWriterROOT* locEventWriterROOT = NULL;
 	locEventLoop->GetSingle(locEventWriterROOT);
-	locEventWriterROOT->Fill_DataTrees(locEventLoop, "p2k");
 	*/
+	// Updated lines
+	const DEventWriterROOT_CLcomp* locEventWriterROOT = NULL;
+	locEventLoop->GetSingle(locEventWriterROOT, "CLcomp");
+	locEventWriterROOT->Fill_DataTrees(locEventLoop, "p2k");
 
 	/*
 	//Optional: Get the analysis results for all DReactions. 

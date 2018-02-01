@@ -16,6 +16,7 @@
 #include <ANALYSIS/DHistogramActions.h>
 
 #include "DFactoryGenerator_CLcomp_CustomBranch.h"
+#include "DEventWriterROOT_CLcomp.h"
 
 using namespace jana;
 using namespace std;

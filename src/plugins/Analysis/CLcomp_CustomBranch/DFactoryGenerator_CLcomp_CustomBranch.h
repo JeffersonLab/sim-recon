@@ -12,6 +12,7 @@
 #include <JANA/JFactoryGenerator.h>
 
 #include "DReaction_factory_p2k.h"
+#include "DEventWriterROOT_factory_CLcomp.h"
 
 class DFactoryGenerator_CLcomp_CustomBranch : public jana::JFactoryGenerator
 {
@@ -22,6 +23,7 @@ class DFactoryGenerator_CLcomp_CustomBranch : public jana::JFactoryGenerator
 		jerror_t GenerateFactories(jana::JEventLoop* locEventLoop)
 		{
 			locEventLoop->AddFactory(new DReaction_factory_p2k());
+			locEventLoop->AddFactory(new DEventWriterROOT_factory_CLcomp());
 			return NOERROR;
 		}
 };
