@@ -21,7 +21,19 @@ extern "C" {
 //-------------------------------
 jerror_t JEventProcessor_danarest::init(void)
 {
-   return NOERROR;
+  is_mc=false;
+  string JANA_CALIB_CONTEXT = "";
+  
+  if(getenv("JANA_CALIB_CONTEXT") != NULL ){ 
+    JANA_CALIB_CONTEXT = getenv("JANA_CALIB_CONTEXT");
+    if(JANA_CALIB_CONTEXT=="variation=mc"
+       || JANA_CALIB_CONTEXT=="variation=mc_generic"
+       ){      
+      is_mc=true;
+    }
+  }
+  
+  return NOERROR;
 }
 
 //-------------------------------
@@ -29,6 +41,7 @@ jerror_t JEventProcessor_danarest::init(void)
 //-------------------------------
 jerror_t JEventProcessor_danarest::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
+  
    return NOERROR;
 }
 
@@ -40,7 +53,7 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *locEventLoop, uint64_t event
 	//CHECK TRIGGER TYPE
 	const DTrigger* locTrigger = NULL;
 	locEventLoop->GetSingle(locTrigger);
-	if(!locTrigger->Get_IsPhysicsEvent())
+	if(is_mc==false && (!locTrigger->Get_IsPhysicsEvent()))
 		return NOERROR;
 
 	// Write this event to the rest output stream.
