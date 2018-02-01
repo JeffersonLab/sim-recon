@@ -21,3 +21,5 @@ optdirs.extend(['dc_alignment','p2pi_trees','Z2pi_trees'])
 optdirs.extend(['CLcomp_CustomAction', 'CLcomp_CustomBranch'])
 sbms.OptionallyBuild(env, optdirs)
 
+sbms.OptionallyBuild(env, optdirs)
+
