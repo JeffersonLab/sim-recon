@@ -45,6 +45,7 @@ public:
     int GetSector(int slot,int channel);
     double GetPhi(int sector);
     double GetPulseTime(const vector<uint16_t> waveform,double w_min,double w_max,double minpeakheight);
+    double readout_threshold;
 
 private:
     jerror_t init(void); ///< Called once at program start.

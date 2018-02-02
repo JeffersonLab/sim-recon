@@ -19,8 +19,9 @@
 // hnamepath: /occupancy/fcal_num_events
 //
 // e-mail: davidl@jlab.org
-// e-mail: adesh@jlab.org
-// e-mail: jzarling@jlab.org
+// e-mail: gleasonc@jlab.org
+// e-mail: shepherd@jlab.org
+// e-mail: tbritton@jlab.org
 //
 
 {

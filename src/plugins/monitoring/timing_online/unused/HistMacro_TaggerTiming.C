@@ -10,20 +10,16 @@
 		return;
 	locDirectory->cd();
 
-        //Setpoints
-        double nominalTAGHTime = 0.;
-        double nominalTAGMTime = -2.;	
-
 	//Get Histograms
-	TH1I* TAGH_Timing        = (TH1I*)gDirectory->Get("TAGH/TAGHHit Matched time");
-	TH1I* TAGM_Timing        = (TH1I*)gDirectory->Get("TAGM/TAGMHit Matched time");
+    TH1I* TAGH_Timing        = (TH1I*)gDirectory->Get("TAGH/TAGHHit Matched time");
+    TH1I* TAGM_Timing        = (TH1I*)gDirectory->Get("TAGM/TAGMHit Matched time");
 	TH2I* TAGH_TDCADC_Timing = (TH2I*)gDirectory->Get("TAGH/TAGHHit TDC_ADC Difference");
 	TH2I* TAGM_TDCADC_Timing = (TH2I*)gDirectory->Get("TAGM/TAGMHit TDC_ADC Difference");
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
-		locCanvas = new TCanvas("OnlineTagger", "OnlineTagger", 1200, 800); //for testing
+		locCanvas = new TCanvas("TaggerTiming", "TaggerTiming", 1200, 800); //for testing
 	else
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(2, 2);
@@ -34,20 +30,14 @@
 	gPad->SetGrid();
 	if(TAGH_Timing != NULL)
 	{
-	  TAGH_Timing->GetXaxis()->SetRangeUser(-200,200);
-	  TAGH_Timing->Draw();
-	  TAGH_Timing->SetFillColor(kGray);
-	  locCanvas->Update();
-
-	  TLine *ln = new TLine(nominalTAGHTime, gPad->GetUymin(), nominalTAGHTime, gPad->GetUymax());
-	  ln->SetLineColor(2);
-	  ln->Draw();
-	}
-	else{
-	  TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
-	  text->AddText("No Matched TAGH TDC/ADC Times");
-	  text->Draw();
-	}
+        TAGH_Timing->Draw();
+        TAGH_Timing->SetFillColor(kGray);
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched TAGH TDC/ADC Times");
+        text->Draw();
+    }
 
     locCanvas->cd(2);
     gPad->SetTicks();
@@ -67,14 +57,8 @@
     gPad->SetGrid();
     if(TAGM_Timing != NULL)
     {
-	  TAGM_Timing->GetXaxis()->SetRangeUser(-200,200);
-          TAGM_Timing->Draw();
-	  TAGM_Timing->SetFillColor(kGray);
-	  locCanvas->Update();
-
-	  TLine *ln = new TLine(nominalTAGMTime, gPad->GetUymin(), nominalTAGMTime, gPad->GetUymax());
-	  ln->SetLineColor(2);
-	  ln->Draw();
+        TAGM_Timing->Draw();
+        TAGM_Timing->SetFillColor(kGray);
     }
     else{
         TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);

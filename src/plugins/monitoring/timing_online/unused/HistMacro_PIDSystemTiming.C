@@ -10,20 +10,16 @@
 		return;
 	locDirectory->cd();
 
-        //Setpoints
-        double nominalSCTime = 0.;
-        double nominalTOFTime = 22.;
-
 	//Get Histograms
-	TH1I* SC_Timing          = (TH1I*)gDirectory->Get("SC/SCHit Matched time");
-	TH1I* TOF_Timing         = (TH1I*)gDirectory->Get("TOF/TOFHit Matched time");
+    TH1I* SC_Timing          = (TH1I*)gDirectory->Get("SC/SCHit Matched time");
+    TH1I* TOF_Timing         = (TH1I*)gDirectory->Get("TOF/TOFHit Matched time");
 	TH2I* SC_TDCADC_Timing   = (TH2I*)gDirectory->Get("SC/SCHit TDC_ADC Difference");
 	TH2I* TOF_TDCADC_Timing  = (TH2I*)gDirectory->Get("TOF/TOFHit TDC_ADC Difference");
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
-		locCanvas = new TCanvas("OnlinePID", "OnlinePID", 1200, 800); //for testing
+		locCanvas = new TCanvas("PIDSystemTiming", "PIDSystemTiming", 1200, 800); //for testing
 	else
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(2, 2);
@@ -34,20 +30,14 @@
 	gPad->SetGrid();
 	if(SC_Timing != NULL)
 	{
-	  SC_Timing->GetXaxis()->SetRangeUser(-200,200);
-	  SC_Timing->Draw();
-	  SC_Timing->SetFillColor(kGray);
-	  locCanvas->Update();
-
-	  TLine *ln = new TLine(nominalSCTime, gPad->GetUymin(), nominalSCTime, gPad->GetUymax());
-	  ln->SetLineColor(2);
-	  ln->Draw();
+        SC_Timing->Draw();
+        SC_Timing->SetFillColor(kGray);
 	}
-	else{
-	  TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
-	  text->AddText("No Matched SC TDC/ADC Times");
-	  text->Draw();
-	}
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched SC TDC/ADC Times");
+        text->Draw();
+    }
 
     locCanvas->cd(2);
     gPad->SetTicks();
@@ -67,14 +57,8 @@
     gPad->SetGrid();
     if(TOF_Timing != NULL)
     {
-        TOF_Timing->GetXaxis()->SetRangeUser(-200,200);
         TOF_Timing->Draw();
         TOF_Timing->SetFillColor(kGray);
-	locCanvas->Update();
-
-	TLine *ln = new TLine(nominalTOFTime, gPad->GetUymin(), nominalTOFTime, gPad->GetUymax());
-	ln->SetLineColor(2);
-	ln->Draw();
     }
     else{
         TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
