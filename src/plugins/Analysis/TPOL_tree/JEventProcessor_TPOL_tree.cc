@@ -97,7 +97,7 @@ jerror_t JEventProcessor_TPOL_tree::init(void)
 //------------------
 jerror_t JEventProcessor_TPOL_tree::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
-    rcdb::Connection connection("mysql://rcdb@hallddb/rcdb");
+    rcdb::Connection connection("mysql://rcdb@hallddb.jlab.org/rcdb");
     auto rtvsCondition = connection.GetCondition(runnumber, "rtvs");
     auto json = rtvsCondition->ToJsonDocument();
     string fileName(json["%(config)"].GetString());
@@ -232,7 +232,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
                         if (w_max[hit] < samplesvector[c_samp]) w_max[hit] = samplesvector[c_samp];
                     }
                 }
-                w_time[hit] = 0.0625*GetPulseTime(samplesvector,w_min[hit],w_max[hit],33.0);
+                w_time[hit] = 0.0625*GetPulseTime(samplesvector,w_min[hit],w_max[hit],readout_threshold-100.0);
                 sector[hit] = GetSector(slot[hit],channel[hit]);
                 phi[hit] = GetPhi(sector[hit]);
                 if (nsamples==100) {
