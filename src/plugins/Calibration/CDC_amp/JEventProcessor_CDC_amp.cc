@@ -148,6 +148,8 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
   float scaledped;
   double charge;
 
+  int used[3522] = {0};
+
 
   for (uint32_t i=0; i<hits.size(); i++) {
 
@@ -267,31 +269,37 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       japp->RootFillLock(this); //ACQUIRE ROOT LOCK!!
 
-      if (netamp > 0) {
-        atsum->Fill(netamp);
-        atn->Fill(n,netamp);
-        atheta->Fill(theta,netamp);
-      }
+      if (!used[n]) {
 
-      if (charge > 0) {
-        qtsum->Fill(charge);
-        qtn->Fill(n,charge);
-        qtheta->Fill(theta,charge);
-      }
-
-      double z = pulls[j].z;
-
-      if ((z>50) && (z<80) && (theta>85) && (theta<95)) {
+        used[n] = 1;
 
         if (netamp > 0) {
-          attsum->Fill(netamp);
-          attn->Fill(n,netamp);
+          atsum->Fill(netamp);
+          atn->Fill(n,netamp);
+          atheta->Fill(theta,netamp);
         }
 
         if (charge > 0) {
-          qttsum->Fill(charge);
-          qttn->Fill(n,charge);
+          qtsum->Fill(charge);
+          qtn->Fill(n,charge);
+          qtheta->Fill(theta,charge);
         }
+
+        double z = pulls[j].z;
+
+        if ((z>50) && (z<80) && (theta>85) && (theta<95)) {
+
+          if (netamp > 0) {
+            attsum->Fill(netamp);
+            attn->Fill(n,netamp);
+          }
+
+          if (charge > 0) {
+            qttsum->Fill(charge);
+            qttn->Fill(n,charge);
+          }
+        }
+
       }
 
       japp->RootFillUnLock(this); 
