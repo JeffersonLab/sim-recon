@@ -33,6 +33,7 @@ class JEventProcessor_imaging:public jana::JEventProcessor{
 		TH3F *TwoTrackXYZ;
 		TH1F *TwoTrackDoca,*TwoTrackZ;
 		TH2F *TwoTrackPocaCut;
+		TH2F *TwoTrackPocaCut1;
 		TH2F *TwoTrackXY_at_65cm;
 		
 		vector<DReferenceTrajectory*> rtv;  
