@@ -231,7 +231,7 @@ jerror_t JEventProcessor_BCAL_LED::brun(JEventLoop *eventLoop, int32_t runnumber
 	}
 	else if (runnumber < 50000 && runnumber > 40000)//Spring 2018
 	{
-	  adccount = 1700;
+	  adccount = 1100;
 	}
 	return NOERROR;
 }
