@@ -5,7 +5,10 @@
 #include <fstream>
 
 #ifdef HAVE_RCDB
+#include <RCDB/Connection.h>
 #include "RCDB/ConfigParser.h"
+string RCDB_CONNECTION;
+rcdb::Connection *rcdb_connection;
 #endif // HAVE_RCDB
 
 

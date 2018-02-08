@@ -291,22 +291,23 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    dTOFz*=0.5;  // mid plane between tof planes
    
    // Get start counter geometry;
-   geom->GetStartCounterGeom(sc_pos,sc_norm);
-   // Create vector of direction vectors in scintillator planes
-   for (int i=0;i<30;i++){
-     vector<DVector3>temp;
-     for (unsigned int j=0;j<sc_pos[i].size()-1;j++){
-       double dx=sc_pos[i][j+1].x()-sc_pos[i][j].x();
-       double dy=sc_pos[i][j+1].y()-sc_pos[i][j].y();
-       double dz=sc_pos[i][j+1].z()-sc_pos[i][j].z();
-       temp.push_back(DVector3(dx/dz,dy/dz,1.));
+   if (geom->GetStartCounterGeom(sc_pos, sc_norm)){
+     // Create vector of direction vectors in scintillator planes
+     for (int i=0;i<30;i++){
+       vector<DVector3>temp;
+       for (unsigned int j=0;j<sc_pos[i].size()-1;j++){
+	 double dx=sc_pos[i][j+1].x()-sc_pos[i][j].x();
+	 double dy=sc_pos[i][j+1].y()-sc_pos[i][j].y();
+	 double dz=sc_pos[i][j+1].z()-sc_pos[i][j].z();
+	 temp.push_back(DVector3(dx/dz,dy/dz,1.));
+       }
+       sc_dir.push_back(temp);
      }
-     sc_dir.push_back(temp);
+     SC_END_NOSE_Z=sc_pos[0][12].z();
+     SC_BARREL_R2=sc_pos[0][0].Perp2();
+     SC_PHI_SECTOR1=sc_pos[0][0].Phi();
    }
-   SC_END_NOSE_Z=sc_pos[0][12].z();
-   SC_BARREL_R2=sc_pos[0][0].Perp2();
-   SC_PHI_SECTOR1=sc_pos[0][0].Phi();
-   
+
    // Get z positions of fdc wire planes
    geom->GetFDCZ(fdc_z_wires);
 
@@ -9117,7 +9118,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
   unsigned int index_beyond_start_counter=inner_index;
   DMatrix5x1 S=forward_traj[inner_index].S;
   bool intersected_start_counter=false;
-  if (S(state_x)*S(state_x)+S(state_y)*S(state_y)<SC_BARREL_R2
+  if (sc_norm.empty()==false
+      && S(state_x)*S(state_x)+S(state_y)*S(state_y)<SC_BARREL_R2
       && forward_traj[inner_index].z<SC_END_NOSE_Z){
     double d_old=1000.,d=1000.,z=0.;
     unsigned int index=0;
@@ -9499,7 +9501,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   unsigned int index_beyond_start_counter=inner_index;
   DVector2 xy=central_traj[inner_index].xy;
   DMatrix5x1 S=central_traj[inner_index].S;
-  if (xy.Mod2()<SC_BARREL_R2&& S(state_z)<SC_END_NOSE_Z){ 
+  if (sc_norm.empty()==false
+      &&xy.Mod2()<SC_BARREL_R2&& S(state_z)<SC_END_NOSE_Z){ 
     double d_old=1000.,d=1000.,z=0.;
     unsigned int index=0;
     for (unsigned int m=0;m<12;m++){
