@@ -323,7 +323,7 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	// back to main dir
 	main->cd();
   
-	japp->RootReadLock();
+	japp->RootUnLock();
  
 	return NOERROR;
 }
