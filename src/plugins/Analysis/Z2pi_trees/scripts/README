@@ -6,7 +6,7 @@ gen_2pi_primakoff> gen_2pi_primakoff -c gen_2pi_primakoff_flat.cfg -o tree_gen_2
 
 # Here are instructions for processing MC smeared output files / or data
 
-gen_2pi_primakoff> hd_root -PPLUGINS=monitoring_hists,Z2pi_trees -PNTHREADS=4 ../hddm/dana_rest_gen_2pi_primakoff_030000_00*.hddm -o hd_root_Z2pi_trees_signal.root
+gen_2pi_primakoff> hd_root -PPLUGINS=monitoring_hists,Z2pi_trees -PNTHREADS=4 -PEVENTS_TO_KEEP=10000 ../hddm/dana_rest_gen_2pi_primakoff_030000_00*.hddm -o hd_root_Z2pi_trees_signal.root
 gen_2pi_primakoff> mv tree_Z2pi_trees.root tree_hd_root_Z2pi_trees_signal.root
 
 gen_2pi_primakoff> root -l -b tree_hd_root_Z2pi_trees_signal.root
