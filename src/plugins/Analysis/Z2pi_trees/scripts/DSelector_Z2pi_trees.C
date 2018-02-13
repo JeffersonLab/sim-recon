@@ -404,8 +404,9 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 
 		cout << " Passed beam energy cut " << endl;
 
-		// Cut on Missing mass
-		if((locMissingMassSquared < dMinMissingMassSquared ) || (locMissingMassSquared >  dMaxMissingMassSquared)){
+		// Cut on Missing mass 
+		if((locMissingMassSquared < dMinMissingMassSquared ) || (locMissingMassSquared >  dMaxMissingMassSquared)){  // measured
+		// if((locMissingP4.M2() < dMinMissingMassSquared ) || (locMissingP4.M2() >  dMaxMissingMassSquared)){   // kinfit
 			dComboWrapper->Set_IsComboCut(true);    
 			continue; 
 		}
@@ -491,6 +492,15 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		// cout << "Proton Thrown P4.E=" << locPb208P4_Thrown.E() << " Kinfit P4.E=" << locProtonP4.E() << " P4 Measured =" << locProtonP4_Measured.E() << " CL=" << dComboWrapper->Get_ConfidenceLevel_KinFit() << endl;
 		cout << "PiPlus Thrown P4.E=" << locPiPlusP4_Thrown.E() << " Kinfit P4.E=" << locPiPlusP4.E() << " P4 Measured =" << locPiPlusP4_Measured.E() << endl;
 		cout << "PiMinus Thrown P4.E=" << locPiMinusP4_Thrown.E() << " Kinfit P4.E=" << locPiMinusP4.E() << " P4 Measured =" << locPiMinusP4_Measured.E() << endl << endl;
+
+
+		if ( locBeamP4_Measured.Z() < 0 || locPiPlusP4_Measured.Z() < 0 || locPiMinusP4_Measured.Z() < 0 ||
+                     locPiPlusP4.Z() < 0 || locPiMinusP4.Z() < 0 ) {
+			dComboWrapper->Set_IsComboCut(true);
+			cout << "*** Negative pz ***" << endl;
+			continue;
+		}
+		cout << " Passed Negative pz cut " << endl;
 
 
                 // Thrown (generated) variables

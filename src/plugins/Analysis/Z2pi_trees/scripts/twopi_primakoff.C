@@ -1,4 +1,4 @@
-void twopi_primakoff(void)
+void twopi_primakoff(TString filename, Int_t maxev=100000)
 {
 // File: twopi_primakoff.C
     // Output histograms and fits generated from amp fitting of parameters.
@@ -24,10 +24,10 @@ void twopi_primakoff(void)
     
     // TString filename = "twopi_primakoff_gen";
     // Double_t scale_factor=0.5;       // divide ymax/scale_factor
-    TString filename = "twopi_primakoff_DSelect";
+    // TString filename = "twopi_primakoff_DSelect";
     // TString filename = "twopi_primakoff_DSelect_thrown_mod";
     // TString filename = "twopi_primakoff_DSelect_thrown_mod2";
-    Double_t scale_factor=0.4;       // divide ymax/scale_factor
+    Double_t scale_factor=400000/maxev;       // divide ymax/scale_factor
     
     TString infile = filename+".fit2";   // file with parameters
     TFile *f = new TFile(filename+".root","read");
@@ -69,7 +69,7 @@ void twopi_primakoff(void)
     Double_t xmin = 0.2;
     Double_t xmax = 0.8;
     Double_t ymin = 0/scale_factor;
-    Double_t ymax = 8000/scale_factor;
+    Double_t ymax = 16000/scale_factor;
         
     M2pigen->SetTitle(filename);
     M2pigen->GetXaxis()->SetRangeUser(xmin,xmax);
@@ -95,7 +95,7 @@ void twopi_primakoff(void)
     c0->cd(2);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 10000/scale_factor;
+    ymax = 20000/scale_factor;
     
     cosThetagen->SetTitle(filename);
     // cosThetagen->GetXaxis()->SetRangeUser(xmin,xmax);
@@ -115,7 +115,7 @@ void twopi_primakoff(void)
     c0->cd(3);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 10000/scale_factor;
+    ymax = 20000/scale_factor;
     
     TF1 *cos2phi = new TF1("cos2phi","[0]*(1+[1]*cos(2*x))",-3.14159,3.14159);
     
@@ -138,7 +138,7 @@ void twopi_primakoff(void)
     c0->cd(4);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 8000/scale_factor;
+    ymax = 16000/scale_factor;
     
     Phigen->SetTitle(filename);
     // Phigen->GetXaxis()->SetRangeUser(xmin,xmax);
@@ -159,7 +159,7 @@ void twopi_primakoff(void)
     c0->cd(5);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 8000/scale_factor;
+    ymax = 16000/scale_factor;
     
     phigen->SetTitle(filename);
     // phigen->GetXaxis()->SetRangeUser(xmin,xmax);
@@ -208,7 +208,7 @@ void twopi_primakoff(void)
     c2->cd(1);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 1.2;
+    ymax = 0.4;
     
     TH1F *M2piAcceptance = (TH1F*)M2piacc->Clone("M2piAcceptance");
     M2piAcceptance->SetTitle("Acceptance");
@@ -224,7 +224,7 @@ void twopi_primakoff(void)
     c2->cd(2);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 1.2;
+    // ymax = 1.2;
     
     TH1F *cosThetaAcceptance = (TH1F*)cosThetaacc->Clone("cosThetaAcceptance");
     cosThetaAcceptance->SetTitle("Acceptance");
@@ -240,7 +240,7 @@ void twopi_primakoff(void)
     c2->cd(3);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 1.2;
+    // ymax = 1.2;
     
     TH1F *psiAcceptance = (TH1F*)psiacc->Clone("psiAcceptance");
     psiAcceptance->SetTitle("Acceptance");
@@ -256,7 +256,7 @@ void twopi_primakoff(void)
     c2->cd(4);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 1.2;
+    // ymax = 1.2;
     
     TH1F *PhiAcceptance = (TH1F*)Phiacc->Clone("PhiAcceptance");
     PhiAcceptance->SetTitle("Acceptance");
