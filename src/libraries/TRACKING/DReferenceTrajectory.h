@@ -12,6 +12,7 @@
 using std::vector;
 
 #include <TMatrixFSym.h>
+#include <TMatrix.h>
 
 #include <HDGEOMETRY/DGeometry.h>
 #include <DVector3.h>
@@ -164,7 +165,8 @@ class DReferenceTrajectory{
 		jerror_t IntersectTracks(const DReferenceTrajectory *rt2,
 					 DKinematicData *track1_kd,
 					 DKinematicData *track2_kd,
-					 DVector3 &pos, double &doca, double &var_doca) const;
+					 DVector3 &pos, double &doca, 
+					 double &var_doca, double &vertex_chi2) const;
 		jerror_t PropagateCovariance(double ds,double q,
 					     double mass_sq,const DVector3 &mom,
 					     const DVector3 &pos,const DVector3 &B,
@@ -174,6 +176,13 @@ class DReferenceTrajectory{
 					 DVector3 &pos2,DVector3 &mom2,
 					 double ds,double q2,
 					 double &doca) const;
+
+		void FitVertex(const DVector3 &pos1,const DVector3 &mom1,
+			       const DVector3 &pos2,const DVector3 &mom2,
+			       const TMatrixFSym &cov1,
+			       const TMatrixFSym &cov2,
+			       DVector3 &pos,double &vertex_chi2) const;
+
 
 		swim_step_t *swim_steps;
 		int Nswim_steps;
