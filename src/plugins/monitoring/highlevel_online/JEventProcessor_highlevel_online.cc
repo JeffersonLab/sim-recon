@@ -175,6 +175,8 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dTimingCutMap[Positron][SYS_BCAL] = 2.5;
 	dTimingCutMap[Positron][SYS_FCAL] = 3.0;
 
+	japp->RootWriteLock();
+
 	// All histograms go in the "highlevel" directory
 	TDirectory *main = gDirectory;
 
@@ -321,6 +323,8 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	// back to main dir
 	main->cd();
   
+	japp->RootUnLock();
+ 
 	return NOERROR;
 }
 
