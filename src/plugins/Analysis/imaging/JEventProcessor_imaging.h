@@ -15,7 +15,7 @@
 
 #include <TH1F.h>
 #include <TH2F.h>
-#include <TH3F.h>
+#include <TH3I.h>
 
 class JEventProcessor_imaging:public jana::JEventProcessor{
 	public:
@@ -30,13 +30,14 @@ class JEventProcessor_imaging:public jana::JEventProcessor{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed. 
 
-		TH3F *TwoTrackXYZ;
+		TH3I *TwoTrackXYZ;
 		TH1F *TwoTrackDoca,*TwoTrackZ,*TwoTrackRelCosTheta;
 		TH2F *TwoTrackPocaCut;
 		TH2F *TwoTrackPocaCut1;
 		TH2F *TwoTrackXY_at_65cm;
 		TH1F *TwoTrackChi2,*TwoTrackProb;
-		
+		TH1F *DocaPull;
+
 		vector<DReferenceTrajectory*> rtv;  
 		unsigned int num_used_rts;
 		
