@@ -2568,7 +2568,7 @@ jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,
 // Find the mid-point of the line connecting the points of closest approach of the
 // trajectories of two tracks.  Return the positions, momenta, and error matrices 
 // at these points for the two tracks.
-jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, DKinematicData *track1_kd, DKinematicData *track2_kd, DVector3 &pos, double &doca, double &var_doca, double &vertex_chi2) const {
+jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, DKinematicData *track1_kd, DKinematicData *track2_kd, DVector3 &pos, double &doca, double &var_doca, double &vertex_chi2, bool DoFitVertex) const {
   const swim_step_t *swim_step1=this->swim_steps;
   const swim_step_t *swim_step2=rt2->swim_steps;
   
@@ -2672,12 +2672,28 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
       // "Vertex" is mid-point of line connecting the positions of closest
       // approach of the two tracks
       pos=0.5*(pos1+pos2);
- 
+          
       if((track1_kd != NULL) && (track2_kd != NULL)){
-	// Use lagrange multiplier method to try to find a better common vertex
-	// between the two tracks	
-	FitVertex(pos1,mom1,pos2,mom2,cov1,cov2,pos,vertex_chi2);
+	if (DoFitVertex){
+	  // Use lagrange multiplier method to try to find a better common 
+	  // vertex between the two tracks	
+	  FitVertex(pos1,mom1,pos2,mom2,cov1,cov2,pos,vertex_chi2);
+	}
+	// Compute the variance on the doca
+	diff=pos1-pos2;
+	if (DoFitVertex) doca=diff.Mag(); // update if necessary
+	double dx=diff.x();
+	double dy=diff.y();
+	double dz=diff.z();
+	var_doca=(dx*dx*(cov1(kX,kX)+cov2(kX,kX))
+		  +dy*dy*(cov1(kY,kY)+cov2(kY,kY))
+		  +dz*dz*(cov1(kZ,kZ)+cov2(kZ,kZ))
+		  +2.*dx*dy*(cov1(kX,kY)+cov2(kX,kY))
+		  +2.*dx*dz*(cov1(kX,kZ)+cov2(kX,kZ))
+		  +2.*dy*dz*(cov1(kY,kZ)+cov2(kY,kZ)))
+	  /(doca*doca);
 
+	  
 	// Adjust flight times
 	double one_over_p1_sq=1./mom1.Mag2();
 	tflight1+=ds*sqrt(1.+mass_sq1*one_over_p1_sq)/SPEED_OF_LIGHT;
@@ -2696,19 +2712,6 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 	track2_kd->setMomentum(mom2);
 	track2_kd->setPosition(pos2);
 	track2_kd->setTime(track2_kd->time() + tflight2);
-	
-	// Compute the variance on the doca
-	diff=pos1-pos2;
-	double dx=diff.x();
-	double dy=diff.y();
-	double dz=diff.z();
-	var_doca=(dx*dx*(cov1(kX,kX)+cov2(kX,kX))
-		  +dy*dy*(cov1(kY,kY)+cov2(kY,kY))
-		  +dz*dz*(cov1(kZ,kZ)+cov2(kZ,kZ))
-		  +2.*dx*dy*(cov1(kX,kY)+cov2(kX,kY))
-				    +2.*dx*dz*(cov1(kX,kZ)+cov2(kX,kZ))
-		  +2.*dy*dz*(cov1(kY,kZ)+cov2(kY,kZ)))
-	  /(doca*doca);
       }      
       break;
     }

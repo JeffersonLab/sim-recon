@@ -166,7 +166,8 @@ class DReferenceTrajectory{
 					 DKinematicData *track1_kd,
 					 DKinematicData *track2_kd,
 					 DVector3 &pos, double &doca, 
-					 double &var_doca, double &vertex_chi2) const;
+					 double &var_doca, double &vertex_chi2,
+					 bool DoFitVertex=false) const;
 		jerror_t PropagateCovariance(double ds,double q,
 					     double mass_sq,const DVector3 &mom,
 					     const DVector3 &pos,const DVector3 &B,
