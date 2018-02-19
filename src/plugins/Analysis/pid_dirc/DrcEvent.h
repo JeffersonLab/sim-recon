@@ -27,7 +27,7 @@ public:
   // Accessors 
   Int_t GetId() const { return fId; }
   Int_t GetType() const { return fType; }
-  Long_t GetTime() const { return fTime; }
+  Double_t GetTime() const { return fTime; }
 
   Int_t GetPdg()          const { return fPdg; }
   Int_t GetParent()       const { return fParent; }
@@ -40,7 +40,7 @@ public:
   // Mutators
   void SetId(Int_t val)        { fId=val; }
   void SetType(Int_t val)        { fType=val; }
-  void SetTime(Long_t val)      { fTime=val; }
+  void SetTime(Double_t val)      { fTime=val; }
 
   void SetPdg(Int_t val) { fPdg = val; }
   void SetParent(Int_t val) { fParent = val; }
@@ -54,7 +54,7 @@ private:
   Int_t fType;
   Int_t fPdg;
   Int_t fParent;
-  Long_t fTime;
+  Double_t fTime;
   
   Int_t fHitSize;
   std::vector<DrcHit> fHitArray;

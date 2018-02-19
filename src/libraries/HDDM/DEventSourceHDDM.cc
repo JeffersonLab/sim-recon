@@ -2851,8 +2851,8 @@ jerror_t DEventSourceHDDM::Extract_DDIRCTruthBarHit(hddm_s::HDDM *record,
       hit->y = iter->getY();
       hit->z = iter->getZ();
       hit->px = iter->getPx();
-      hit->py = iter->getPx();
-      hit->pz = iter->getPx();
+      hit->py = iter->getPy();
+      hit->pz = iter->getPz();
       hit->t = iter->getT();
       hit->E = iter->getE();
       hit->pdg = iter->getPdg();

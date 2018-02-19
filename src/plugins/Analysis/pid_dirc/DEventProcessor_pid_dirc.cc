@@ -130,16 +130,20 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
       for (unsigned int h = 0; h < dircPmtHits.size(); h++){
 	int relevant(0);
 	// identify bar id
-	std::cout<<"dircBarHits.size() "<<dircBarHits.size()<<std::endl;
-	
 	for (unsigned int j = 0; j < dircBarHits.size(); j++){
 	  if(j != fabs(dircPmtHits[h]->key_bar)) continue;
 	  if(mcthrowns[m]->myid == dircBarHits[j]->track){
-	    double px = mcthrowns[m]->momentum().X();
-	    double py = mcthrowns[m]->momentum().Y();
-	    double pz = mcthrowns[m]->momentum().Z();
+	    // double px = mcthrowns[m]->momentum().X();
+	    // double py = mcthrowns[m]->momentum().Y();
+	    // double pz = mcthrowns[m]->momentum().Z();
+	    
+	    double px = dircBarHits[j]->px;
+	    double py = dircBarHits[j]->py;
+	    double pz = dircBarHits[j]->pz;
+
 	    fEvent->SetMomentum(TVector3(px,py,pz));
 	    fEvent->SetPdg(mcthrowns[m]->pdgtype);
+	    fEvent->SetTime(dircBarHits[j]->t);
 	    fEvent->SetParent(mcthrowns[m]->parentid);
 	    fEvent->SetId(dircBarHits[j]->bar);// bar id where the particle hit the detector
 	    fEvent->SetPosition(TVector3(dircBarHits[j]->x, dircBarHits[j]->y, dircBarHits[j]->z)); // position where the charged particle hit the radiator
@@ -156,9 +160,9 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	hit.SetPmtId(pmt);
 	hit.SetPixelId(pix);
 	hit.SetPosition(TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z));
-	hit.SetEnergy(dircPmtHits[h]->E);
+	hit.SetEnergy(dircPmtHits[h]->key_bar);
 	hit.SetLeadTime(dircPmtHits[h]->t);
-	hit.SetPathId(dircPmtHits[h]->key_bar);
+	hit.SetPathId(dircPmtHits[h]->E);
 	fEvent->AddHit(hit);
       }
       
