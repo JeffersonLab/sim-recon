@@ -246,6 +246,10 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
       hFDCOccTrkSmooth=new TH1I("Occ form track smoothing", "Occ per plane", 24,0.5,24.5);
    }
 
+   // TMatrix pool
+   dResourcePool_TMatrixFSym = std::make_shared<DResourcePool<TMatrixFSym>>();
+   dResourcePool_TMatrixFSym->Set_ControlParams(20, 20, 50);
+  
    return NOERROR;
 }
 
@@ -545,6 +549,19 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
          cand->Ndof=ndof_old;
          cand->chisq=chi2_old;
          cand->setPID(PiPlus);
+
+	 auto locTrackingCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+	 locTrackingCovarianceMatrix->ResizeTo(5, 5); 
+	 locTrackingCovarianceMatrix->Zero();
+	 for(unsigned int loc_i = 0; loc_i < 4; ++loc_i)
+	   {
+	     for(unsigned int loc_j = 0; loc_j < 4; ++loc_j)
+	       (*locTrackingCovarianceMatrix)(loc_i, loc_j) = Cbest(loc_i, loc_j);
+
+	   }
+	 (*locTrackingCovarianceMatrix)(4,4)=10.;
+	 cand->setTrackingErrorMatrix(locTrackingCovarianceMatrix);
+	 cand->setErrorMatrix(Get7x7ErrorMatrix(locTrackingCovarianceMatrix,Sbest));
 
          // Smooth the result
          if (Smooth(best_trajectory,best_updates,hits,cand) == NOERROR) cand->IsSmoothed=true;
@@ -1038,14 +1055,15 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          if (V<0) return VALUE_OUT_OF_RANGE;
 
          // Add the pull
+	 double myscale=1./sqrt(1.+tx*tx+ty*ty);
+	 double cosThetaRel=wire->udir.Dot(DVector3(myscale*tx,myscale*ty,myscale));
          DTrackFitter::pull_t thisPull(resi,sqrt(V),
-               trajectory[m].t*SPEED_OF_LIGHT,
-               cdc_updates[id].tdrift,
-               d,
-               hits[id], NULL,
-               diff.Phi(), //docaphi
-               trajectory[m].z,
-               cdc_updates[id].tdrift);
+				       trajectory[m].t*SPEED_OF_LIGHT,
+				       cdc_updates[id].tdrift,
+				       d,hits[id], NULL,
+				       diff.Phi(), //docaphi
+				       trajectory[m].z,cosThetaRel,
+				       cdc_updates[id].tdrift);
 
          // Derivatives for alignment
          double wtx=wire->udir.X(), wty=wire->udir.Y(), wtz=wire->udir.Z();
@@ -1433,8 +1451,21 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
 
       cand->Ndof=ndof_old;
       cand->chisq=chi2_old;
-      cand->setPID(PiMinus);
+      cand->setPID(PiMinus);	
 
+      auto locTrackingCovarianceMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
+      locTrackingCovarianceMatrix->ResizeTo(5, 5);
+      locTrackingCovarianceMatrix->Zero();
+      for(unsigned int loc_i = 0; loc_i < 4; ++loc_i)
+	{
+	  for(unsigned int loc_j = 0; loc_j < 4; ++loc_j)
+	    (*locTrackingCovarianceMatrix)(loc_i, loc_j) = Cbest(loc_i, loc_j);
+	  
+	}
+      (*locTrackingCovarianceMatrix)(4,4)=10.;
+      cand->setTrackingErrorMatrix(locTrackingCovarianceMatrix);
+      cand->setErrorMatrix(Get7x7ErrorMatrix(locTrackingCovarianceMatrix,Sbest));
+ 
       _data.push_back(cand);
 
    }
@@ -2035,18 +2066,20 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          }
 
          // Implement derivatives wrt track parameters needed for millepede alignment
-
+	  // Add the pull
+	 double scale=1./sqrt(1.+tx*tx+ty*ty);
+	 double cosThetaRel=hits[id]->wire->udir.Dot(DVector3(scale*tx,scale*ty,scale));
          DTrackFitter::pull_t thisPull(resi_a,sqrt(V(0,0)),
-               trajectory[m].t*SPEED_OF_LIGHT,
-               fdc_updates[id].tdrift,
-               fdc_updates[id].d,
-               NULL,hits[id],
-               0.0, //docaphi
-               trajectory[m].z, 
-               0.0, //tcorr
-               resi_c, sqrt(V(1,1))
-               );
-
+				       trajectory[m].t*SPEED_OF_LIGHT,
+				       fdc_updates[id].tdrift,
+				       fdc_updates[id].d,
+				       NULL,hits[id],
+				       0.0, //docaphi
+				       trajectory[m].z,cosThetaRel, 
+				       0.0, //tcorr
+				       resi_c, sqrt(V(1,1))
+				       );
+	 
          if (hits[id]->wire->layer!=PLANE_TO_SKIP){
             vector<double> derivatives;
             derivatives.resize(FDCTrackD::size);
@@ -2227,14 +2260,15 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          if (V<0) return VALUE_OUT_OF_RANGE;
 
          // Add the pull
+	 double myscale=1./sqrt(1.+tx*tx+ty*ty);
+	 double cosThetaRel=wire->udir.Dot(DVector3(myscale*tx,myscale*ty,myscale));
          DTrackFitter::pull_t thisPull(resi,sqrt(V),
-               trajectory[m].t*SPEED_OF_LIGHT,
-               cdc_updates[id].tdrift,
-               d,
-               cdc_hits[id], NULL,
-               diff.Phi(), //docaphi
-               trajectory[m].z,
-               cdc_updates[id].tdrift);
+				       trajectory[m].t*SPEED_OF_LIGHT,
+				       cdc_updates[id].tdrift,
+				       d,cdc_hits[id], NULL,
+				       diff.Phi(), //docaphi
+				       trajectory[m].z,cosThetaRel,
+				       cdc_updates[id].tdrift);
 
          // Derivatives for alignment
          double wtx=wire->udir.X(), wty=wire->udir.Y(), wtz=wire->udir.Z();
@@ -2303,3 +2337,41 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
    return NOERROR;
 }
 
+shared_ptr<TMatrixFSym> 
+DTrackCandidate_factory_StraightLine::Get7x7ErrorMatrix(shared_ptr<TMatrixFSym>C,DMatrix4x1 &S){
+   auto C7x7 = dResourcePool_TMatrixFSym->Get_SharedResource();
+   C7x7->ResizeTo(7, 7);
+   DMatrix J(7,5);
+
+   double p=10.; // fixed: cannot measure
+   double tx_=S(state_tx);
+   double ty_=S(state_ty);
+   double x_=S(state_x);
+   double y_=S(state_y);
+   double tanl=1./sqrt(tx_*tx_+ty_*ty_);
+   double tanl2=tanl*tanl;
+   double lambda=atan(tanl);
+   double sinl=sin(lambda);
+   double sinl3=sinl*sinl*sinl;
+
+   J(state_X,state_x)=J(state_Y,state_y)=1.;
+   J(state_Pz,state_ty)=-p*ty_*sinl3;
+   J(state_Pz,state_tx)=-p*tx_*sinl3;
+   J(state_Px,state_ty)=J(state_Py,state_tx)=-p*tx_*ty_*sinl3;
+   J(state_Px,state_tx)=p*(1.+ty_*ty_)*sinl3;
+   J(state_Py,state_ty)=p*(1.+tx_*tx_)*sinl3;
+   J(state_Pz,4)=-p*p*sinl;
+   J(state_Px,4)=tx_*J(state_Pz,4);
+   J(state_Py,4)=ty_*J(state_Pz,4); 
+   J(state_Z,state_x)=-tx_*tanl2;
+   J(state_Z,state_y)=-ty_*tanl2;
+   double diff=tx_*tx_-ty_*ty_;
+   double frac=tanl2*tanl2;
+   J(state_Z,state_tx)=(x_*diff+2.*tx_*ty_*y_)*frac;
+   J(state_Z,state_ty)=(2.*tx_*ty_*x_-y_*diff)*frac;
+
+   // C'= JCJ^T
+   *C7x7=(*C).Similarity(J);
+
+   return C7x7;
+}

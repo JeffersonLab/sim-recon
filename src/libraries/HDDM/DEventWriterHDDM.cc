@@ -65,6 +65,7 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	vector<const DTAGHHit*> TAGHHits;
 	vector<const DTAGMHit*> TAGMHits;
 	vector<const DTPOLHit*> TPOLHits;
+	vector<const DRFTime*> RFtimes;
 
 	locEventLoop->Get(CDCHits);
 	locEventLoop->Get(TOFHits);
@@ -78,9 +79,10 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	locEventLoop->Get(TAGHHits);
 	locEventLoop->Get(TAGMHits);
 	locEventLoop->Get(TPOLHits);
+	locEventLoop->Get(RFtimes);
 
 
-	if(CDCHits.size()== uint(0) && TOFHits.size()==uint(0) && FCALHits.size()==uint(0) && BCALDigiHits.size()==uint(0) && BCALTDCDigiHits.size()==uint(0) && SCHits.size()==uint(0) && PSHits.size()==uint(0) && PSCHits.size()==uint(0) && FDCHits.size()==uint(0) && TAGHHits.size()==uint(0) && TAGMHits.size()==uint(0) && TPOLHits.size()==uint(0))
+	if(CDCHits.size()== uint(0) && TOFHits.size()==uint(0) && FCALHits.size()==uint(0) && BCALDigiHits.size()==uint(0) && BCALTDCDigiHits.size()==uint(0) && SCHits.size()==uint(0) && PSHits.size()==uint(0) && PSCHits.size()==uint(0) && FDCHits.size()==uint(0) && TAGHHits.size()==uint(0) && TAGMHits.size()==uint(0) && TPOLHits.size()==uint(0) && RFtimes.size()==uint(0))
 	{
 		return false;
 	}
@@ -644,6 +646,32 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
         cdcstrawhitit->getCdcDigihits().begin()->setPeakAmp(CDCHits[i]->amp);
 	}
 
+	//========================================RFtime=======================================================
+
+	for(uint i=0; i<RFtimes.size(); ++i)
+	{
+		hddm_s::RFtimeList nextRF = hitv->addRFtimes();
+		nextRF(0).setJtag(RFtimes[i]->GetTag());
+		nextRF(0).setTsync(RFtimes[i]->dTime);
+	}
+
+	std::vector<std::string> RFtags = {"TOF", "FDC", "PSC", "TAGH"};
+	hddm_s::RFtimeList mainRF = hitv->getRFtimes();
+	if(mainRF.size() > 0)
+	{
+		for(uint it=0; it < RFtags.size(); ++it)
+		{
+			vector<const DRFTime*> RFsubsys;
+			locEventLoop->Get(RFsubsys, RFtags[it].c_str());
+			for(uint i=0; i < RFsubsys.size(); ++i)
+			{
+				hddm_s::RFsubsystemList nextRF = mainRF(0).addRFsubsystems();
+				nextRF(0).setJtag(RFsubsys[i]->GetTag());
+				nextRF(0).setTsync(RFsubsys[i]->dTime);
+			}
+		}
+	}
+
 
 	//*fout << *record; //stream the new record into the file
 
@@ -664,6 +692,7 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	TAGHHits.clear();
 	TAGMHits.clear();
 	TPOLHits.clear();
+	RFtimes.clear();
 
 	return locWriteStatus;
 }

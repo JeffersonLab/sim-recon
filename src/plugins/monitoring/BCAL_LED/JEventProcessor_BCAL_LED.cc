@@ -214,7 +214,9 @@ jerror_t JEventProcessor_BCAL_LED::init(void) {
 jerror_t JEventProcessor_BCAL_LED::brun(JEventLoop *eventLoop, int32_t runnumber) {
   	// This is called whenever the run number changes
 	
-	//In case different thresholds are required.
+	adccount = 1700; //default threshold
+	
+	//In case different thresholds are required for different run periods.
 	if (runnumber < 20000 && runnumber > 10000)//Spring 2016
 	{
 	  adccount = 1700;
@@ -224,6 +226,10 @@ jerror_t JEventProcessor_BCAL_LED::brun(JEventLoop *eventLoop, int32_t runnumber
 	  adccount = 1700;
 	}
 	else if (runnumber < 40000 && runnumber > 30000)//Spring 2017
+	{
+	  adccount = 1700;
+	}
+	else if (runnumber < 50000 && runnumber > 40000)//Spring 2018
 	{
 	  adccount = 1700;
 	}

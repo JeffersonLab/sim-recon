@@ -183,6 +183,9 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
   //japp->RootWriteLock();
   //Double_t p;
   for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
+    vector<DTrackFitter::Extrapolation_t>extrapolations=locTrackTimeBased[i]->extrapolations.at(SYS_FCAL);
+    if (extrapolations.size()==0) continue;
+
     for (unsigned int j=0; j< locFCALShowers.size(); ++j){
 
       Double_t x = locFCALShowers[j]->getPosition().X();
@@ -199,30 +202,29 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
          //DVector3 pos_FCAL(0.0,0.0,650);
       //std::cout<<"i: "<< i<< " j: "<< j << " z: "<<z<< endl;
       // if (locTrackTimeBased[i]->rt->GetIntersectionWithPlane(pos_FCAL,norm,pos,mom)==NOERROR)
-      if (locTrackTimeBased[i]->rt->GetIntersectionWithPlane(pos_FCAL,norm,pos,mom,NULL,NULL,NULL,SYS_FCAL)==NOERROR)
-	{
-	  // Double_t dX= TMath::Abs(pos.X() - x);
-	  // Double_t dY= TMath::Abs(pos.Y() - y);
-	  // Double_t dZ= TMath::Abs(pos.Z() - z);
-	  Double_t trkmass = locTrackTimeBased[i]->mass();
-	  Double_t FOM = TMath::Prob(locTrackTimeBased[i]->chisq, locTrackTimeBased[i]->Ndof);
-	 // radius = sqrt(pos.X()*pos.X() + pos.Y()*pos.Y());
-	//  Double_t Eshwr = locFCALShowers[j]->getEnergy();
-	//  p = locTrackTimeBased[i]->momentum().Mag();
-	  // cout<<"p: "<<p<<endl;
-	  // Double_t dZ = TMath::Abs(pos.Z() - z);
-	  Double_t dRho = sqrt(((pos.X() - x)*(pos.X() - x)) + ((pos.Y() - y)* (pos.Y() - y)));
-	  // std::cout<<"i: "<< i<< " j: "<< j << " dRho " <<dRho << endl;
-	  //if(dX < 20 && dY < 20 && trkmass < 0.15 && dRho < 50 && FOM > 0.01) {  
-	  if(trkmass < 0.15 && dRho < 5 && FOM > 0.01 ) {  
-	    matchedShowers.push_back(locFCALShowers[j]);
-	   // matchedTracks.push_back(locTrackTimeBased[i]);
-	    //  printf ("Matched event=%d, i=%d, j=%d, p=%f, Ztrk=%f Zshr=%f, Xtrk=%f, Xshr=%f, Ytrk=%f, Yshr=%f\n",locEventNumber,i,j,p,
-	    //  pos.Z(),z,pos.X(),x,pos.Y(),y);
-	    //  break;
-	 
-	  }
-	}
+      pos=extrapolations[0].position;
+
+      // Double_t dX= TMath::Abs(pos.X() - x);
+      // Double_t dY= TMath::Abs(pos.Y() - y);
+      // Double_t dZ= TMath::Abs(pos.Z() - z);
+      Double_t trkmass = locTrackTimeBased[i]->mass();
+      Double_t FOM = TMath::Prob(locTrackTimeBased[i]->chisq, locTrackTimeBased[i]->Ndof);
+      // radius = sqrt(pos.X()*pos.X() + pos.Y()*pos.Y());
+      //  Double_t Eshwr = locFCALShowers[j]->getEnergy();
+      //  p = locTrackTimeBased[i]->momentum().Mag();
+      // cout<<"p: "<<p<<endl;
+      // Double_t dZ = TMath::Abs(pos.Z() - z);
+      Double_t dRho = sqrt(((pos.X() - x)*(pos.X() - x)) + ((pos.Y() - y)* (pos.Y() - y)));
+      // std::cout<<"i: "<< i<< " j: "<< j << " dRho " <<dRho << endl;
+      //if(dX < 20 && dY < 20 && trkmass < 0.15 && dRho < 50 && FOM > 0.01) {  
+      if(trkmass < 0.15 && dRho < 5 && FOM > 0.01 ) {  
+	matchedShowers.push_back(locFCALShowers[j]);
+	// matchedTracks.push_back(locTrackTimeBased[i]);
+	//  printf ("Matched event=%d, i=%d, j=%d, p=%f, Ztrk=%f Zshr=%f, Xtrk=%f, Xshr=%f, Ytrk=%f, Yshr=%f\n",locEventNumber,i,j,p,
+	//  pos.Z(),z,pos.X(),x,pos.Y(),y);
+	//  break;
+	
+      }
 
     }
   }

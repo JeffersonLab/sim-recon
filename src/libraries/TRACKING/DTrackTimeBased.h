@@ -12,8 +12,8 @@
 #include <JANA/JFactory.h>
 #include "DTrackingData.h"
 #include "DTrackFitter.h"
-
-class DReferenceTrajectory;
+#include "CDC/DCDCTrackHit.h"
+#include "FDC/DFDCPseudo.h"
 
 using namespace jana;
 using namespace std;
@@ -37,8 +37,11 @@ class DTrackTimeBased:public DTrackingData{
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)
+		map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations;
 
-		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
+		bool GetProjection(DetectorSystem_t detector,DVector3 &pos,
+				   DVector3 *mom=nullptr,double *t=nullptr) const;
+
 
       bool IsSmoothed; // Boolean value to indicate whether the smoother was run succesfully over this track.
 
@@ -77,6 +80,40 @@ class DTrackTimeBased:public DTrackingData{
 			AddString(items, "#HitsMCMatched", "%d",dNumHitsMatchedToThrown);
 		}
 };
+
+size_t Get_NumTrackHits(const DTrackTimeBased* locTrackTimeBased);
+inline size_t Get_NumTrackHits(const DTrackTimeBased* locTrackTimeBased)
+{
+	vector<const DCDCTrackHit*> locCDCHits;
+	locTrackTimeBased->Get(locCDCHits);
+	vector<const DFDCPseudo*> locFDCHits;
+	locTrackTimeBased->Get(locFDCHits);
+
+	size_t locNumHits = locCDCHits.size() + locFDCHits.size();
+	if(locNumHits > 0)
+		return locNumHits;
+
+	return locTrackTimeBased->Ndof + 5; //is WRONG because FDC DoF != FDC Hits
+}
+
+inline bool DTrackTimeBased::GetProjection(DetectorSystem_t detector,
+					   DVector3 &pos,
+					   DVector3 *mom,double *t) const{
+  if (detector>SYS_BCAL && extrapolations.at(detector).size()>0){
+    DTrackFitter::Extrapolation_t extrapolation=extrapolations.at(detector)[0];
+    pos=extrapolation.position;
+    if (mom){
+      *mom=extrapolation.momentum;
+    }
+    if (t){
+      *t=extrapolation.t;
+    }
+    return true;
+  }
+
+  
+  return false;
+}
 
 #endif // _DTrackTimeBased_
 

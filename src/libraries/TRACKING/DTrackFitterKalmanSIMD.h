@@ -190,7 +190,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t KalmanLoop(void);
   virtual kalman_error_t KalmanForward(double fdc_anneal,double cdc_anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 				 double &chisq,unsigned int &numdof);
-  virtual jerror_t SmoothForward(void);   
+  virtual jerror_t SmoothForward(vector<pull_t>&mypulls);   
+  virtual jerror_t ExtrapolateForwardToOtherDetectors(void);  
+  jerror_t ExtrapolateCentralToOtherDetectors(void);
 
   kalman_error_t KalmanForwardCDC(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 			    double &chisq,unsigned int &numdof);
@@ -271,6 +273,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   double Step(double oldz,double newz, double dEdx,DMatrix5x1 &S);
   double FasterStep(double oldz,double newz, double dEdx,DMatrix5x1 &S);
+  void FastStep(double &z,double ds, double dEdx,DMatrix5x1 &S); 
+  void FastStep(DVector2 &xy,double ds, double dEdx,DMatrix5x1 &S);
   jerror_t StepJacobian(double oldz,double newz,const DMatrix5x1 &S,
 			double dEdx,DMatrix5x5 &J);
   jerror_t CalcDerivAndJacobian(double z,double dz,const DMatrix5x1 &S,
@@ -302,12 +306,13 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t GetProcessNoiseCentral(double ds,double chi2c_factor,
 				  double chi2a_factor,double chi2a_corr,
 				  const DMatrix5x1 &S,DMatrix5x5 &Q);  
-  jerror_t SmoothForwardCDC(void);   
-  jerror_t SmoothCentral(void);  
+  jerror_t SmoothForwardCDC(vector<pull_t>&mypulls);   
+  jerror_t SmoothCentral(vector<pull_t>&cdc_pulls);  
   jerror_t FillPullsVectorEntry(const DMatrix5x1 &Ss,const DMatrix5x5 &Cs,
 			    const DKalmanForwardTrajectory_t &traj,
 			    const DKalmanSIMDCDCHit_t *hit,
-			    const DKalmanUpdate_t &update);
+				const DKalmanUpdate_t &update,
+				vector<pull_t>&mypulls);
   jerror_t SwimToPlane(DMatrix5x1 &S);
   jerror_t FindCentralResiduals(vector<DKalmanUpdate_t>updates);
   jerror_t SwimCentral(DVector3 &pos,DMatrix5x1 &Sc);
@@ -433,6 +438,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double endplate_z_downstream;
   // upstream cdc start position
   vector<double>cdc_origin;
+  // outer detectors
+  double dTOFz,dFCALz;
 
   // Mass hypothesis
   double MASS,mass2;
@@ -535,7 +542,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // Parameters for drift resolution
   double DRIFT_RES_PARMS[3];
   // parameters for time-to-distance function for FDC
-  double DRIFT_FUNC_PARMS[4];
+  double DRIFT_FUNC_PARMS[6];
 
   // Identity matrix
   DMatrix5x5 I5x5;
@@ -543,6 +550,19 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   DMatrix5x5 Zero5x5;
   DMatrix5x1 Zero5x1;
   
+  // FDC wire info
+  vector<double>fdc_z_wires;
+
+  // start counter geom info
+  vector<vector<DVector3> >sc_dir; // direction vector in plane of plastic
+  vector<vector<DVector3> >sc_pos;
+  vector<vector<DVector3> >sc_norm;
+  double SC_BARREL_R2,SC_END_NOSE_Z,SC_PHI_SECTOR1;
+
+  // Beam position and direction
+  DVector2 beam_center, beam_dir;
+  double beam_z0;
+
   bool IsHadron,IsElectron,IsPositron;
   TH1I *alignDerivHists[46];
   TH2I *brentCheckHists[2];

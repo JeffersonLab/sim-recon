@@ -25,6 +25,7 @@ using namespace std;
 extern char *OUTFILENAME;
 extern std::map<hddm_s::istream*,double> files2merge;
 extern std::map<hddm_s::istream*,hddm_s::streamposition> start2merge;
+extern std::map<hddm_s::istream*,int> skip2merge;
 
 static pthread_mutex_t output_file_mutex;
 static pthread_t output_file_mutex_last_owner;
@@ -206,10 +207,13 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
 	config->ParseRCDBConfigFile(locRunNumber);
 #endif  // HAVE_RCDB
 
-    // rewind any merger input files to the beginning
+    // fast forward any merger input files over skipped events
     std::map<hddm_s::istream*,hddm_s::streamposition>::iterator iter;
     for (iter = start2merge.begin(); iter != start2merge.end(); ++iter) {
-        iter->first->setPosition(iter->second);
+        hddm_s::HDDM record2;
+        for (int i=0; i < skip2merge[iter->first]; ++i)
+            *iter->first >> record2;
+        skip2merge[iter->first] = 0;
     }
 
 	return NOERROR;
@@ -244,6 +248,12 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, uint64_t eventnumber)
       for (int i=0; i < count; ++i) {
          hddm_s::HDDM record2;
          *iter->first >> record2;
+         hddm_s_merger::set_t_shift_ns(0);
+         hddm_s::RFsubsystemList RFtimes = record2.getRFsubsystems();
+         hddm_s::RFsubsystemList::iterator RFiter;
+         for (RFiter = RFtimes.begin(); RFiter != RFtimes.end(); ++RFiter)
+            if (RFiter->getJtag() == "TAGH")
+               hddm_s_merger::set_t_shift_ns(-RFiter->getTsync());
          if (iter->first->eof()) {
             pthread_mutex_lock(&input_file_mutex);
             input_file_mutex_last_owner = pthread_self();

@@ -508,7 +508,7 @@ class DMatrix5x5{
          double sums[5]={0};
          // First row/column of ACA^T
          for (unsigned int i=0;i<5;i++){
-            for (unsigned k=0;k<5;k++){
+            for (unsigned int k=0;k<5;k++){
                sums[i]+=mA[i][k]*A(0,k);
             }
          }
@@ -519,9 +519,9 @@ class DMatrix5x5{
             temp(0,i)=temp(i,0);
          }
          // Second row/column of ACA^T
-         for (unsigned i=0;i<5;i++){
+         for (unsigned int i=0;i<5;i++){
             sums[i]=0.;
-            for (unsigned k=0;k<5;k++){
+            for (unsigned int k=0;k<5;k++){
                sums[i]+=mA[i][k]*A(1,k);
             }
          }    
@@ -532,9 +532,9 @@ class DMatrix5x5{
             temp(1,i)=temp(i,1);
          } 
          // Third row/column of ACA^T
-         for (unsigned i=0;i<5;i++){
+         for (unsigned int i=0;i<5;i++){
             sums[i]=0.;
-            for (unsigned k=0;k<5;k++){
+            for (unsigned int k=0;k<5;k++){
                sums[i]+=mA[i][k]*A(2,k);
             }
          }      
@@ -545,9 +545,9 @@ class DMatrix5x5{
             temp(2,i)=temp(i,2);
          } 
          // Fourth row/column of ACA^T
-         for (unsigned i=0;i<5;i++){
+         for (unsigned int i=0;i<5;i++){
             sums[i]=0.;
-            for (unsigned k=0;k<5;k++){
+            for (unsigned int k=0;k<5;k++){
                sums[i]+=mA[i][k]*A(3,k);
             }
          }      
@@ -558,9 +558,9 @@ class DMatrix5x5{
             temp(3,i)=temp(i,3);
          }
          // Last entry ACA^T[4][4]   
-         for (unsigned i=0;i<5;i++){
+         for (unsigned int i=0;i<5;i++){
             sums[i]=0.;
-            for (unsigned k=0;k<5;k++){
+            for (unsigned int k=0;k<5;k++){
                sums[i]+=mA[i][k]*A(4,k);
             }
          }

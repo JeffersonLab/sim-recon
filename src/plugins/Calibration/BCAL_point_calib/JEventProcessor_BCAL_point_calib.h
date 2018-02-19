@@ -13,7 +13,7 @@
 
 #include <ANALYSIS/DHistogramActions.h>
 #include "ANALYSIS/DAnalysisUtilities.h"
-//#include "TRACKING/DTrackFinder.h"
+#include "TRACKING/DTrackFitter.h"
 #include <BCAL/DBCALGeometry.h>
 
 #include "DLorentzVector.h"
@@ -44,6 +44,8 @@ class JEventProcessor_BCAL_point_calib:public jana::JEventProcessor{
 
 		bool DEBUG;    // control the creation of extra histograms
 		bool VERBOSE;  // verbose output
+
+		const DTrackFitter *fitter;
 };
 
 #endif // _JEventProcessor_BCAL_point_calib_

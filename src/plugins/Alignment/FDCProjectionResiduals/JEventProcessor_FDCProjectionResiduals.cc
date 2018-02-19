@@ -102,37 +102,81 @@ jerror_t JEventProcessor_FDCProjectionResiduals::brun(JEventLoop *eventLoop, int
    }
 
    typedef map<string,double>::iterator iter_double;
-   if (jcalib->Get("CDC/cdc_drift_table::NoBField", tvals)==false){    
-      for(unsigned int i=0; i<tvals.size(); i++){
-         map<string, double> &row = tvals[i];
-         iter_double iter = row.find("t");
-         cdc_drift_table.push_back(1000.*iter->second);
+   if (dIsNoFieldFlag){
+      if (jcalib->Get("CDC/cdc_drift_table::NoBField", tvals)==false){    
+         for(unsigned int i=0; i<tvals.size(); i++){
+            map<string, double> &row = tvals[i];
+            iter_double iter = row.find("t");
+            cdc_drift_table.push_back(1000.*iter->second);
+         }
+      }
+
+      if (jcalib->Get("CDC/drift_parameters::NoBField", tvals)==false){
+         map<string, double> &row = tvals[0]; //long drift side
+         long_drift_func[0][0]=row["a1"]; 
+         long_drift_func[0][1]=row["a2"];
+         long_drift_func[0][2]=row["a3"];  
+         long_drift_func[1][0]=row["b1"];
+         long_drift_func[1][1]=row["b2"];
+         long_drift_func[1][2]=row["b3"];
+         long_drift_func[2][0]=row["c1"];
+         long_drift_func[2][1]=row["c2"];
+         long_drift_func[2][2]=row["c3"];
+
+         row = tvals[1]; // short drift side
+         short_drift_func[0][0]=row["a1"];
+         short_drift_func[0][1]=row["a2"];
+         short_drift_func[0][2]=row["a3"];  
+         short_drift_func[1][0]=row["b1"];
+         short_drift_func[1][1]=row["b2"];
+         short_drift_func[1][2]=row["b3"];
+         short_drift_func[2][0]=row["c1"];
+         short_drift_func[2][1]=row["c2"];
+         short_drift_func[2][2]=row["c3"];
+      }
+   }
+   else{
+      if (jcalib->Get("CDC/cdc_drift_table", tvals)==false){
+         for(unsigned int i=0; i<tvals.size(); i++){
+            map<string, double> &row = tvals[i];
+            iter_double iter = row.find("t");
+            cdc_drift_table.push_back(1000.*iter->second);
+         }
+      }
+
+      if (jcalib->Get("CDC/drift_parameters", tvals)==false){
+         map<string, double> &row = tvals[0]; //long drift side
+         long_drift_func[0][0]=row["a1"];
+         long_drift_func[0][1]=row["a2"];
+         long_drift_func[0][2]=row["a3"];
+         long_drift_func[1][0]=row["b1"];
+         long_drift_func[1][1]=row["b2"];
+         long_drift_func[1][2]=row["b3"];
+         long_drift_func[2][0]=row["c1"];
+         long_drift_func[2][1]=row["c2"];
+         long_drift_func[2][2]=row["c3"];
+
+         row = tvals[1]; // short drift side
+         short_drift_func[0][0]=row["a1"];
+         short_drift_func[0][1]=row["a2"];
+         short_drift_func[0][2]=row["a3"];
+         short_drift_func[1][0]=row["b1"];
+         short_drift_func[1][1]=row["b2"];
+         short_drift_func[1][2]=row["b3"];
+         short_drift_func[2][0]=row["c1"];
+         short_drift_func[2][1]=row["c2"];
+         short_drift_func[2][2]=row["c3"];
       }
    }
 
-   if (jcalib->Get("CDC/drift_parameters::NoBField", tvals)==false){
-      map<string, double> &row = tvals[0]; //long drift side
-      long_drift_func[0][0]=row["a1"]; 
-      long_drift_func[0][1]=row["a2"];
-      long_drift_func[0][2]=row["a3"];  
-      long_drift_func[1][0]=row["b1"];
-      long_drift_func[1][1]=row["b2"];
-      long_drift_func[1][2]=row["b3"];
-      long_drift_func[2][0]=row["c1"];
-      long_drift_func[2][1]=row["c2"];
-      long_drift_func[2][2]=row["c3"];
-
-      row = tvals[1]; // short drift side
-      short_drift_func[0][0]=row["a1"];
-      short_drift_func[0][1]=row["a2"];
-      short_drift_func[0][2]=row["a3"];  
-      short_drift_func[1][0]=row["b1"];
-      short_drift_func[1][1]=row["b2"];
-      short_drift_func[1][2]=row["b3"];
-      short_drift_func[2][0]=row["c1"];
-      short_drift_func[2][1]=row["c2"];
-      short_drift_func[2][2]=row["c3"];
+   vector<const DTrackFitter *> fitters;
+   eventLoop->Get(fitters);
+   
+   if(fitters.size()<1){
+     _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+     return RESOURCE_UNAVAILABLE;
    }
+   fitter = fitters[0];
 
 
    MAX_DRIFT_TIME = 1000.0; //ns: from TRKFIND:MAX_DRIFT_TIME in DTrackCandidate_factory_CDC
@@ -165,7 +209,7 @@ jerror_t JEventProcessor_FDCProjectionResiduals::evnt(JEventLoop *loop, uint64_t
 
       const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
 
-      
+
       // Cut very loosely on the track quality
       auto thisTimeBasedTrack = bestHypothesis->Get_TrackTimeBased();
 
@@ -198,29 +242,38 @@ jerror_t JEventProcessor_FDCProjectionResiduals::evnt(JEventLoop *loop, uint64_t
          }
       }
 
-      for (auto ringPtr=cdcwires.begin(); ringPtr < cdcwires.end(); ringPtr++){
-         vector< DCDCWire * > wireByNumber = (*ringPtr);
-         for (auto wirePtr = wireByNumber.begin(); wirePtr < wireByNumber.end(); wirePtr++)
-         {
-            DCDCWire * wire = *wirePtr;
-            //double wireLength = wire->L;
-            //double distanceToWire = thisTimeBasedTrack->rt->DistToRT(wire, &wireLength);
-            DVector3 POCAOnTrack(0.0, 0.0, 0.0), POCAOnWire(0.0, 0.0, 0.0);
-            double zVertex = thisTimeBasedTrack->position().Z();
-            double distanceToBeamline = thisTimeBasedTrack->position().Perp();
-            double distanceToWire = GetDOCA(wire->origin, wire->udir, thisTimeBasedTrack->position(), thisTimeBasedTrack->momentum(), POCAOnTrack, POCAOnWire);
-            double zPOCA = POCAOnTrack.Z();
-            DVector3 LOCA = POCAOnTrack - POCAOnWire;
-
-            if(distanceToWire > 1.2 || distanceToBeamline > 1.0 || zPOCA < zVertex || POCAOnWire.Z() > endplate_z) continue;
-
-            double delta = 0.0, dz = 0.0;
-            if(!Expect_Hit(thisTimeBasedTrack, wire, distanceToWire, delta, dz))
-               continue;
-            // Check for a CDC Hit on this wire
-            for (auto cdcHit = cdcHitVector.begin(); cdcHit != cdcHitVector.end(); cdcHit++){
-               const DCDCHit *thisHit = (*cdcHit);
-               if (thisHit->ring == wire->ring && thisHit->straw == wire->straw){
+      vector<DTrackFitter::Extrapolation_t>extrapolations=thisTimeBasedTrack->extrapolations.at(SYS_CDC);
+      if (extrapolations.size()>0){
+	for (auto ringPtr=cdcwires.begin(); ringPtr < cdcwires.end(); ringPtr++){
+	  vector< DCDCWire * > wireByNumber = (*ringPtr);
+	  for (auto wirePtr = wireByNumber.begin(); wirePtr < wireByNumber.end(); wirePtr++)
+	    {
+	      DCDCWire * wire = *wirePtr;
+	      //double wireLength = wire->L;
+	      //double distanceToWire = thisTimeBasedTrack->rt->DistToRT(wire, &wireLength);
+	      DVector3 POCAOnTrack(0.0, 0.0, 0.0), POCAOnWire(0.0, 0.0, 0.0);
+	      double zVertex = thisTimeBasedTrack->position().Z();
+	      double distanceToBeamline = thisTimeBasedTrack->position().Perp();
+	      double distanceToWire;
+	      if (dIsNoFieldFlag) distanceToWire = GetDOCA(wire->origin, wire->udir, thisTimeBasedTrack->position(), thisTimeBasedTrack->momentum(), POCAOnTrack, POCAOnWire);
+	      else {
+		distanceToWire=fitter->DistToWire(wire,extrapolations,
+						  &POCAOnTrack,NULL,&POCAOnWire);
+	      }
+	      double zPOCA = POCAOnTrack.Z();
+	      DVector3 LOCA = POCAOnTrack - POCAOnWire;
+	      if(distanceToWire > 1.2 || distanceToBeamline > 1.0 || zPOCA < zVertex || POCAOnWire.Z() > endplate_z) continue;
+	      jout << " Dist = " << distanceToWire << " POCAOnTrack POCAOnWire Manual Distance = " << LOCA.Mag() << endl;
+	      POCAOnTrack.Print();
+	      POCAOnWire.Print(); 
+	      
+	      double delta = 0.0, dz = 0.0;
+	      if(!Expect_Hit(thisTimeBasedTrack, wire, distanceToWire, delta, dz))
+		continue;
+	      // Check for a CDC Hit on this wire
+	      for (auto cdcHit = cdcHitVector.begin(); cdcHit != cdcHitVector.end(); cdcHit++){
+		const DCDCHit *thisHit = (*cdcHit);
+		if (thisHit->ring == wire->ring && thisHit->straw == wire->straw){
                   // We found the hit on the wire and have all of the information we need.
                   // Get the corrected drift time
                   //DReferenceTrajectory::swim_step_t* swimstep = thisTimeBasedTrack->rt->FindClosestSwimStep(wire);
@@ -234,25 +287,25 @@ jerror_t JEventProcessor_FDCProjectionResiduals::evnt(JEventLoop *loop, uint64_t
                   sprintf(name,"Ring %i Residual Vs. Straw Number", thisHit->ring);
                   sprintf(title,"Ring %i Residual Vs. Straw Number; Straw Number; Residual [cm]", thisHit->ring);
                   Fill2DHistogram("FDCProjectionResiduals","ResidualVsStrawNumber",name,
-                        thisHit->straw, residual,
-                        title,
-                        numstraws[thisHit->ring-1], 0.5, numstraws[thisHit->ring-1] + 0.5, 1000, -0.5, 0.5);
+				  thisHit->straw, residual,
+				  title,
+				  numstraws[thisHit->ring-1], 0.5, numstraws[thisHit->ring-1] + 0.5, 1000, -0.5, 0.5);
                   sprintf(name,"Ring %i rPhi Residual Vs. phi", thisHit->ring);
                   sprintf(title,"Ring %i #Deltar#phi Vs. #phi; Straw Number; Residual [cm]", thisHit->ring);
                   Fill2DHistogram("FDCProjectionResiduals","ResidualVsPhi",name,
-                        thisTimeBasedTrack->momentum().Phi(), signedResidual,
+				  thisTimeBasedTrack->momentum().Phi(), signedResidual,
                         title,
-                        numstraws[thisHit->ring-1], -3.14, 3.14, 1000, -0.5, 0.5);
+				  numstraws[thisHit->ring-1], -3.14, 3.14, 1000, -0.5, 0.5);
                   if (thisHit->ring == 1){
-                     sprintf(name,"Ring %i Straw %i Distance Vs. Time", thisHit->ring, thisHit->straw);
-                     sprintf(title,"Ring %i Straw %i Distance Vs. Time ; Time [ns]; Distance [cm]", thisHit->ring, thisHit->straw);
-                     Fill2DHistogram("FDCProjectionResiduals","DistanceVsTimeRing1",name,
+		    sprintf(name,"Ring %i Straw %i Distance Vs. Time", thisHit->ring, thisHit->straw);
+		    sprintf(title,"Ring %i Straw %i Distance Vs. Time ; Time [ns]; Distance [cm]", thisHit->ring, thisHit->straw);
+		    Fill2DHistogram("FDCProjectionResiduals","DistanceVsTimeRing1",name,
                            tdrift, distanceToWire,
-                           title,
-                           500, -50.0, 1000, 120, 0.0, 1.2);
+				    title,
+				    500, -50.0, 1000, 120, 0.0, 1.2);
                   }
-
-               }
+		}
+	      }
             }
          }
       }
@@ -359,9 +412,12 @@ bool JEventProcessor_FDCProjectionResiduals::Expect_Hit(const DTrackTimeBased* t
 
    // Loose cut before delta information
    // Need to get phi_doca for each of the wires that pass this cut
-   DVector3 pos, mom;
-   thisTimeBasedTrack->rt->GetLastDOCAPoint(pos, mom);
+   vector<DTrackFitter::Extrapolation_t>extrapolations=thisTimeBasedTrack->extrapolations.at(SYS_CDC);
+   if (extrapolations.size()==0) return false;
+   
    // Form the vector between the wire and the DOCA point
+   DVector3 pos;
+   fitter->DistToWire(wire,extrapolations,&pos);
    DVector3 DOCA = (-1) * ((wire->origin - pos) - (wire->origin - pos).Dot(wire->udir) * wire->udir);
 
    double docaphi = DOCA.Phi();

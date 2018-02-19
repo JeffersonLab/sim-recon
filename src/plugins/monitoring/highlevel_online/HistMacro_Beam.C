@@ -3,16 +3,16 @@
 // hnamepath: /highlevel/BeamEnergy
 //
 // e-mail: davidl@jlab.org
-// e-mail: pmatt@jlab.org
 // e-mail: staylor@jlab.org
 // e-mail: sdobbs@jlab.org
+// e-mail: tbritton@jlab.org
 //
 
 {
-	// This taken from the bin contents of the BeamEnergy histogram from the
-	// online monitoring root file for run 30618, an amorphous target run.
-	// The macro used is in /gluonwork1/Users/davidl/2017.02.08.amorphous_norm
-	string amorphous_label = "Normalized to Amorphous run 30900";
+// This taken from the bin contents of the BeamEnergy histogram from the
+// online monitoring root file for run 41180, an amorphous target run.
+// The macro used is in /gluonwork1/Users/davidl/2017.02.08.amorphous_norm
+string amorphous_label = "Normalized to Amorphous run 41180";
 
 	Double_t amorphous_data[] = {
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
@@ -25,21 +25,22 @@
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
-		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,   8467209.0,   7984169.0,   7867145.0, 
-		        0.0,   7437883.0,   7628181.0,         0.0,   7358015.0,   7273253.0,   7104395.0,   6721692.0,   6804315.0,   6770605.0, 
-		  7018530.0,         0.0,   6601182.0,   6403582.0,   6232494.0,   8069431.0,   7686601.0,   9591162.0,         0.0,   7340630.0, 
-		  9391315.0,   7189523.0,   7350025.0,   8582645.0,   8741070.0,         0.0,   8313966.0,   8184044.0,   7992201.0,   7898073.0, 
-		  6567000.0,         0.0,   6563492.0,   6555150.0,   6379928.0,   4828050.0,   8812168.0,   6035256.0,         0.0,   6117357.0, 
-		  5845703.0,   5453999.0,   5712679.0,  13077910.0,  12411341.0,  11227161.0,  12365610.0,  13807468.0,   8746885.0,   7882088.0, 
-		  7740417.0,   9603000.0,   9545339.0,   9062989.0,   7014238.0,   9131638.0,   8946120.0,   8922498.0,   8343195.0,   8360881.0, 
-		  8030791.0,   7625110.0,   7713314.0,   9200766.0,   6153115.0,   7390885.0,   8017599.0,   6878501.0,  12143743.0,   9153244.0, 
-		  7397976.0,  11433953.0,   8345734.0,  10327686.0,   6878375.0,  11035233.0,  11057129.0,  10642711.0,   7148681.0,  10656065.0, 
-		 10567091.0,   9965437.0,  10015530.0,   9488799.0,   9439835.0,   7873878.0,   9389965.0,   9170954.0,  13434863.0,   8541066.0, 
-		  8492133.0,   8188612.0,  11674394.0,   9653875.0,   8404592.0,   8973011.0,   8687054.0,   8370837.0,   7999743.0,   7905451.0, 
-		 11407964.0,   7238862.0,  10298003.0,   6602011.0,  10048469.0,   9521222.0,   9027212.0,   8011532.0,   7717873.0,  11253272.0, 
-		  6857751.0,   9366911.0,   6576462.0,  10121613.0,   5932297.0,   7640428.0,   8553758.0,   6818529.0,   5529225.0,         0.0, 
+		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,    209738.0,    198138.0,         0.0,    193285.0, 
+		   182928.0,    189803.0,    188623.0,    182261.0,    180752.0,    176329.0,         0.0,    167626.0,    169955.0,    168081.0, 
+		   173281.0,    163542.0,    158071.0,         0.0,    154996.0,    200971.0,    190962.0,    238371.0,    182560.0,    233500.0, 
+		        0.0,    179005.0,    183107.0,    212746.0,    217870.0,    206988.0,    203560.0,    199817.0,         0.0,    196465.0, 
+		   163990.0,    163596.0,    163323.0,    158890.0,         0.0,    120653.0,    219450.0,    150392.0,    152018.0,    146696.0, 
+		   135199.0,         0.0,    242118.0,    311081.0,    343239.0,    397432.0,    303272.0,    321248.0,    217471.0,    179834.0, 
+		   223478.0,    204684.0,    175483.0,    212535.0,    199347.0,    204616.0,    206993.0,    200380.0,    192812.0,    187961.0, 
+		   186785.0,    192361.0,    185509.0,    221479.0,    155732.0,    165711.0,    211286.0,    213044.0,    162172.0,    218470.0, 
+		   326773.0,    173718.0,    260586.0,    175565.0,    283390.0,    190320.0,    277235.0,    271381.0,    270542.0,    258743.0, 
+		   254601.0,    253674.0,    242940.0,    239718.0,    271785.0,    233869.0,    227794.0,    220098.0,    222537.0,    211732.0, 
+		   202200.0,    302707.0,    216286.0,    216766.0,    227206.0,    218474.0,    214509.0,    207579.0,    287877.0,    191310.0, 
+		   278819.0,    175601.0,    245601.0,    252577.0,    124981.0,    231491.0,    212180.0,    299163.0,    190505.0,    175994.0, 
+		   250525.0,    153673.0,    258291.0,    154869.0,    207703.0,    219492.0,    165417.0,    124383.0,     24692.0,         0.0, 
 		        0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0,         0.0, 
 	0.0};
+
 
 	TDirectory *locTopDirectory = gDirectory;
 
@@ -112,24 +113,16 @@
 		TH1D* locHist_BeamEnergy_norm = (TH1D*)gDirectory->Get("BeamEnergy_norm");
 		if(!locHist_BeamEnergy_norm){
 			locHist_BeamEnergy_norm = new TH1D("BeamEnergy_norm", "Reconstructed Photon Beam Energy;Beam #gamma energy (GeV)", 240, 0.0, 12.0);
-
-			locHist_BeamEnergy_norm->GetXaxis()->SetTitleSize(0.05);
-			locHist_BeamEnergy_norm->GetXaxis()->SetLabelSize(0.05);
-			locHist_BeamEnergy_norm->GetYaxis()->SetLabelSize(0.03);
-			locHist_BeamEnergy_norm->SetFillStyle(3001);
-			locHist_BeamEnergy_norm->SetFillColor(kOrange);
-			locHist_BeamEnergy_norm->SetLineColor(kRed-2);
-			locHist_BeamEnergy_norm->SetLineWidth(2);
-			locHist_BeamEnergy_norm->SetStats(0);
 		}
 		if(locHist_BeamEnergy_norm){
-		
+
+			locHist_BeamEnergy_norm->Reset();
 
 			// Normalize to amorphous baseline 
 			double scale = 0.0;
 			for(int ibin=1; ibin<=locHist_BeamEnergy_norm->GetNbinsX(); ibin++){
 				Double_t norm = amorphous_data[ibin-1];
-				if( norm < 100000.0) continue;
+				if( norm < 10000.0) continue;
 
 				Double_t v = (Double_t)locHist_BeamEnergy->GetBinContent(ibin);
 				v /= norm;
@@ -138,12 +131,12 @@
 			}
 
 			// Find maximum and scale histogram so peak is at 1
-			locHist_BeamEnergy_norm->Scale(1.0/scale);		
+			if(scale != 0.0) locHist_BeamEnergy_norm->Scale(1.0/scale);		
 
 			// Find leftmost non-zero bin 
 			double left_scale = 0.0;
 			for(int ibin=1; ibin<=locHist_BeamEnergy_norm->GetNbinsX(); ibin++){
-				if( amorphous_data[ibin-1] < 100000.0) continue;
+				if( amorphous_data[ibin-1] < 10000.0) continue;
 				Double_t v = (Double_t)locHist_BeamEnergy_norm->GetBinContent(ibin);
 				if(v>0.1){
 					left_scale = v;
@@ -156,15 +149,23 @@
 			double min = left_scale - diff*0.1;
 			double max = left_scale + diff*1.2;
 			if( (max-min) < 0.4 ){
-				min = 0.5;
-				max =1.5;
+				min = 0.25;
+				if(max<1.50) max =1.50;
 			}
 			
-			max = 1.50;
-			min = 0.25;
+			// max = 1.50;
+			// min = 0.25;
 			
+			locHist_BeamEnergy_norm->GetXaxis()->SetTitleSize(0.05);
+			locHist_BeamEnergy_norm->GetXaxis()->SetLabelSize(0.05);
+			locHist_BeamEnergy_norm->GetYaxis()->SetLabelSize(0.03);
+			locHist_BeamEnergy_norm->SetFillStyle(3001);
+			locHist_BeamEnergy_norm->SetFillColor(kOrange);
+			locHist_BeamEnergy_norm->SetLineColor(kRed-2);
+			locHist_BeamEnergy_norm->SetLineWidth(2);
+			locHist_BeamEnergy_norm->SetStats(0);		
 			locHist_BeamEnergy_norm->GetYaxis()->SetRangeUser(min, max);
-			locHist_BeamEnergy_norm->Draw();
+			locHist_BeamEnergy_norm->Draw("HIST");
 			
 			// If diff is > 0.3 then assume this is not an amorphous run
 			// and draw a label of the peak energy

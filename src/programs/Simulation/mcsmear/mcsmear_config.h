@@ -9,10 +9,6 @@
 #include <JANA/JEventLoop.h>
 #include "DRandom2.h"
 
-#ifdef HAVE_RCDB
-#include <RCDB/Connection.h>
-#endif // HAVE_RCDB
-
 using namespace jana;
 
 
@@ -58,10 +54,6 @@ class mcsmear_config_t
 	
 	
 #ifdef HAVE_RCDB
-	// RCDB information
-	string RCDB_CONNECTION;
-	rcdb::Connection *rcdb_connection;
-
     void LoadRCDBConnection();
 	bool ParseRCDBConfigFile(int runNumber);
 #endif  // HAVE_RCDB
