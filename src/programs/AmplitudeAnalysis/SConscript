@@ -3,7 +3,8 @@ import sbms
 
 Import('*')
 
-subdirs = ['fit', 'twopi_plotter', 'twopi_plotter_amp', 'twopi_plotter_mom', 'twopi_plotter_primakoff', 'split_mass', 'threepi_plotter_schilling', 'omega_radiative_plotter', 'project_moments']
+subdirs = ['fit', 'twopi_plotter', 'twopi_plotter_amp', 'twopi_plotter_mom', 'twopi_plotter_primakoff', 'split_mass', 'threepi_plotter_schilling', 'omega_radiative_plotter']
+#, 'project_moments'
 
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 

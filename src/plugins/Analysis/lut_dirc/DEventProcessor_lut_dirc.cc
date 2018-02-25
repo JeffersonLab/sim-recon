@@ -60,8 +60,10 @@ jerror_t DEventProcessor_lut_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
   loop->Get(dircBarHits);
 
   if(mcthrowns.size()<1) return NOERROR;
-  if(dircBarHits.size()<1) return NOERROR;
+  //if(dircBarHits.size()<1) return NOERROR;
   if(dircPmtHits.size()!=1) return NOERROR;
+  int nrefl=0;
+  if(dircBarHits.size()>0) nrefl = dircBarHits[0]->pdg; // n of reflections
   
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK
     
@@ -73,17 +75,21 @@ jerror_t DEventProcessor_lut_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
     int pix=ch%64;
     int id = 100*pmt + pix;
     int lutId = dircPmtHits[h]->key_bar;
+    TVector3 dir =  TVector3(mcthrowns[0]->momentum().X(),
+			     mcthrowns[0]->momentum().Y(),
+			     mcthrowns[0]->momentum().Z()).Unit();
+    
     ((DrcLutNode*)(fLut[lutId]->At(id)))->
-      AddEntry(lutId,                   // lut/bar id
-	       id,                      // pixel id
-    	       TVector3(mcthrowns[0]->momentum().X(),
-    			mcthrowns[0]->momentum().Y(),
-    			mcthrowns[0]->momentum().Z()),
+      AddEntry(lutId,               // lut/bar id
+	       id,                  // pixel id
+    	       dir,
     	       dircPmtHits[h]->E,   // path id
-    	       dircBarHits[h]->pdg, // n of reflections
+    	       nrefl,
     	       dircPmtHits[h]->t,
     	       TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z),
     	       TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z));
+    if(fabs(dircPmtHits[h]->E-4715)<0.0001){
+    }
   }
   japp->RootUnLock(); //RELEASE ROOT LOCK
 
