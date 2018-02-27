@@ -277,6 +277,14 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         if (q < DIGI_THRESHOLD) 
             continue;
 
+        //** NSJ trim time window at both ends ** 
+	//        if (t < -60.0) continue;
+        //        if (t > 745.0) continue; 
+
+        // tighter cut on approx ~ 2 * background hits in time histo
+        if (t < -32.0) continue;
+        if (t > 610.0) continue; 
+
         DCDCHit *hit = new DCDCHit;
         hit->ring  = ring;
         hit->straw = straw;
