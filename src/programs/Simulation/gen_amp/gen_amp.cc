@@ -51,7 +51,7 @@ int main( int argc, char* argv[] ){
 	
 	double beamMaxE   = 12.0;
 	double beamPeakE  = 9.0;
-	double beamLowE   = 0.139*2;
+	double beamLowE   = lowMass + 0.937;
 	double beamHighE  = 12.0;
 	
 	int runNum = 9001;
@@ -183,7 +183,8 @@ int main( int argc, char* argv[] ){
 	// random number initialization (set to 0 by default)
 	TRandom3* gRandom = new TRandom3();
 	gRandom->SetSeed(seed);
-	cout << "TRandom3 Seed : " << gRandom->GetSeed() << endl;
+	seed = gRandom->GetSeed();
+	cout << "TRandom3 Seed : " << seed << endl;
 
 	// setup AmpToolsInterface
 	AmpToolsInterface::registerAmplitude( ThreePiAngles() );
