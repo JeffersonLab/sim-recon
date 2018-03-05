@@ -1827,7 +1827,8 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX
 	  || fabs(S(state_tx))>TAN_MAX
 	  || fabs(S(state_ty))>TAN_MAX
-	  || S(state_x)*S(state_x)+S(state_y)*S(state_y)>50.*50.
+	  || S(state_x)*S(state_x)+S(state_y)*S(state_y)>50.*50.  
+	  || z>400. || z<Z_MIN
          ){
          break;
       }
@@ -1840,6 +1841,7 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
 	       || fabs(S(state_tx))>TAN_MAX
 	       || fabs(S(state_ty))>TAN_MAX  
 	       || S(state_x)*S(state_x)+S(state_y)*S(state_y)>50.*50.
+	       || z>400. || z< Z_MIN
                ){
                break;
             }
