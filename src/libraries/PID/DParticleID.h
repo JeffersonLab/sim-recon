@@ -216,7 +216,6 @@ class DParticleID:public jana::JObject
 		double TOF_CUT_PAR1, TOF_CUT_PAR2, TOF_CUT_PAR3, TOF_CUT_PAR4;
 		vector<double> dSCCutPars_TimeBased, dSCCutPars_WireBased;
 
-		double DELTA_R_FCAL;
 		double C_EFFECTIVE; // start counter light propagation speed
 		double ATTEN_LENGTH; // Start counter attenuation length
 		double OUT_OF_TIME_CUT; //for all matches

@@ -187,7 +187,7 @@
 			double sumw = 0.0;
 			for(int jbin=1; jbin<=yaxis->GetNbins(); jbin++){
 				double w = digihits_trig1->GetBinContent(ibin, jbin);
-				double y = yaxis->GetBinCenter(jbin);
+				double y = yaxis->GetBinLowEdge(jbin);
 				sumw += y*w;
 				sum  += w; 
 			}

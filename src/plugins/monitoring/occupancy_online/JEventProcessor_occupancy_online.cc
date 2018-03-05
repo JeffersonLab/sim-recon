@@ -89,6 +89,8 @@ JEventProcessor_occupancy_online::~JEventProcessor_occupancy_online()
 //------------------
 jerror_t JEventProcessor_occupancy_online::init(void)
 {
+	japp->RootWriteLock();
+
 	// All histograms go in the "occupancy" directory
 	TDirectory *main = gDirectory;
 	gDirectory->mkdir("occupancy")->cd();
@@ -259,6 +261,8 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	// back to main dir
 	main->cd();
   
+	japp->RootUnLock();
+ 
 	return NOERROR;
 }
 

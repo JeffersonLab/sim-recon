@@ -1149,7 +1149,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
             if(cdc_used_in_fit[id] == false) continue;
 
             FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
-                  cdc_updates[id]);
+				 cdc_updates[id],pulls);
          }
       }
       else{
