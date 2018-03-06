@@ -22,7 +22,7 @@
 	TH2I *digihits_trig1 = (TH2I*)gDirectory->FindObjectAny("digihits_trig1");
 	TH2I *digihits_trig3 = (TH2I*)gDirectory->FindObjectAny("digihits_trig3");
 	TH2I *digihits_trig4 = (TH2I*)gDirectory->FindObjectAny("digihits_trig4");
-	TH2I *digihits_scale_factors = (TH2I*)gDirectory->FindObjectAny("digihits_scale_factors");
+	TH1F *digihits_scale_factors = (TH1F*)gDirectory->FindObjectAny("digihits_scale_factors");
 
 	// Just for testing
 	if(gPad == NULL){
@@ -35,22 +35,17 @@
 	
 	// Some detectors are scaled in order to fit them on the same
 	// graph. The scale factors are communicated via the digihits_scale_factors
-	// histogram. Since RootSpy sums this histogram it is passed as
-	// a 2D histo so the sum is in the second dimension that we ignore.
+	// histogram. Since RootSpy sums this histogram we must divide the bin contents
+	// by the last bin which keeps track of how many hists were added.
 	map<string,double> digihitbinmap; // bin number
 	map<string,double> digihitsclmap; // Scale number of hits by this (0 means don't scale)
 	if(digihits_scale_factors){
+		double Nhists_summed = digihits_scale_factors->GetBinContent(digihits_scale_factors->GetNbinsX());
 		TAxis *xaxis = digihits_scale_factors->GetXaxis();
-		TAxis *yaxis = digihits_scale_factors->GetYaxis();
-		for(int ibin=1; ibin<=xaxis->GetNbins(); ibin++){
+		for(int ibin=1; ibin<xaxis->GetNbins(); ibin++){
 			string lab = xaxis->GetBinLabel(ibin);
 			digihitbinmap[lab] = (double)ibin;
-			for(int jbin=1; jbin<=yaxis->GetNbins(); jbin++){
-				if(digihits_scale_factors->GetBinContent(ibin, jbin) > 0){
-					digihitsclmap[lab] = yaxis->GetBinCenter(jbin);
-					break;
-				}
-			}
+			digihitsclmap[lab] = digihits_scale_factors->GetBinContent(ibin)/Nhists_summed;
 		}
 	}
 
@@ -95,7 +90,11 @@
 			double x = xaxis->GetBinCenter((int)digihitbinmap[p.first]);
 			double y = 70.0;
 			char str[256];
-			sprintf(str, "#divide%2.0f", p.second);
+			if( p.second>1.0 ){
+				sprintf(str, "#divide%2.0f", p.second);
+			}else{
+				sprintf(str, "#times%2.0f", 1.0/p.second);
+			}
 			box.DrawBox(x-0.3, y-9.0, x+0.33, y+9.0);
 			latex.DrawLatex(x, y, str);
 		}
@@ -113,17 +112,21 @@
 			double sumw = 0.0;			
 			for(int jbin=1; jbin<=yaxis->GetNbins(); jbin++){
  				double w = digihits_trig4->GetBinContent(ibin, jbin);
- 				double y = yaxis->GetBinCenter(jbin);
+ 				double y = yaxis->GetBinLowEdge(jbin);
  				sumw += y*w;
  				sum  += w; 
 			}
 			
 			double mean = sum==0.0 ? 0.0:sumw/sum;
 			double scale = digihitsclmap[p.first];
-			if(scale>0.0) mean *= scale;
+			if(scale != 0.0) mean *= scale;
 			
 			char str[256];
-			sprintf(str, "%5.1f", mean);
+			if( mean > 0.5 ){
+				sprintf(str, "%5.1f", mean);
+			}else{
+				sprintf(str, "%4.3f", mean);
+			}
 			box.DrawBox(x-0.3, y-10.0, x+0.33, y+10.0);
 			latex.DrawLatex(x, y, str);
 		}
@@ -169,7 +172,11 @@
 			double x = xaxis->GetBinCenter((int)digihitbinmap[p.first]);
 			double y = 70.0;
 			char str[256];
-			sprintf(str, "#divide%2.0f", p.second);
+			if( p.second>1.0 ){
+				sprintf(str, "#divide%2.0f", p.second);
+			}else{
+				sprintf(str, "#times%2.0f", 1.0/p.second);
+			}
 			box.DrawBox(x-0.3, y-9.0, x+0.33, y+9.0);
 			latex.DrawLatex(x, y, str);
 		}
@@ -197,7 +204,11 @@
 			if(scale>0.0) mean *= scale;
 			
 			char str[256];
-			sprintf(str, "%5.1f", mean);
+			if( mean > 0.5 ){
+				sprintf(str, "%5.1f", mean);
+			}else{
+				sprintf(str, "%4.3f", mean);
+			}
 			box.DrawBox(x-0.3, y-10.0, x+0.33, y+10.0);
 			latex.DrawLatex(x, y, str);
 		}
