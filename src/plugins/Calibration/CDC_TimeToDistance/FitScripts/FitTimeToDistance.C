@@ -189,7 +189,7 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root")
    profile->Draw("cont2 list same");
    f1->Draw("cont2 list same");
    c1->Update();
-   c1->SaveAs(Form("Before_Run%i.png", run));
+   c1->SaveAs(Form("Before/Before_Run%i.png", run));
 
    TProfile2D *profileRebin = profile->Rebin2D(4,4, "Rebin");
    TFitResultPtr fr = profileRebin->Fit("f2", "S");
@@ -200,17 +200,18 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root")
    profile->Draw("cont2 list same");
    f2->Draw("cont2 list same");
    c2->Update();
-   c2->SaveAs(Form("After_Run%i.png", run));
+   c2->SaveAs(Form("After/After_Run%i.png", run));
 
    TCanvas *c3 = new TCanvas ("c3", "c3", 800, 600);
    f1->Draw("cont2 list");
    f1->SetLineColor(3);
    f2->Draw("cont2 list same");
    c3->Update();
+   c3->SaveAs(Form("Combined/Combined_Run%i.png", run));
 
    if ((Int_t) fr == 0){ // Fit converged with no errors
       ofstream outputTextFile;
-      outputTextFile.open(Form("ccdb_Format_%i.txt",run)); 
+      outputTextFile.open(Form("ccdb/ccdb_Format_%i.txt",run)); 
       outputTextFile << fr->Parameter(0) << " " << fr->Parameter(1) << " " << fr->Parameter(2) << " " ;
       outputTextFile << fr->Parameter(3) << " " << fr->Parameter(4) << " " << fr->Parameter(5) << " " ;
       outputTextFile << fr->Parameter(6) << " " << fr->Parameter(7) << " " << fr->Parameter(8) << " " ;
@@ -222,5 +223,54 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root")
       outputTextFile.close();
    }
 
-   return;
+   // Get Residual vs Drift Time
+   TH2I *resVsT = (TH2I*)thisFile->Get("/CDC_TimeToDistance/Residual Vs. Drift Time");
+   TCanvas *c4 = new TCanvas("c4", "c4", 800, 600);
+   resVsT->Draw("colz");
+   c4->SaveAs(Form("ResVsT/ResVsT_Run%i.png", run));
+
+   TCanvas *c5 = new TCanvas("c5", "c5", 800, 600);
+   gStyle->SetOptFit();
+   p = (TH1D*)resVsT->ProjectionY();
+   //p = (TH1D*)resVsT->ProjectionY("_py", resVsT->GetXaxis()->FindBin(100.), -1);
+   p->Draw();
+   p->Fit("gaus", "sqWR", "", -0.01, 0.01);
+   c5->SaveAs(Form("Proj/Proj_ResVsT_Run%i.png", run));
+
+   TCanvas *c6 = new TCanvas("c6", "c6", 1600, 900);
+   c6->Divide(3, 2, 0.001, 0.001);
+   c6->cd(1);
+   profile->SetContour(21, contours);
+   profile->Draw("colz");
+   f1->SetContour(21, contours);
+   profile->Draw("cont2 list same");
+   f1->Draw("cont2 list same");
+   c6->Update();
+
+   c6->cd(2);
+   profile->Draw("colz");
+   f2->SetContour(21, contours);
+   profile->Draw("cont2 list same");
+   f2->Draw("cont2 list same");
+   c6->Update();
+
+   c6->cd(3);
+   f1->Draw("cont2 list");
+   f1->SetLineColor(3);
+   f2->Draw("cont2 list same");
+   c6->Update();
+   
+   c6->cd(4);
+   resVsT->Draw("colz");
+   c6->Update();
+
+   c6->cd(5);
+   p->Draw();
+   c6->Update();
+
+   c6->SaveAs(Form("Monitoring/Monitoring_Run%i.png", run));
+
+   gApplication->Terminate();
+   //return;
 }
+
