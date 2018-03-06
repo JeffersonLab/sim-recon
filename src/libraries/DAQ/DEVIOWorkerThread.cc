@@ -118,6 +118,7 @@ void DEVIOWorkerThread::Run(void)
 			jerr << "Data format error exception caught" << endl;
 			jerr << "Stack trace follows:" << endl;
 			jerr << e.getStackTrace() << endl;
+			jerr << e.what() << endl;
 			japp->Quit(10);
 		} catch (exception &e) {
 			jerr << e.what() << endl;
@@ -416,6 +417,7 @@ void DEVIOWorkerThread::ParseEPICSbank(uint32_t* &iptr, uint32_t *iend)
 			// Unknown tag. Bail
 			_DBG_ << "Unknown tag 0x" << hex << tag << dec << " in EPICS event!" <<endl;
 			DumpBinary(istart, iend_epics, 32, &iptr[-1]);
+			throw JExceptionDataFormat("Unknown tag in EPICS bank", __FILE__, __LINE__);
 		}
 		
 		iptr = &iptr[bank_len];
@@ -461,7 +463,7 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 	if(current_parsed_events.size() != 1){
 		stringstream ss;
 		ss << "DEVIOWorkerThread::ParseBORbank called for EVIO event with " << current_parsed_events.size() << " events in it. (Should be exactly 1!)";
-		throw JException(ss.str(), __FILE__, __LINE__);
+		throw JExceptionDataFormat(ss.str(), __FILE__, __LINE__);
 	}
 	
 	// Create new DBORptrs object and set pointer to it in DParsedEvent
@@ -477,7 +479,7 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 	if(borevent_len > bank_len){
 		stringstream ss;
 		ss << "BOR: Size of bank doesn't match amount of data given (" << borevent_len << " > " << bank_len << ")";
-		throw JException(ss.str(), __FILE__, __LINE__);
+		throw JExceptionDataFormat(ss.str(), __FILE__, __LINE__);
 	}
 	iend = &iptr[borevent_len]; // in case they give us too much data!
 	
@@ -486,7 +488,7 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 	if(bor_header != 0x700e01){
 		stringstream ss;
 		ss << "Bad BOR header: 0x" << hex << bor_header;
-		throw JException(ss.str(), __FILE__, __LINE__);
+		throw JExceptionDataFormat(ss.str(), __FILE__, __LINE__);
 	}
 
 	// Loop over crates
@@ -500,7 +502,7 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 		if( (crate_header>>16) != 0x71 ){
 			stringstream ss;
 			ss << "Bad BOR crate header: 0x" << hex << (crate_header>>16);
-			throw JException(ss.str(), __FILE__, __LINE__);
+			throw JExceptionDataFormat(ss.str(), __FILE__, __LINE__);
 		}
 
 		// Loop over modules
@@ -551,7 +553,7 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 					stringstream ss;
 					ss << "Unknown BOR module type: " << modType << "  (module_header=0x"<<hex<<module_header<<")";
 					jerr << ss.str() << endl;
-					throw JException(ss.str(), __FILE__, __LINE__);
+					throw JExceptionDataFormat(ss.str(), __FILE__, __LINE__);
 					}
 			}
 
@@ -559,7 +561,7 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 			if( module_len > sizeof_dest ){
 				stringstream ss;
 				ss << "BOR module bank size does not match structure! " << module_len << " > " << sizeof_dest << " for modType " << modType;
-				throw JException(ss.str(), __FILE__, __LINE__);
+				throw JExceptionDataFormat(ss.str(), __FILE__, __LINE__);
 			}
 
 			// Copy bank data, assuming format is the same
@@ -597,7 +599,7 @@ void DEVIOWorkerThread::ParseTSscalerBank(uint32_t* &iptr, uint32_t *iend)
     if(Nwords != Nwords_expected){
         _DBG_ << "TS bank size does not match expected!!" << endl;
         _DBG_ << "Found " << Nwords << " words. Expected " << Nwords_expected << endl;
-
+        throw JExceptionDataFormat("TS bank size does not match expected", __FILE__, __LINE__);
     }else{
 	 	// n.b. Get the last event here since if this is a block
 		// of events, the last should be the actual sync event.
@@ -702,7 +704,7 @@ void DEVIOWorkerThread::ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend)
 	if( ((*iptr) & mask) != mask ){
 		stringstream ss;
 		ss << "Bad header word in Built Trigger Bank: " << hex << *iptr;
-		throw JException(ss.str(), __FILE__, __LINE__);
+		throw JExceptionDataFormat(ss.str(), __FILE__, __LINE__);
 	}
 	
 	uint32_t tag     = (*iptr)>>16; // 0xFF2X
@@ -713,7 +715,7 @@ void DEVIOWorkerThread::ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend)
     if(Mevents == 0) {
 		stringstream ss;
 		ss << "DEVIOWorkerThread::ParseBuiltTriggerBank() called with zero events! "<<endl;
-		throw JException(ss.str(), __FILE__, __LINE__);
+		throw JExceptionDataFormat(ss.str(), __FILE__, __LINE__);
 	}
 
 	
@@ -774,7 +776,7 @@ void DEVIOWorkerThread::ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend)
 			for(uint32_t i=2; i<Nwords_per_event; i++) codarocinfo->misc.push_back(*iptr++);
 			
 			if(iptr > iend){
-				throw JException("Bad data format in ParseBuiltTriggerBank!", __FILE__, __LINE__);
+				throw JExceptionDataFormat("Bad data format in ParseBuiltTriggerBank!", __FILE__, __LINE__);
 			}
 		}
 	}
@@ -882,6 +884,8 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 					cout.flush(); cerr.flush();
 					DumpBinary(&iptr[-2], iend, 32, &iptr[-1]);
 //				}
+				throw JExceptionDataFormat("Unknown bank type in EVIO", __FILE__, __LINE__);
+
 		}
 
 		iptr = iend_data_block_bank;
@@ -974,8 +978,7 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
 						_DBG_ << "CAEN1290TDC parser sees more events than CODA header! (>" << current_parsed_events.size() << ")" << endl;
 						for( auto p : events_by_event_id) cout << "id=" << p.first << endl;
 						iptr = iend;
-						exit(-1); // should we exit, or try and continue??
-						return;
+						throw JExceptionDataFormat("CAEN1290TDC parser sees more events than CODA header", __FILE__, __LINE__);
 					}
 					pe = *pe_iter++;
 					events_by_event_id[event_id] = pe;
@@ -1009,6 +1012,7 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
                 break;
             default:
                 cout << "Unknown datatype: 0x" << hex << type << " full word: "<< *iptr << dec << endl;
+					 throw JExceptionDataFormat("Unknown data type for CAEN1190", __FILE__, __LINE__);
         }
 
         iptr++;
@@ -1056,7 +1060,7 @@ void DEVIOWorkerThread::ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr
         for(uint32_t i=0; i< Nvals; i++){
             if( iptr >= iend){
                 _DBG_ << "DAQ Configuration bank corrupt! slot_mask=0x" << hex << slot_mask << dec << " Nvals="<< Nvals << endl;
-                exit(-1);
+                throw JExceptionDataFormat("Corrupt DAQ config. bank", __FILE__, __LINE__);
             }
 
             daq_param_type ptype = (daq_param_type)((*iptr)>>16);
@@ -1132,7 +1136,7 @@ void DEVIOWorkerThread::ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr
 
                 default:
                     _DBG_ << "Unknown module type: 0x" << hex << (ptype>>8) << endl;
-                    exit(-1);
+                    throw JExceptionDataFormat("Unknown module type in configuration bank", __FILE__, __LINE__);
             }
 
 
@@ -1200,6 +1204,7 @@ void DEVIOWorkerThread::ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uin
                 while(iptr<iend && ((*iptr) & 0xF8000000) != 0x88000000) iptr++; // Skip to JLab block trailer
                 iptr++; // advance past JLab block trailer
                 while(iptr<iend && *iptr == 0xF8000000) iptr++; // skip filler words after block trailer
+                throw JExceptionDataFormat("Unknown JLab module type", __FILE__, __LINE__);
                 break;
         }
 	}
@@ -1392,7 +1397,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					break;
 				default:
  					if(VERBOSE>7) cout << "      FADC250 unknown data type ("<<data_type<<")"<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
-					break;
+					throw JExceptionDataFormat("Unexpected word type in fADC125 block!", __FILE__, __LINE__);
         }
     }
 
@@ -1747,6 +1752,10 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
             case 15: // Filler (non-data) word
                 if(VERBOSE>7) cout << "      FADC125 ignored data type: " << data_type <<endl;
                 break;
+				default:
+ 					if(VERBOSE>7) cout << "      FADC125 unknown data type ("<<data_type<<")"<<" (0x"<<hex<<*iptr<<dec<<")"<<endl;
+					throw JExceptionDataFormat("Unexpected word type in fADC125 block!", __FILE__, __LINE__);
+
         }
     }
 
