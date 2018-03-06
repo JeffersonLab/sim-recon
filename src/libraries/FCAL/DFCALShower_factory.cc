@@ -84,92 +84,92 @@ DFCALShower_factory::DFCALShower_factory()
 jerror_t DFCALShower_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
  
-    // Get calibration constants
-    map<string, double> fcal_parms;
-    loop->GetCalib("FCAL/fcal_parms", fcal_parms);
-    if (fcal_parms.find("FCAL_C_EFFECTIVE")!=fcal_parms.end()){
-	FCAL_C_EFFECTIVE = fcal_parms["FCAL_C_EFFECTIVE"];
-	if(debug_level>0)jout<<"FCAL_C_EFFECTIVE = "<<FCAL_C_EFFECTIVE<<endl;
-    } else {
-	jerr<<"Unable to get FCAL_C_EFFECTIVE from FCAL/fcal_parms in Calib database!"<<endl;
-    }
+  // Get calibration constants
+  map<string, double> fcal_parms;
+  loop->GetCalib("FCAL/fcal_parms", fcal_parms);
+  if (fcal_parms.find("FCAL_C_EFFECTIVE")!=fcal_parms.end()){
+    FCAL_C_EFFECTIVE = fcal_parms["FCAL_C_EFFECTIVE"];
+    if(debug_level>0)jout<<"FCAL_C_EFFECTIVE = "<<FCAL_C_EFFECTIVE<<endl;
+  } else {
+    jerr<<"Unable to get FCAL_C_EFFECTIVE from FCAL/fcal_parms in Calib database!"<<endl;
+  }
   
-    DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-    const DGeometry *geom = dapp->GetDGeometry(runnumber);
+  DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+  const DGeometry *geom = dapp->GetDGeometry(runnumber);
     
-    if (geom) {
-	geom->GetTargetZ(m_zTarget);
-	geom->GetFCALZ(m_FCALfront);
-    }
-    else{
+  if (geom) {
+    geom->GetTargetZ(m_zTarget);
+    geom->GetFCALZ(m_FCALfront);
+  }
+  else{
       
-      cerr << "No geometry accessbile." << endl;
-      return RESOURCE_UNAVAILABLE;
-    }
+    cerr << "No geometry accessbile." << endl;
+    return RESOURCE_UNAVAILABLE;
+  }
 
-    // by default, load non-linear shower corrections from the CCDB
-    // but allow these to be overridden by command line parameters
-    if(LOAD_CCDB_CONSTANTS > 0.1) {
-	map<string, double> shower_calib_piecewise;
-	loop->GetCalib("FCAL/shower_calib_piecewise", shower_calib_piecewise);
-	cutoff_energy = shower_calib_piecewise["cutoff_energy"];
-	linfit_slope = shower_calib_piecewise["linfit_slope"];
-	linfit_intercept = shower_calib_piecewise["linfit_intercept"];
-	expfit_param1 = shower_calib_piecewise["expfit_param1"];
-	expfit_param2 = shower_calib_piecewise["expfit_param2"];
-	expfit_param3 = shower_calib_piecewise["expfit_param3"];
+  // by default, load non-linear shower corrections from the CCDB
+  // but allow these to be overridden by command line parameters
+  if(LOAD_CCDB_CONSTANTS > 0.1) {
+    map<string, double> shower_calib_piecewise;
+    loop->GetCalib("FCAL/shower_calib_piecewise", shower_calib_piecewise);
+    cutoff_energy = shower_calib_piecewise["cutoff_energy"];
+    linfit_slope = shower_calib_piecewise["linfit_slope"];
+    linfit_intercept = shower_calib_piecewise["linfit_intercept"];
+    expfit_param1 = shower_calib_piecewise["expfit_param1"];
+    expfit_param2 = shower_calib_piecewise["expfit_param2"];
+    expfit_param3 = shower_calib_piecewise["expfit_param3"];
 
-	if(debug_level>0) {
-	    jout << "cutoff_energy = " << cutoff_energy << endl;
-	    jout << "linfit_slope = " << linfit_slope << endl;
-	    jout << "linfit_intercept = " << linfit_intercept << endl;
-	    jout << "expfit_param1 = " << expfit_param1 << endl;
-	    jout << "expfit_param2 = " << expfit_param2<< endl;
-	    jout << "expfit_param3 = " << expfit_param3 << endl;
-
-	}
-    }
-
-    // Get timing correction polynomial, J. Mirabelli 10/31/17
-    if(LOAD_CCDB_CONSTANTS > 0.1) {
-      map<string,double> timing_correction;
-      loop->GetCalib("FCAL/shower_timing_correction", timing_correction); 
-      timeConst0 = timing_correction["P0"];
-      timeConst1 = timing_correction["P1"];     
-      timeConst2 = timing_correction["P2"];
-      timeConst3 = timing_correction["P3"];
-      timeConst4 = timing_correction["P4"];
-
-      if(debug_level>0) {
-
-        jout << "timeConst0 = " << timeConst0 << endl;
-        jout << "timeConst1 = " << timeConst1 << endl;
-        jout << "timeConst2 = " << timeConst2 << endl;
-        jout << "timeConst3 = " << timeConst3 << endl;
-        jout << "timeConst4 = " << timeConst4 << endl;
-      }
+    if(debug_level>0) {
+      jout << "cutoff_energy = " << cutoff_energy << endl;
+      jout << "linfit_slope = " << linfit_slope << endl;
+      jout << "linfit_intercept = " << linfit_intercept << endl;
+      jout << "expfit_param1 = " << expfit_param1 << endl;
+      jout << "expfit_param2 = " << expfit_param2<< endl;
+      jout << "expfit_param3 = " << expfit_param3 << endl;
 
     }
+  }
+
+  // Get timing correction polynomial, J. Mirabelli 10/31/17
+  if(LOAD_CCDB_CONSTANTS > 0.1) {
+    map<string,double> timing_correction;
+    loop->GetCalib("FCAL/shower_timing_correction", timing_correction); 
+    timeConst0 = timing_correction["P0"];
+    timeConst1 = timing_correction["P1"];     
+    timeConst2 = timing_correction["P2"];
+    timeConst3 = timing_correction["P3"];
+    timeConst4 = timing_correction["P4"];
+
+    if(debug_level>0) {
+
+      jout << "timeConst0 = " << timeConst0 << endl;
+      jout << "timeConst1 = " << timeConst1 << endl;
+      jout << "timeConst2 = " << timeConst2 << endl;
+      jout << "timeConst3 = " << timeConst3 << endl;
+      jout << "timeConst4 = " << timeConst4 << endl;
+    }
+
+  }
 
 	
 
 
-	jerror_t result = LoadCovarianceLookupTables();
-	if (result!=NOERROR) return result;
+  jerror_t result = LoadCovarianceLookupTables();
+  if (result!=NOERROR) return result;
 
-    return NOERROR;
+  return NOERROR;
 }
 
 
 jerror_t DFCALShower_factory::erun(void) {
-    // delete lookup tables to prevent memory leak
-	for (int i=0; i<5; i++) {
-		for (int j=0; j<=i; j++) {
-            delete CovarianceLookupTable[i][j];
-            CovarianceLookupTable[i][j] = nullptr;
-        }
+  // delete lookup tables to prevent memory leak
+  for (int i=0; i<5; i++) {
+    for (int j=0; j<=i; j++) {
+      delete CovarianceLookupTable[i][j];
+      CovarianceLookupTable[i][j] = nullptr;
     }
-    return NOERROR;
+  }
+  return NOERROR;
 }
 
 
@@ -185,6 +185,8 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
   // Use the center of the target as an approximation for the vertex position
   DVector3 vertex(0.0, 0.0, m_zTarget);
 
+  
+  
   // Loop over list of DFCALCluster objects and calculate the "Non-linear" corrected
   // energy and position for each. We'll use a logarithmic energy-weighting to 
   // find the final position and error. 
@@ -221,17 +223,17 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
       shower->setTime ( cTime );
       // shower->getClassifierOutput( 0 );   // need to set this
 
-	  FillCovarianceMatrix(shower);
-	  if (VERBOSE>2) {
-		  printf("FCAL shower:    E=%f   x=%f   y=%f   z=%f   t=%f\n",
-				 shower->getEnergy(),shower->getPosition().X(),shower->getPosition().Y(),shower->getPosition().Z(),shower->getTime());
-		  printf("FCAL shower:   dE=%f  dx=%f  dy=%f  dz=%f  dt=%f\n",
-				 shower->EErr(),shower->xErr(),shower->yErr(),shower->zErr(),shower->tErr());
-		  printf("FCAL shower:   Ex=%f  Ey=%f  Ez=%f  Et=%f  xy=%f\n",
-				 shower->EXcorr(),shower->EYcorr(),shower->EZcorr(),shower->ETcorr(),shower->XYcorr());
-		  printf("FCAL shower:   xz=%f  xt=%f  yz=%f  yt=%f  zt=%f\n",
-				 shower->XZcorr(),shower->XTcorr(),shower->YZcorr(),shower->YTcorr(),shower->ZTcorr());
-	  }
+      FillCovarianceMatrix(shower);
+      if (VERBOSE>2) {
+	printf("FCAL shower:    E=%f   x=%f   y=%f   z=%f   t=%f\n",
+	       shower->getEnergy(),shower->getPosition().X(),shower->getPosition().Y(),shower->getPosition().Z(),shower->getTime());
+	printf("FCAL shower:   dE=%f  dx=%f  dy=%f  dz=%f  dt=%f\n",
+	       shower->EErr(),shower->xErr(),shower->yErr(),shower->zErr(),shower->tErr());
+	printf("FCAL shower:   Ex=%f  Ey=%f  Ez=%f  Et=%f  xy=%f\n",
+	       shower->EXcorr(),shower->EYcorr(),shower->EZcorr(),shower->ETcorr(),shower->XYcorr());
+	printf("FCAL shower:   xz=%f  xt=%f  yz=%f  yt=%f  zt=%f\n",
+	       shower->XZcorr(),shower->XTcorr(),shower->YZcorr(),shower->YTcorr(),shower->ZTcorr());
+      }
       shower->AddAssociatedObject(cluster);
 
       _data.push_back(shower);
@@ -271,13 +273,13 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
   
   if ( Eclust <= Ecutoff ) { 
   
-  Egamma = Eclust/(A*Eclust + B); // Linear part
+    Egamma = Eclust/(A*Eclust + B); // Linear part
   
   }
   
   if ( Eclust > Ecutoff ) { 
   
-  Egamma = Eclust/(C - exp(-D*Eclust+ E)); // Non-linear part
+    Egamma = Eclust/(C - exp(-D*Eclust+ E)); // Non-linear part
   
   }
   
@@ -321,173 +323,184 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
 
 jerror_t
 DFCALShower_factory::FillCovarianceMatrix(DFCALShower *shower){
-	/// This function takes a FCALShower object and using the internal variables
-	/// overwrites any existing covaraince matrix using lookup tables.
+  /// This function takes a FCALShower object and using the internal variables
+  /// overwrites any existing covaraince matrix using lookup tables.
 
-	// Get edges of lookup table histograms (assume that all histograms have the same limits.)
-	TAxis *xaxis = CovarianceLookupTable[0][0]->GetXaxis();
-	TAxis *yaxis = CovarianceLookupTable[0][0]->GetYaxis();
-	float minElookup = xaxis->GetBinLowEdge(1);
-	float maxElookup = xaxis->GetBinUpEdge(xaxis->GetNbins());
-	float minthlookup = yaxis->GetBinLowEdge(1);
-	float maxthlookup = yaxis->GetBinUpEdge(yaxis->GetNbins());
+  // Get edges of lookup table histograms (assume that all histograms have the same limits.)
+  TAxis *xaxis = CovarianceLookupTable[0][0]->GetXaxis();
+  TAxis *yaxis = CovarianceLookupTable[0][0]->GetYaxis();
+  float minElookup = xaxis->GetBinLowEdge(1);
+  float maxElookup = xaxis->GetBinUpEdge(xaxis->GetNbins());
+  float minthlookup = yaxis->GetBinLowEdge(1);
+  float maxthlookup = yaxis->GetBinUpEdge(yaxis->GetNbins());
 
-	float shower_E = shower->getEnergy();
-	float shower_x = shower->getPosition().X();
-	float shower_y = shower->getPosition().Y();
-	float shower_z = shower->getPosition().Z();
-	float shower_r = sqrt(shower_x*shower_x + shower_y*shower_y);
-	float shower_theta = atan2(shower_r,shower_z);
-	float thlookup = shower_theta/3.14159265*180;
-	float Elookup = shower_E;
+  float shower_E = shower->getEnergy();
+  float shower_x = shower->getPosition().X();
+  float shower_y = shower->getPosition().Y();
+  float shower_z = shower->getPosition().Z();
+  float shower_r = sqrt(shower_x*shower_x + shower_y*shower_y);
+  float shower_theta = atan2(shower_r,shower_z);
+  float thlookup = shower_theta/3.14159265*180;
+  float Elookup = shower_E;
 
-	// Adjust values: in order to use Interpolate() must be within histogram range
-	if (Elookup<minElookup) Elookup=minElookup;
-	if (Elookup>maxElookup) Elookup=maxElookup-0.0001; // move below edge, on edge doesn't work.
-	if (thlookup<minthlookup) thlookup=minthlookup;
-	if (thlookup>maxthlookup) thlookup=maxthlookup-0.0001;
-	if (VERBOSE>3) printf("(%f,%F)    limits (%f,%f)  (%f,%f)\n",Elookup,thlookup,minElookup,maxElookup,minthlookup,maxthlookup);
+  // Adjust values: in order to use Interpolate() must be within histogram range
+  if (Elookup<minElookup) Elookup=minElookup;
+  if (Elookup>maxElookup) Elookup=maxElookup-0.0001; // move below edge, on edge doesn't work.
+  if (thlookup<minthlookup) thlookup=minthlookup;
+  if (thlookup>maxthlookup) thlookup=maxthlookup-0.0001;
+  if (VERBOSE>3) printf("(%f,%F)    limits (%f,%f)  (%f,%f)\n",Elookup,thlookup,minElookup,maxElookup,minthlookup,maxthlookup);
 
-	DMatrixDSym ErphiztCovariance(5);
-	for (int i=0; i<5; i++) {
-		for (int j=0; j<=i; j++) {
-			float val = CovarianceLookupTable[i][j]->Interpolate(Elookup, thlookup);
-			if (i==0 && j==0) val *= shower_E; // E variance is divided by energy in CCDB
-			ErphiztCovariance(i,j) = ErphiztCovariance(j,i) = val;
-		}
-	}
+  DMatrixDSym ErphiztCovariance(5);
+  for (int i=0; i<5; i++) {
+    for (int j=0; j<=i; j++) {
+      float val = CovarianceLookupTable[i][j]->Interpolate(Elookup, thlookup);
+      if (i==0 && j==0) val *= shower_E; // E variance is divided by energy in CCDB
+      ErphiztCovariance(i,j) = ErphiztCovariance(j,i) = val;
+    }
+  }
 
-	float shower_phi = atan2(shower_y,shower_x);
-    float cosPhi = cos(shower_phi);
-    float sinPhi = sin(shower_phi);
-	DMatrix rotationmatrix(5,5);
-	rotationmatrix(0,0) = 1;
-	rotationmatrix(3,3) = 1;
-	rotationmatrix(4,4) = 1;
-	rotationmatrix(1,1) = cosPhi;
-	rotationmatrix(1,2) = -sinPhi;
-	rotationmatrix(2,1) = sinPhi;
-	rotationmatrix(2,2) = cosPhi;
+  float shower_phi = atan2(shower_y,shower_x);
+  float cosPhi = cos(shower_phi);
+  float sinPhi = sin(shower_phi);
+  DMatrix rotationmatrix(5,5);
+  rotationmatrix(0,0) = 1;
+  rotationmatrix(3,3) = 1;
+  rotationmatrix(4,4) = 1;
+  rotationmatrix(1,1) = cosPhi;
+  rotationmatrix(1,2) = -sinPhi;
+  rotationmatrix(2,1) = sinPhi;
+  rotationmatrix(2,2) = cosPhi;
 
-	if (VERBOSE>3) {printf("(E,r,phi,z,t)  "); ErphiztCovariance.Print(); }
-	DMatrixDSym &D = ErphiztCovariance.Similarity(rotationmatrix);
-	for (int i=0; i<5; i++) {
-		for (int j=0; j<5; j++)
-			shower->ExyztCovariance(i, j) = D(i, j);
-	}
-	if (VERBOSE>2) {printf("(E,x,y,z,t)    "); shower->ExyztCovariance.Print(); }
+  if (VERBOSE>3) {printf("(E,r,phi,z,t)  "); ErphiztCovariance.Print(); }
+  DMatrixDSym &D = ErphiztCovariance.Similarity(rotationmatrix);
+  for (int i=0; i<5; i++) {
+    for (int j=0; j<5; j++)
+      shower->ExyztCovariance(i, j) = D(i, j);
+  }
+  if (VERBOSE>2) {printf("(E,x,y,z,t)    "); shower->ExyztCovariance.Print(); }
 
-	return NOERROR;
+  return NOERROR;
 }
 
 
 jerror_t
 DFCALShower_factory::LoadCovarianceLookupTables(){
-	std::thread::id this_id = std::this_thread::get_id();
-	stringstream idstring;
-	idstring << this_id;
-	if (VERBOSE>0) printf("DFCALShower_factory::LoadCovarianceLookupTables():  Thread %s\n",idstring.str().c_str());
+  std::thread::id this_id = std::this_thread::get_id();
+  stringstream idstring;
+  idstring << this_id;
+  if (VERBOSE>0) printf("DFCALShower_factory::LoadCovarianceLookupTables():  Thread %s\n",idstring.str().c_str());
 
-	bool USECCDB=0;
-	bool DUMMYTABLES=0;
-	// if filename specified try to use filename else get info from CCDB
-	if (COVARIANCEFILENAME == "") USECCDB=1;
+  bool USECCDB=0;
+  bool DUMMYTABLES=0;
+  // if filename specified try to use filename else get info from CCDB
+  if (COVARIANCEFILENAME == "") USECCDB=1;
 
-	map<string,string> covariance_data;
-	if (USECCDB) {
-		// load information for covariance matrix
-		if (eventLoop->GetJCalibration()->GetCalib("/FCAL/shower_covariance", covariance_data)) {
-			jerr << "Error loading /FCAL/shower_covariance !" << endl;
-			DUMMYTABLES=1;
-		}
-		if (covariance_data.size() == 15)  {  // there are 15 elements in the covariance matrix
-			// for example, print it all out
-			if (VERBOSE>0) {
-				for(auto element : covariance_data) {
-					cout << "\nTEST:   " << element.first << " = " << element.second << endl;
-				}
-			}
-		} else {
-			jerr << "Wrong number of elements /FCAL/shower_covariance !" << endl;
-			DUMMYTABLES=1;
-		}
+  map<string,string> covariance_data;
+  if (USECCDB) {
+    // load information for covariance matrix
+    if (eventLoop->GetJCalibration()->GetCalib("/FCAL/shower_covariance", covariance_data)) {
+      jerr << "Error loading /FCAL/shower_covariance !" << endl;
+      DUMMYTABLES=1;
+    }
+    if (covariance_data.size() == 15)  {  // there are 15 elements in the covariance matrix
+      // for example, print it all out
+      if (VERBOSE>0) {
+	for(auto element : covariance_data) {
+	  cout << "\nTEST:   " << element.first << " = " << element.second << endl;
 	}
+      }
+    } else {
+      jerr << "Wrong number of elements /FCAL/shower_covariance !" << endl;
+      DUMMYTABLES=1;
+    }
+  }
 
-	for (int i=0; i<5; i++) {
-		for (int j=0; j<=i; j++) {
+  for (int i=0; i<5; i++) {
+    for (int j=0; j<=i; j++) {
 
-			japp->RootWriteLock();
-			// change directory to memory so that histograms are not saved to file
-			TDirectory *savedir = gDirectory;
+      japp->RootWriteLock();
+      // change directory to memory so that histograms are not saved to file
+      TDirectory *savedir = gDirectory;
 
-			char histname[255];
-			sprintf(histname,"covariance_%i%i_thread%s",i,j,idstring.str().c_str());
-			// Read in string
-			ifstream ifs;
-			string line;
-			stringstream ss;
-			if (USECCDB) {
-				stringstream matrixname;
-				matrixname << "covmatrix_" << i << j;
-				if (VERBOSE>1) cout << "Using CCDB \"" << matrixname.str() << "\"  " << covariance_data[matrixname.str()] << endl;
-				ss.str(covariance_data[matrixname.str()]);
-			} else {
-				char filename[255];
-				sprintf(filename,"%s%i%i.txt",COVARIANCEFILENAME.c_str(),i,j);
-				if (VERBOSE>0) cout  << filename << std::endl;
-				ifs.open(filename);
-				if (! ifs.is_open()) {
-					jerr << " Error: Cannot open file! " << filename << std::endl;
-					DUMMYTABLES=1;
-				} else {
-					getline(ifs, line, '\n');
-					ss.str(line);
-					if (VERBOSE>1) cout << filename << " dump: " <<line<<endl;
-				}
-			}
-			if (DUMMYTABLES) {
-				// create dummy histogram since something went wrong
-				CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",10,0,12,10,0,12);
-	                        CovarianceLookupTable[i][j]->SetDirectory(nullptr);
-			} else {
-				// Parse string
-				int nxbins, nybins;
-				ss>>nxbins;
-				ss>>nybins;
-				if (VERBOSE>1) printf("parsed dump: bins (%i,%i)\n",nxbins,nybins);
-				Float_t xbins[nxbins+1];
-				Float_t ybins[nybins+1];
-				for (int count=0; count<=nxbins; count++) {
-					ss>>xbins[count];
-					if (VERBOSE>1) printf("(%i,%f)  ",count,xbins[count]);
-				}
-				if (VERBOSE>1) printf("\n");
-				for (int count=0; count<=nybins; count++) {
-					ss>>ybins[count];
-					if (VERBOSE>1) printf("(%i,%f)  ",count,ybins[count]);
-				}
-				if (VERBOSE>1) printf("\n");
-				int xbin=1;
-				double cont;
-				int ybin=1;
-				// create histogram
-				CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",nxbins,xbins,nybins,ybins);
-	                        CovarianceLookupTable[i][j]->SetDirectory(nullptr);
-				// fill histogram
-				while(ss>>cont){
-					if (VERBOSE>1) printf("(%i,%i) (%i,%i) %e  ",i,j,xbin,ybin,cont);
-					CovarianceLookupTable[i][j]->SetBinContent(xbin,ybin,cont);
-					ybin++;
-					if (ybin>nybins) { xbin++; ybin=1; }
-				}
-				if (VERBOSE>1) printf("\n");
-				// Close file
-				ifs.close();
-			}
-			savedir->cd();
-			japp->RootUnLock(); 
-		}
+      char histname[255];
+      sprintf(histname,"covariance_%i%i_thread%s",i,j,idstring.str().c_str());
+      // Read in string
+      ifstream ifs;
+      string line;
+      stringstream ss;
+      if (USECCDB) {
+	stringstream matrixname;
+	matrixname << "covmatrix_" << i << j;
+	if (VERBOSE>1) cout << "Using CCDB \"" << matrixname.str() << "\"  " << covariance_data[matrixname.str()] << endl;
+	ss.str(covariance_data[matrixname.str()]);
+      } else {
+	char filename[255];
+	sprintf(filename,"%s%i%i.txt",COVARIANCEFILENAME.c_str(),i,j);
+	if (VERBOSE>0) cout  << filename << std::endl;
+	ifs.open(filename);
+	if (! ifs.is_open()) {
+	  jerr << " Error: Cannot open file! " << filename << std::endl;
+	  DUMMYTABLES=1;
+	} else {
+	  getline(ifs, line, '\n');
+	  ss.str(line);
+	  if (VERBOSE>1) cout << filename << " dump: " <<line<<endl;
 	}
-	return NOERROR;
+      }
+      if (DUMMYTABLES) {
+	// create dummy histogram since something went wrong
+	CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",10,0,12,10,0,12);
+	CovarianceLookupTable[i][j]->SetDirectory(nullptr);
+      } else {
+	// Parse string
+	int nxbins, nybins;
+	ss>>nxbins;
+	ss>>nybins;
+	if (VERBOSE>1) printf("parsed dump: bins (%i,%i)\n",nxbins,nybins);
+	Float_t xbins[nxbins+1];
+	Float_t ybins[nybins+1];
+	for (int count=0; count<=nxbins; count++) {
+	  ss>>xbins[count];
+	  if (VERBOSE>1) printf("(%i,%f)  ",count,xbins[count]);
+	}
+	if (VERBOSE>1) printf("\n");
+	for (int count=0; count<=nybins; count++) {
+	  ss>>ybins[count];
+	  if (VERBOSE>1) printf("(%i,%f)  ",count,ybins[count]);
+	}
+	if (VERBOSE>1) printf("\n");
+	int xbin=1;
+	double cont;
+	int ybin=1;
+	// create histogram
+	CovarianceLookupTable[i][j] = new TH2F(histname,"Covariance histogram",nxbins,xbins,nybins,ybins);
+	CovarianceLookupTable[i][j]->SetDirectory(nullptr);
+	// fill histogram
+	while(ss>>cont){
+	  if (VERBOSE>1) printf("(%i,%i) (%i,%i) %e  ",i,j,xbin,ybin,cont);
+	  CovarianceLookupTable[i][j]->SetBinContent(xbin,ybin,cont);
+	  ybin++;
+	  if (ybin>nybins) { xbin++; ybin=1; }
+	}
+	if (VERBOSE>1) printf("\n");
+	// Close file
+	ifs.close();
+      }
+      savedir->cd();
+      japp->RootUnLock(); 
+    }
+  }
+  return NOERROR;
+}
+
+double
+DFCALShower_factor::getQuality( const DFCALShower& shower ){
+
+  vector< const DFCALCluster* > clusterVec;
+  shower->Get( clusterVec );
+  const DFCALCluster* cluster = clusterVec[0];
+ 
+   
+
 }
 
