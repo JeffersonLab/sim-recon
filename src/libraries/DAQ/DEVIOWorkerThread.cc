@@ -12,6 +12,7 @@
 #include "LinkAssociations.h"
 
 #include <swap_bank.h>
+#include <DANA/JExceptionDataFormat.h>
 
 using namespace std;
 using namespace std::chrono;
@@ -110,12 +111,20 @@ void DEVIOWorkerThread::Run(void)
 			
 			if( !current_parsed_events.empty() ) PublishEvents();
             
+		} catch( JExceptionDataFormat &e ){
+			for(auto pe : parsed_event_pool) delete pe; // delete all parsed events any any objects they hold
+			parsed_event_pool.clear();
+			current_parsed_events.clear(); // (these are also in parsed_event_pool so were already deleted)
+			jerr << "Data format error exception caught" << endl;
+			jerr << "Stack trace follows:" << endl;
+			jerr << e.getStackTrace() << endl;
+			japp->Quit(10);
 		} catch (exception &e) {
 			jerr << e.what() << endl;
 			for(auto pe : parsed_event_pool) delete pe; // delete all parsed events any any objects they hold
 			parsed_event_pool.clear();
 			current_parsed_events.clear(); // (these are also in parsed_event_pool so were already deleted)
-			//exit(-1);
+			japp->Quit(-1);
 		}
 		
 		// Reset and mark us as available for use
@@ -1907,7 +1916,7 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 					cerr<<endl;
 					if(iiptr > (iptr+4)) break;
 				}
-				throw JException("Unexpected word type in F1TDC block!", __FILE__, __LINE__);
+				throw JExceptionDataFormat("Unexpected word type in F1TDC block!", __FILE__, __LINE__);
 				break;
 		}
 	}	
