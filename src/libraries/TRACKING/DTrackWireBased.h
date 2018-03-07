@@ -46,6 +46,7 @@ class DTrackWireBased:public DTrackingData{
 inline bool DTrackWireBased::GetProjection(DetectorSystem_t detector,
 					   DVector3 &pos,
 					   DVector3 *mom,double *t) const{
+ 
   if (detector>SYS_BCAL && extrapolations.at(detector).size()>0){
     DTrackFitter::Extrapolation_t extrapolation=extrapolations.at(detector)[0];
     pos=extrapolation.position;
@@ -57,8 +58,14 @@ inline bool DTrackWireBased::GetProjection(DetectorSystem_t detector,
     }
     return true;
   }
-
-  
+  // Set defaults that are clearly unreasonable, since the projection did not work! 
+  pos.SetXYZ(0.,0.,-100.);
+  if (mom){
+    mom->SetXYZ(0.,0.,0.);
+  }
+  if (t){
+    *t=-1000.;
+  }  
   return false;
 }
 

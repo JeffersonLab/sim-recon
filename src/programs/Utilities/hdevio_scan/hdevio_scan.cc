@@ -33,6 +33,7 @@ bool   GENERATE_ERROR_REPORT = false;
 string ROOT_FILENAME = "hdevio_scan.root";
 string MAP_FILENAME = "";
 uint64_t MAX_EVIO_EVENTS = 20000;
+uint64_t SKIP_EVIO_EVENTS = 0;
 uint32_t BLOCK_SIZE = 20; // used for daq_block_size histogram
 uint32_t MAX_HISTORY_BUFF_SIZE = 400;
 
@@ -62,19 +63,24 @@ void Usage(string mess="")
 	cout <<"    hdevio [options] file.evio [file2.evio ...]" << endl;
 	cout << endl;
 	cout << "options:" << endl;
-	cout << "   -h, --help    Print this usage statement" << endl;
-	cout << "   -w            Make histogram of population by word type" << endl;
-	cout << "   -r file.root  Set name of ROOT file to save histo to. " << endl;
-	cout << "                 (implies -w)" << endl;
-	cout << "   -m max_events Max. EVIO events (not physics events) to process." << endl;
-	cout << "   -b block_size EVIO events to add for daq_block_size histo." << endl;
-	cout << "   -e            Write details of bad event tag location to file" << endl;
-	cout << "   -n max_buff   Max. events to keep timing info for (only valid)" << endl;
-	cout << "                 with -w option)" << endl;
-	cout << "   -s            Save file block/event map" << endl;
-	cout << "   -blocksonly   Save only block map not events. (Only use with -s)" << endl;
-	cout << "   -f file.map   Set name of file to save block/event to. " << endl;
-	cout << "                 (implies -s)" << endl;
+	cout << "   -h, --help        Print this usage statement" << endl;
+	cout << "   -w                Make histogram of population by word type" << endl;
+	cout << "   -r file.root      Set name of ROOT file to save histo to. " << endl;
+	cout << "                     (implies -w)" << endl;
+	cout << "   -m max_events     Max. EVIO events (not physics events) to process." << endl;
+	cout << "   -i ignore_events  Num. EVIO events (not physics events) to ignore at start." << endl;
+	cout << "   -b block_size     EVIO events to add for daq_block_size histo." << endl;
+	cout << "   -e                Write details of bad event tag location to file" << endl;
+	cout << "   -n max_buff       Max. events to keep timing info for (only valid)" << endl;
+	cout << "                     with -w option)" << endl;
+	cout << "   -s                Save file block/event map" << endl;
+	cout << "   -blocksonly       Save only block map not events. (Only use with -s)" << endl;
+	cout << "   -f file.map       Set name of file to save block/event to. " << endl;
+	cout << "                     (implies -s)" << endl;
+	cout << endl;
+	cout << "n.b. When using the -i (ignore) flag, the total number of events" << endl;
+	cout << "     read in will be the sum of how many are ignored and the \"max\"" << endl;
+	cout << "     events with only the last max_events being processed." << endl;
 	cout << endl;
 
 	if(mess != "") cout << endl << mess << endl << endl;
@@ -97,6 +103,7 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		if(arg == "-h" || arg == "--help") Usage();
 		else if(arg == "-w"){ MAP_WORDS = true; PRINT_SUMMARY = false; }
 		else if(arg == "-r"){ MAP_WORDS = true; PRINT_SUMMARY = false; ROOT_FILENAME = next; i++;}
+		else if(arg == "-i"){ SKIP_EVIO_EVENTS = atoi(next.c_str()); i++;}
 		else if(arg == "-m"){ MAX_EVIO_EVENTS = atoi(next.c_str()); i++;}
 		else if(arg == "-b"){ BLOCK_SIZE = atoi(next.c_str()); i++;}
 		else if(arg == "-e"){ GENERATE_ERROR_REPORT = true; }
@@ -239,7 +246,7 @@ void MapEVIOWords(void)
 			hdevio->readNoFileBuff(buff, buff_len);
 			switch(hdevio->err_code){
 				case HDEVIO::HDEVIO_OK:
-					mapevio.ParseEvent(buff);
+					if( Nevents>= SKIP_EVIO_EVENTS ) mapevio.ParseEvent(buff);
 					break;
 				case HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL:
 					buff_len = hdevio->last_event_len;
@@ -262,7 +269,7 @@ void MapEVIOWords(void)
 				int percent_done = (100*Nevents)/MAX_EVIO_EVENTS;
 				cout << " " << Nevents << "/" << MAX_EVIO_EVENTS << " (" << percent_done << "%) processed       \r"; cout.flush();
 			}
-			if(Nevents>MAX_EVIO_EVENTS) break;
+			if( Nevents > (SKIP_EVIO_EVENTS+MAX_EVIO_EVENTS) ) break;
 		}
 		cout << endl;
 

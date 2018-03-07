@@ -91,33 +91,16 @@ DParticleID::DParticleID(JEventLoop *loop)
 	}
 
 
-	//Get calibration constants
-	map<string, double> locPIDParams;
-	if(!loop->GetCalib("PID/photon_track_matching", locPIDParams))
-	{
-		static bool printed_message = false;
-		if(!printed_message){
-			printed_message = true;
-			cout<<"DParticleID: loading values from PID data base"<<endl;
-		}
-		DELTA_R_FCAL = locPIDParams["DELTA_R_FCAL"];
-	}
-	else
-	{
-		cout << "DParticleID: Error loading values from PID data base" <<endl;
-		DELTA_R_FCAL = 15.0;
-	}
-
 	//IF YOU CHANGE THESE, PLEASE (!!) UPDATE THE CUT LINES DRAWN FOR THE MONITORING IN:
 	// src/plugins/Analysis/monitoring_hists/HistMacro_Matching_*.C
 
-	FCAL_CUT_PAR1=4.5;
+	FCAL_CUT_PAR1=2.75;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR1",FCAL_CUT_PAR1);
 
-	FCAL_CUT_PAR2=0.0;
+	FCAL_CUT_PAR2=0.5;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR2",FCAL_CUT_PAR2);
 	
-	FCAL_CUT_PAR3=0.0044;
+	FCAL_CUT_PAR3=0.002;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR3",FCAL_CUT_PAR3);
 
 	TOF_CUT_PAR1 = 1.1;

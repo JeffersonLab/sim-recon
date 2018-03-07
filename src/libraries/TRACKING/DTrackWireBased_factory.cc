@@ -212,22 +212,23 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber
    dTOFz*=0.5;  // mid plane between tof planes
    
     // Get start counter geometry;
-   geom->GetStartCounterGeom(sc_pos,sc_norm);
-   // Create vector of direction vectors in scintillator planes
-   for (int i=0;i<30;i++){
-     vector<DVector3>temp;
-     for (unsigned int j=0;j<sc_pos[i].size()-1;j++){
-       double dx=sc_pos[i][j+1].x()-sc_pos[i][j].x();
-       double dy=sc_pos[i][j+1].y()-sc_pos[i][j].y();
-       double dz=sc_pos[i][j+1].z()-sc_pos[i][j].z();
-       temp.push_back(DVector3(dx/dz,dy/dz,1.));
-     }
+   if (geom->GetStartCounterGeom(sc_pos,sc_norm)){
+     // Create vector of direction vectors in scintillator planes
+     for (int i=0;i<30;i++){
+       vector<DVector3>temp;
+       for (unsigned int j=0;j<sc_pos[i].size()-1;j++){
+	 double dx=sc_pos[i][j+1].x()-sc_pos[i][j].x();
+	 double dy=sc_pos[i][j+1].y()-sc_pos[i][j].y();
+	 double dz=sc_pos[i][j+1].z()-sc_pos[i][j].z();
+	 temp.push_back(DVector3(dx/dz,dy/dz,1.));
+       }
      sc_dir.push_back(temp);
+     }
+     SC_END_NOSE_Z=sc_pos[0][12].z();
+     SC_BARREL_R=sc_pos[0][0].Perp();
+     SC_PHI_SECTOR1=sc_pos[0][0].Phi();
    }
-   SC_END_NOSE_Z=sc_pos[0][12].z();
-   SC_BARREL_R=sc_pos[0][0].Perp();
-   SC_PHI_SECTOR1=sc_pos[0][0].Phi();
-   
+
    return NOERROR;
 }
 
@@ -319,6 +320,12 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	 s=diff.Mag();
 	 t=s/29.98;
 	 track->extrapolations[SYS_FCAL].push_back(DTrackFitter::Extrapolation_t(pos,dir,t,s));  
+	 // extrapolate to exit of FCAL
+	 diff=((dFCALz+45.-z0)/uz)*dir;
+	 pos=pos0+diff;
+	 s=diff.Mag();
+	 t=s/29.98;
+	 track->extrapolations[SYS_FCAL].push_back(DTrackFitter::Extrapolation_t(pos,dir,t,s));
 	  
 	 // Extrapolate to Start Counter and BCAL
 	 double R=pos0.Perp();
@@ -332,7 +339,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	   t=s/29.98;
 	   //	   printf("R %f z %f\n",R,z);
 	   // start counter
-	   if (R<SC_BARREL_R && z<SC_END_NOSE_Z){
+	   if (sc_pos.empty()==false && R<SC_BARREL_R && z<SC_END_NOSE_Z){
 	     double d_old=1000.,d=1000.;
 	     unsigned int index=0;
 	     for (unsigned int m=0;m<12;m++){
