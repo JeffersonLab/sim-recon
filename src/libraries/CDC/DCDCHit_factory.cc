@@ -69,6 +69,18 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     Nrings = Nstraws.size();
 
     /// Read in calibration constants
+
+    vector<double> cdc_timing_cuts;
+    if (eventLoop->GetCalib("/CDC/timing_cut", cdc_timing_cuts)){
+      LowTCut = -60.;
+      HighTCut = 900.;
+      jout << "Error loading /CDC/timing_cut ! set defaul values -60. and 900." << endl;
+    } else {
+      LowTCut = cdc_timing_cuts[0];
+      HighTCut = cdc_timing_cuts[1];
+      jout<<"CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
+    }
+
     vector<double> raw_gains;
     vector<double> raw_pedestals;
     vector<double> raw_time_offsets;
@@ -196,10 +208,10 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             throw JException(str);
         }
         if ( (straw < 1) || (straw > (int)Nstraws[ring-1])) {
-            sprintf(str, "DCDCDigiHit straw out of range!"
-                    " straw=%d for ring=%d (should be 1-%d)",
-                    straw, ring, Nstraws[ring-1]);
-            throw JException(str);
+	  sprintf(str, "DCDCDigiHit straw out of range!"
+		  " straw=%d for ring=%d (should be 1-%d)",
+		  straw, ring, Nstraws[ring-1]);
+	  throw JException(str);
         }
 
 
@@ -276,6 +288,12 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         if (q < DIGI_THRESHOLD) 
             continue;
+
+	// apply timing cut
+	if ( (t<LowTCut) || (t>HighTCut) ){
+	  continue;
+	}
+
 
         DCDCHit *hit = new DCDCHit;
         hit->ring  = ring;
