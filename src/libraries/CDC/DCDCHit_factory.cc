@@ -257,9 +257,8 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     /// end of echo filter setup
 
+    char str[256];
 
-
-       char str[256];
     for (unsigned int i=0; i < digihits.size(); i++) {
 
         if (badhit[i]) continue;    //NSJ echo filter
@@ -369,8 +368,8 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         //        if (t > 745.0) continue; 
 
         // tighter cut on approx ~ 2 * background hits in time histo
-	        if (t < -32.0) continue;
-	        if (t > 610.0) continue; 
+	//	        if (t < -32.0) continue;
+	//	        if (t > 610.0) continue; 
 
         DCDCHit *hit = new DCDCHit;
         hit->ring  = ring;
