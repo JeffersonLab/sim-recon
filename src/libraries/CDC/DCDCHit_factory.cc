@@ -69,6 +69,18 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     Nrings = Nstraws.size();
 
     /// Read in calibration constants
+
+    vector<double> cdc_timing_cuts;
+    if (eventLoop->GetCalib("/CDC/timing_cut", cdc_timing_cuts)){
+       LowTCut = -60.;
+       HighTCut = 900.;
+       jout << "Error loading /CDC/timing_cut ! set defaul values -60. and 900." << endl;
+    } else {
+      LowTCut = cdc_timing_cuts[0];
+      HighTCut = cdc_timing_cuts[1];
+      jout<<"CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
+    }    
+
     vector<double> raw_gains;
     vector<double> raw_pedestals;
     vector<double> raw_time_offsets;
@@ -180,8 +192,78 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     vector<const DCDCDigiHit*> digihits;
     loop->Get(digihits);
-    char str[256];
+
+
+    /// NSJ and here's adding to the mess - try to remove electronic echo pulses
+
+    unsigned int hvbhits[180][200] = {0};  
+ 
+// [hvb,sample]  hvb index number.  15 slots * 3 boards * 4 rocs.  There are 179 in use. 
+// sample is le_time / 10 (don't need the precision)
+
+              
+    bool badhit[3522] = {0}; // use this to flag hits to be ignored
+
     for (unsigned int i=0; i < digihits.size(); i++) {
+        const DCDCDigiHit *digihit = digihits[i];
+        const Df125CDCPulse *cp = NULL;
+        digihit->GetSingle(cp);
+        if (!cp) continue;
+
+        unsigned int hvb = (cp->rocid-25)*15*3 + (cp->slot-3)*3;
+        if (cp->channel > 23) hvb++;
+        if (cp->channel > 47) hvb++;
+ 
+        if (hvb>179) continue; //shouldn't happen
+
+        // time sample number
+        unsigned int tindex = (unsigned int)(0.1*cp->le_time);
+
+        // if there are 2 hits on the same hvb in the same time sample, ignore the smaller amplitude hit
+        if (!hvbhits[hvb][tindex]) {
+          hvbhits[hvb][tindex] = i;
+        } else {
+
+          unsigned int previous = hvbhits[hvb][tindex];
+          const DCDCDigiHit *digihitprevious = digihits[previous];
+          if (digihits[i]->pulse_peak > digihitprevious->pulse_peak) {   //skip pedestal subtraction 
+            hvbhits[hvb][tindex] = i;  //skip pedestal subtraction 
+            badhit[previous] = 1;
+          } else {
+            badhit[i] = 1;
+          }
+        }
+    }  
+
+    //for each board, look for times 3 samples apart & callously reject the smaller amplitude one
+
+    for (unsigned int hvb = 0; hvb<180; hvb++) {
+      for (unsigned int tindex=3; tindex<200; tindex++) {
+
+        if ((hvbhits[hvb][tindex] > 0) && (hvbhits[hvb][tindex-3] > 0)) {   
+
+          unsigned int thishitnum = hvbhits[hvb][tindex];
+          unsigned int prevhitnum = hvbhits[hvb][tindex-3];
+          const DCDCDigiHit *thishit = digihits[thishitnum];
+          const DCDCDigiHit *previoushit = digihits[prevhitnum];
+
+          if (previoushit->pulse_peak > thishit->pulse_peak) badhit[thishitnum] = 1;    // skip pedestal subtraction
+          
+        }
+      }
+
+    }
+    
+
+    /// end of echo filter setup
+
+
+
+       char str[256];
+    for (unsigned int i=0; i < digihits.size(); i++) {
+
+        if (badhit[i]) continue;    //NSJ echo filter
+
         const DCDCDigiHit *digihit = digihits[i];
 
         if ( (digihit->QF & 0x1) != 0 ) continue; // Cut bad timing quality factor hits... (should check effect on efficiency)
@@ -277,13 +359,18 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         if (q < DIGI_THRESHOLD) 
             continue;
 
+	// apply timing cut
+	if ( (t<LowTCut) || (t>HighTCut) ){
+	  continue;
+	} 
+
         //** NSJ trim time window at both ends ** 
 	//        if (t < -60.0) continue;
         //        if (t > 745.0) continue; 
 
         // tighter cut on approx ~ 2 * background hits in time histo
-        if (t < -32.0) continue;
-        if (t > 610.0) continue; 
+	        if (t < -32.0) continue;
+	        if (t > 610.0) continue; 
 
         DCDCHit *hit = new DCDCHit;
         hit->ring  = ring;
