@@ -15,6 +15,7 @@ using namespace std;
 #include "HDGEOMETRY/DGeometry.h"
 #include "TTAB/DTranslationTable.h"
 #include "DCDCHit.h"
+#include "DAQ/Df125CDCPulse.h"
 
 // store constants indexed by ring/straw number
 typedef  vector< vector<double> >  cdc_digi_constants_t;
@@ -24,6 +25,10 @@ class DCDCHit_factory:public jana::JFactory<DCDCHit>{
 	public:
 		DCDCHit_factory(){};
 		~DCDCHit_factory(){};
+
+		// timing cut limits
+		double LowTCut;
+		double HighTCut;
 
 		// overall scale factors.
 		double a_scale;
