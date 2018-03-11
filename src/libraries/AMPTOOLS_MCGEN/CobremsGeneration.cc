@@ -112,7 +112,7 @@ void CobremsGeneration::setTargetCrystal(std::string crystal)
       fTargetCrystal.Z = 6;
       fTargetCrystal.A = 12.01;
       fTargetCrystal.density = 3.534; // g/cm^3
-      fTargetCrystal.lattice_constant = 3.56e-10; // m
+      fTargetCrystal.lattice_constant = 3.5668e-10; // m
       fTargetCrystal.Debye_Waller_const = 0.40e9; // 1/GeV^2
    }
    else if (crystal == "silicon") {
