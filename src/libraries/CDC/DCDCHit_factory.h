@@ -24,7 +24,9 @@ class DCDCHit_factory:public jana::JFactory<DCDCHit>{
 	public:
 		DCDCHit_factory(){};
 		~DCDCHit_factory(){};
-
+		// timing cut limits
+		double LowTCut;
+		double HighTCut;
 		// overall scale factors.
 		double a_scale;
 		double t_scale;

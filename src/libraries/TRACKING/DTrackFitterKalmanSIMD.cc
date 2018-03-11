@@ -291,22 +291,23 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    dTOFz*=0.5;  // mid plane between tof planes
    
    // Get start counter geometry;
-   geom->GetStartCounterGeom(sc_pos,sc_norm);
-   // Create vector of direction vectors in scintillator planes
-   for (int i=0;i<30;i++){
-     vector<DVector3>temp;
-     for (unsigned int j=0;j<sc_pos[i].size()-1;j++){
-       double dx=sc_pos[i][j+1].x()-sc_pos[i][j].x();
-       double dy=sc_pos[i][j+1].y()-sc_pos[i][j].y();
-       double dz=sc_pos[i][j+1].z()-sc_pos[i][j].z();
-       temp.push_back(DVector3(dx/dz,dy/dz,1.));
+   if (geom->GetStartCounterGeom(sc_pos, sc_norm)){
+     // Create vector of direction vectors in scintillator planes
+     for (int i=0;i<30;i++){
+       vector<DVector3>temp;
+       for (unsigned int j=0;j<sc_pos[i].size()-1;j++){
+	 double dx=sc_pos[i][j+1].x()-sc_pos[i][j].x();
+	 double dy=sc_pos[i][j+1].y()-sc_pos[i][j].y();
+	 double dz=sc_pos[i][j+1].z()-sc_pos[i][j].z();
+	 temp.push_back(DVector3(dx/dz,dy/dz,1.));
+       }
+       sc_dir.push_back(temp);
      }
-     sc_dir.push_back(temp);
+     SC_END_NOSE_Z=sc_pos[0][12].z();
+     SC_BARREL_R2=sc_pos[0][0].Perp2();
+     SC_PHI_SECTOR1=sc_pos[0][0].Phi();
    }
-   SC_END_NOSE_Z=sc_pos[0][12].z();
-   SC_BARREL_R2=sc_pos[0][0].Perp2();
-   SC_PHI_SECTOR1=sc_pos[0][0].Phi();
-   
+
    // Get z positions of fdc wire planes
    geom->GetFDCZ(fdc_z_wires);
 
@@ -863,16 +864,17 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
          //Dump pulls
          for (unsigned int iPull = 0; iPull < pulls.size(); iPull++){
             if (pulls[iPull].cdc_hit != NULL){
-               _DBG_ << " ring: " <<  pulls[iPull].cdc_hit->wire->ring
-                  << " straw: " << pulls[iPull].cdc_hit->wire->straw  
-                  << " Residual: " << pulls[iPull].resi
-                  << " Err: " << pulls[iPull].err
-                  << " tdrift: " << pulls[iPull].tdrift
-                  << " doca: " << pulls[iPull].d
-                  << " docaphi: " << pulls[iPull].docaphi
-                  << " z: " << pulls[iPull].z
-                  << " tcorr: " << pulls[iPull].tcorr 
-                  << endl;
+	      _DBG_ << " ring: " <<  pulls[iPull].cdc_hit->wire->ring
+		    << " straw: " << pulls[iPull].cdc_hit->wire->straw  
+		    << " Residual: " << pulls[iPull].resi
+		    << " Err: " << pulls[iPull].err
+		    << " tdrift: " << pulls[iPull].tdrift
+		    << " doca: " << pulls[iPull].d
+		    << " docaphi: " << pulls[iPull].docaphi
+		    << " z: " << pulls[iPull].z
+		    << " cos(theta_rel): " << pulls[iPull].cosThetaRel
+		    << " tcorr: " << pulls[iPull].tcorr 
+		    << endl;
             }
          }
       }
@@ -888,7 +890,6 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
             errMatrix(i,j)=fcov[i][j];
          }
       }
-
       if (FORWARD_PARMS_COV){
          fit_params.setForwardParmFlag(true);    
          fit_params.setTrackingStateVector(x_,y_,tx_,ty_,q_over_p_);
@@ -902,7 +903,6 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
 
          // Compute and fill the error matrix needed for kinematic fitting
          fit_params.setErrorMatrix(Get7x7ErrorMatrix(errMatrix));
-
       }
    }
    else if (cov.size()!=0){
@@ -1827,7 +1827,8 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX
 	  || fabs(S(state_tx))>TAN_MAX
 	  || fabs(S(state_ty))>TAN_MAX
-	  || S(state_x)*S(state_x)+S(state_y)*S(state_y)>50.*50.
+	  || S(state_x)*S(state_x)+S(state_y)*S(state_y)>50.*50.  
+	  || z>400. || z<Z_MIN
          ){
          break;
       }
@@ -1840,6 +1841,7 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
 	       || fabs(S(state_tx))>TAN_MAX
 	       || fabs(S(state_ty))>TAN_MAX  
 	       || S(state_x)*S(state_x)+S(state_y)*S(state_y)>50.*50.
+	       || z>400. || z< Z_MIN
                ){
                break;
             }
@@ -7128,14 +7130,14 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
          Clast=C;	 
          last_z=z_;
 
-         forward_pulls.clear();
+	 IsSmoothed=false;
          if(fit_type==kTimeBased){
+	   forward_pulls.clear();
 	   if (SmoothForward(forward_pulls) == NOERROR){
 	     IsSmoothed = true;
 	   }
 	   last_forward_pulls.assign(forward_pulls.begin(),forward_pulls.end());
 	 }
-         else  IsSmoothed = false; 
 
 	 // Source for t0 guess
 	 mT0Detector=SYS_CDC; 
@@ -7400,14 +7402,14 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
                || fabs(new_reduced_chisq-old_reduced_chisq)<CHISQ_DELTA) break;
 
          // Run the smoother
-         cdc_pulls.clear();
+	 IsSmoothed=false;
          if(fit_type==kTimeBased){
+	   cdc_pulls.clear();
 	   if (SmoothForwardCDC(cdc_pulls) == NOERROR){
 	     IsSmoothed = true;
 	   }
 	   last_cdc_pulls.assign(cdc_pulls.begin(),cdc_pulls.end());
 	 }
-         else IsSmoothed = false; 
 
 	 // source for t0 guess
 	 mT0Detector=SYS_CDC; 
@@ -7661,14 +7663,14 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
          last_ndf=my_ndf;
 
          // Run smoother and fill pulls vector
-         cdc_pulls.clear();
+	 IsSmoothed=false;
          if(fit_type==kTimeBased){
+	   cdc_pulls.clear();
 	   if (SmoothCentral(cdc_pulls) == NOERROR){
 	     IsSmoothed = true;
 	   }
 	   last_cdc_pulls.assign(cdc_pulls.begin(),cdc_pulls.end()); 
 	 }
-         else IsSmoothed = false;
 
 	 // source for t0 guess
 	 mT0Detector=SYS_CDC;
@@ -8016,13 +8018,17 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(vector<pull_t>&forward_pulls){
                      <<endl;
                }
 
+	       double scale=1./sqrt(1.+tx*tx+ty*ty);
+	       double cosThetaRel=my_fdchits[id]->hit->wire->udir.Dot(DVector3(scale*tx,scale*ty,scale));
                DTrackFitter::pull_t thisPull = pull_t(resi_a,sqrt(V(0,0)),
-                     forward_traj[m].s,
-                     fdc_updates[id].tdrift,
-                     fdc_updates[id].doca,
-                     NULL,my_fdchits[id]->hit,0.,
-                     forward_traj[m].z,0.,
-                     resi,sqrt(V(1,1)));
+						      forward_traj[m].s,
+						      fdc_updates[id].tdrift,
+						      fdc_updates[id].doca,
+						      NULL,my_fdchits[id]->hit,
+						      0.,
+						      forward_traj[m].z,
+						      cosThetaRel,0.,
+						      resi,sqrt(V(1,1)));
                thisPull.AddTrackDerivatives(alignmentDerivatives);
                forward_pulls.push_back(thisPull);
             }
@@ -8113,8 +8119,8 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(vector<pull_t>&cdc_pulls){
             }
             if (!Cs.IsPosDef()){
                if (DEBUG_LEVEL>5){
-		 cout /*      _DBG_ */<< "Covariance Matrix not PosDef... Ckk dC A" << endl;
-                  cdc_updates[id].C.Print(); dC.Print(); A.Print();
+		 _DBG_ << "Covariance Matrix not PosDef... Ckk dC A" << endl;
+		 cdc_updates[id].C.Print(); dC.Print(); A.Print();
                }
                return VALUE_OUT_OF_RANGE;
             }
@@ -8450,15 +8456,21 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(vector<pull_t>&cdc_pulls){
 
             if (DEBUG_LEVEL>1 && (!isfinite(VRes) || VRes < 0.0) ) _DBG_ << " SmoothCentral Problem: VRes is " << VRes << " = " << Vhit << " - " << Vtrack << endl;
 
+	    double lambda=atan(Ss(state_tanl));
+	    double sinl=sin(lambda);
+	    double cosl=cos(lambda);
+	    double cosThetaRel=my_cdchits[id]->hit->wire->udir.Dot(DVector3(cosphi*cosl,
+								 sinphi*cosl,
+								 sinl));
             pull_t thisPull(cdc_updates[id].doca-d,sqrt(VRes),
-                  central_traj[m].s,cdc_updates[id].tdrift,
-                  d,my_cdchits[id]->hit,NULL,
-                  diff.Phi(),myS(state_z),
-                  cdc_updates[id].tcorr);
+			    central_traj[m].s,cdc_updates[id].tdrift,
+			    d,my_cdchits[id]->hit,NULL,
+			    diff.Phi(),myS(state_z),cosThetaRel,
+			    cdc_updates[id].tcorr);
 
             thisPull.AddTrackDerivatives(alignmentDerivatives);
             cdc_pulls.push_back(thisPull);
-         }
+	 }
          else{
 	   A=central_traj[m].Ckk*JT*C.InvertSym();
 	   Ss=central_traj[m].Skk+A*(Ss-S);
@@ -8870,8 +8882,13 @@ jerror_t DTrackFitterKalmanSIMD::FillPullsVectorEntry(const DMatrix5x1 &Ss,
 
    if (DEBUG_LEVEL>1 && (!isfinite(V) || V < 0.0) ) _DBG_ << " Problem: V is " << V << endl;
 
+   double tx=Ss(state_tx);
+   double ty=Ss(state_ty);
+   double scale=1./sqrt(1.+tx*tx+ty*ty);
+   double cosThetaRel=hit->hit->wire->udir.Dot(DVector3(scale*tx,scale*ty,scale));
+
    pull_t thisPull(update.doca-d,sqrt(V),traj.s,update.tdrift,d,hit->hit,
-         NULL,diff.Phi(),new_z,update.tcorr);
+		   NULL,diff.Phi(),new_z,cosThetaRel,update.tcorr);
    thisPull.AddTrackDerivatives(alignmentDerivatives);
    my_pulls.push_back(thisPull);
    return NOERROR;
@@ -9117,7 +9134,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
   unsigned int index_beyond_start_counter=inner_index;
   DMatrix5x1 S=forward_traj[inner_index].S;
   bool intersected_start_counter=false;
-  if (S(state_x)*S(state_x)+S(state_y)*S(state_y)<SC_BARREL_R2
+  if (sc_norm.empty()==false
+      && S(state_x)*S(state_x)+S(state_y)*S(state_y)<SC_BARREL_R2
       && forward_traj[inner_index].z<SC_END_NOSE_Z){
     double d_old=1000.,d=1000.,z=0.;
     unsigned int index=0;
@@ -9499,7 +9517,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   unsigned int index_beyond_start_counter=inner_index;
   DVector2 xy=central_traj[inner_index].xy;
   DMatrix5x1 S=central_traj[inner_index].S;
-  if (xy.Mod2()<SC_BARREL_R2&& S(state_z)<SC_END_NOSE_Z){ 
+  if (sc_norm.empty()==false
+      &&xy.Mod2()<SC_BARREL_R2&& S(state_z)<SC_END_NOSE_Z){ 
     double d_old=1000.,d=1000.,z=0.;
     unsigned int index=0;
     for (unsigned int m=0;m<12;m++){
