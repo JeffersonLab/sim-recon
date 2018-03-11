@@ -1,0 +1,26 @@
+
+
+These translators existed in the sim-recon base for many years until
+they were retired in March 2017 as part of a clean up effort to remove
+unused or obsolete code.
+
+They have been reinstated in Feb. 2018 since a use case emerged that
+could make use of them. Note that the itape conversion programs were 
+not resurrected.
+
+Note also that these make use of cernlib and so are implmented as an
+optional build. 
+
+
+Below is the original README file contents
+--------------------------------------------------------------
+
+See CVS package HDMS_mcfast/README for more
+details. This package is used by mcfast.
+
+To make the translators:
+	% make all
+This will make 4 executables: ascii2stdhep itape2stdhep
+stdhep2ascii stdhep2itape
+
+Install these files in your path.

@@ -99,7 +99,7 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		TH2I *digihits_trig1;
 		TH2I *digihits_trig3;
 		TH2I *digihits_trig4;
-		TH2I *digihits_scale_factors;
+		TH1F *digihits_scale_factors;
 
 
 	private:
