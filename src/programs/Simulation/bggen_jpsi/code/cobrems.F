@@ -21,7 +21,7 @@ C #define vector real
       alpha=7.297e-3    !fine structure constant
       hbarc=1.97e-16    !Planck's constant * speed of light (GeV m)
       Z=6		!atomic number of diamond
-      a=3.56e-10	!dimension of diamond unit cell (m)
+      a=3.5668e-10	!dimension of diamond unit cell (m)
       Aphonon=0.5e9	!phonon-free recoil constant (GeV**-2)
       betaFF=111*Z**(-1/3.)/me	!cutoff for atomic form-factor (/GeV)
       mospread=50e-6	!crystal r.m.s. mosaic spread
