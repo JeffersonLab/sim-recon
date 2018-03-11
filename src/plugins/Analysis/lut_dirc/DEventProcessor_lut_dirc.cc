@@ -79,17 +79,16 @@ jerror_t DEventProcessor_lut_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			     mcthrowns[0]->momentum().Y(),
 			     mcthrowns[0]->momentum().Z()).Unit();
     
-    ((DrcLutNode*)(fLut[lutId]->At(id)))->
-      AddEntry(lutId,               // lut/bar id
-	       id,                  // pixel id
-    	       dir,
-    	       dircPmtHits[h]->E,   // path id
-    	       nrefl,
-    	       dircPmtHits[h]->t,
-    	       TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z),
-    	       TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z));
-    if(fabs(dircPmtHits[h]->E-4715)<0.0001){
-    }
+    if(lutId>=0 && lutId<48)
+      ((DrcLutNode*)(fLut[lutId]->At(id)))->
+	AddEntry(lutId,               // lut/bar id
+		 id,                  // pixel id
+		 dir,
+		 dircPmtHits[h]->E,   // path id
+		 nrefl,
+		 dircPmtHits[h]->t,
+		 TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z),
+		 TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z));
   }
   japp->RootUnLock(); //RELEASE ROOT LOCK
 
