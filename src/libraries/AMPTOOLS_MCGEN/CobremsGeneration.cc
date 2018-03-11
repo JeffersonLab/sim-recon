@@ -98,9 +98,9 @@ void CobremsGeneration::updateTargetOrientation()
    resetTargetOrientation();
    RotateTarget(0, dpi/2, 0);      // point (1,0,0) along beam
    RotateTarget(0, 0, dpi/4);      // point (0,1,1) vertically
-   RotateTarget(-fTargetThetax, 0, 0);
-   RotateTarget(0, -fTargetThetay, 0);
    RotateTarget(0, 0, -fTargetThetaz);
+   RotateTarget(0, -fTargetThetay, 0);
+   RotateTarget(-fTargetThetax, 0, 0);
 }
 
 void CobremsGeneration::setTargetCrystal(std::string crystal)
@@ -310,23 +310,14 @@ void CobremsGeneration::applyBeamCrystalConvolution(int nbins, double *xvalues,
                  pow(fBeamEmittance / fCollimatorSpotrms, 2);
    double varMS = Sigma2MS(fTargetThickness);
 
-   // Here we have to guess which characteristic angle alph inside the crystal
-   // is dominantly responsible for the coherent photons in each bin in x.
-   // I just use the smallest of the two angles, but this does not work when
-   // both angles are small, and you have to be more clever -- BEWARE!!!
-   double alph = (fabs(fTargetThetax) < fabs(fTargetThetay))?
-                  fabs(fTargetThetax) : fabs(fTargetThetay);
-   if (alph == 0) {
-      alph = (fabs(fTargetThetax) > fabs(fTargetThetay))?
-              fabs(fTargetThetax) : fabs(fTargetThetay);
-   }
-
-   // In any case, fine-tuning below the mosaic spread limit makes no sense.
-   else {
-      alph = (alph > fTargetCrystal.mosaic_spread)?
-              alph : fTargetCrystal.mosaic_spread;
-   }
-
+   // Here we have to guess which reciprocal lattice vector is dominantly
+   // for the coherent photons in each bin in x. For simplicity, I assume
+   // it is a (2,2,0) vector. Higher order vectors exhibit more smearing
+   // but this is a good approximation if the primary peaks in the spectrum
+   // come from (2,2,0) vectors.
+   double a = fTargetCrystal.lattice_constant;
+   double qabs = sqrt(8.0) * hbarc * 2*dpi / a;
+   double xfact = 2 * fBeamEnergy * qabs / (me*me);
    double *norm = new double[nbins];
    double *result = new double[nbins];
    for (int j=0; j < nbins; ++j) {
@@ -335,7 +326,7 @@ void CobremsGeneration::applyBeamCrystalConvolution(int nbins, double *xvalues,
       for (int i=0; i < nbins; ++i) {
          double dx = (x1 - x0) * (j - i) / nbins;
          double x = x0 + (x1 - x0) * (j + 0.5) / nbins;
-         double dalph = dx * alph / (x * (1 - x) + 1e-99);
+         double dalph = dx / xfact / pow(1 - x + 1e-99, 2);
          double term;
          if (varMS / var0 > 1e-4) {
             term = dalph / varMS *
@@ -349,7 +340,6 @@ void CobremsGeneration::applyBeamCrystalConvolution(int nbins, double *xvalues,
          else {
             term = exp(-dalph*dalph / (2 * var0)) / sqrt(2 * dpi * var0);
          }
-         term *= alph / x;
          norm[j] += term;
       }
    }
@@ -358,7 +348,7 @@ void CobremsGeneration::applyBeamCrystalConvolution(int nbins, double *xvalues,
       for (int j=0; j < nbins; ++j) {
          double dx = (x1 - x0) * (j - i) / nbins;
          double x = x0 + (x1 - x0) * (j + 0.5) / nbins;
-         double dalph = dx * alph / (x * (1 - x) + 1e-99);
+         double dalph = dx / xfact / pow(1 - x + 1e-99, 2);
          double term;
          if (varMS / var0 > 1e-4) {
             term = dalph / varMS *
@@ -372,7 +362,6 @@ void CobremsGeneration::applyBeamCrystalConvolution(int nbins, double *xvalues,
          else {
             term = exp(-dalph*dalph / (2 * var0)) / sqrt(2 * dpi * var0);
          }
-         term *= alph / x;
          result[i] += term * yvalues[j] / norm[j];
       }
    }
@@ -533,7 +522,14 @@ double CobremsGeneration::Rate_dNcdx(double x)
    // Returns the coherent bremsstrahlung probability density differential
    // in x (scaled photon energy) at photon energy k = x*fBeamEnergy.
 
-   return 2 * dpi * Rate_dNcdxdp(x, dpi/4);
+   double rate = 0;
+   int npoints = 2;
+   for (int n=0; n < npoints; ++n) {
+      double phi = (n + 0.5) * (dpi/2) / npoints;
+      rate += Rate_dNcdxdp(x, phi);
+   }
+   rate *= 2*dpi / npoints;
+   return rate;
 }
 
 double CobremsGeneration::Rate_dNcdx(double x, 
@@ -551,7 +547,13 @@ double CobremsGeneration::Rate_dNcdx(double x,
    fCollimatorDiameter = (diameter_m > 0)? diameter_m : (diameter_m < 0)?
                          -2 * distance_m * diameter_m * me / fBeamEnergy :
                          fCollimatorDiameter;
-   double rate = 2 * dpi * Rate_dNcdxdp(x, dpi/4);
+   double rate = 0;
+   int npoints = 2;
+   for (int n=0; n < npoints; ++n) {
+      double phi = (n + 0.5) * (dpi/2) / npoints;
+      rate += Rate_dNcdxdp(x, phi);
+   }
+   rate *= 2*dpi / npoints;
    fCollimatorDistance = dist;
    fCollimatorDiameter = diam;
    return rate;
@@ -575,9 +577,7 @@ double CobremsGeneration::Rate_dNcdxdp(double x, double phi)
    fQ2theta2.clear();
    fQ2weight.clear();
    double qzmin = 99;
-#if COBREMS_GENERATOR_VERBOSITY > 1
    int hmin, kmin, lmin;
-#endif
    double sum = 0;
    // can restrict to h=0 for cpu speedup, if crystal alignment is "reasonable"
    for (int h = -4; h <= 4; ++h) {
@@ -634,11 +634,9 @@ double CobremsGeneration::Rate_dNcdxdp(double x, double phi)
 
             if (q[2] < qzmin) {
                qzmin = q[2];
-#if COBREMS_GENERATOR_VERBOSITY > 1
                hmin = h;
                kmin = k;
                lmin = l;
-#endif
             }
             double theta2 = (1 - x) * xmax / (x * (1 - xmax) + 1e-99) - 1;
             double betaFF2 = pow(fTargetCrystal.betaFF, 2);
@@ -649,7 +647,7 @@ double CobremsGeneration::Rate_dNcdxdp(double x, double phi)
                    ((1 + pow(1 - x, 2)) - 8 * (theta2 / pow(1 + theta2, 2) * 
                                               (1 - x) * pow(cos(phi), 2))) *
                    ((fCollimatedFlag)? Acceptance(theta2) : 1) *
-                   ((fPolarizedFlag)? Polarization(x, theta2) : 1);
+                   ((fPolarizedFlag)? Polarization(x, theta2, phi) : 1);
             fQ2theta2.push_back(theta2);
             fQ2weight.push_back(sum);
          }
@@ -774,7 +772,7 @@ double CobremsGeneration::Rate_para(double x, double theta2, double phi)
 
    return 0.5 * pow((2 - x) * (1 + theta2), 2) -
           8 * theta2 * (1 - x) * pow(cos(phi), 2) -
-          8 * pow(theta2, 2) * (1 - x) * pow(cos(phi), 2) * pow(sin(phi), 2);
+          8 * pow(theta2, 2) * (1 - x) * pow(cos(phi) * sin(phi), 2);
 }
 
 double CobremsGeneration::Rate_ortho(double x, double theta2, double phi)
@@ -786,7 +784,7 @@ double CobremsGeneration::Rate_ortho(double x, double theta2, double phi)
    // expressed in units of (me/fBeamEnergy)^2.
 
    return 0.5 * pow(x * (1 + theta2), 2) +
-          8 * pow(theta2, 2) * (1 - x) * pow(cos(phi), 2) * pow(sin(phi), 2);
+          8 * pow(theta2, 2) * (1 - x) * pow(cos(phi) * sin(phi), 2);
 }
 
 double CobremsGeneration::Polarization(double x, double theta2)
@@ -800,6 +798,42 @@ double CobremsGeneration::Polarization(double x, double theta2)
 
    return 2 * (1 - x) / (pow(1 + theta2, 2) * (pow(1 - x + 1e-99, 2) + 1) - 
                          4 * theta2 * (1 - x));
+}
+
+double CobremsGeneration::Polarization(double x, double theta2, double phi)
+{
+   // Returns the degree of linear polarization in a coherent bremsstrahlung
+   // beam at photon energy k = x*fBeamEnergy and production angles theta, phi.
+   // The argument theta2 is the production polar angle theta^2 expressed
+   // in units of (me/fBeamEnergy)^2.
+
+   double Rpara = Rate_para(x, theta2, phi);
+   double Rperp = Rate_ortho(x, theta2, phi);
+   return (Rpara - Rperp) / (Rpara + Rperp);
+}
+
+double CobremsGeneration::AbremsPolarization(double x, double theta2, double phi)
+{
+   // Returns the degree of linear polarization in an ordinary atomic
+   // bremsstrahlung beam at photon energy k = x*fBeamEnergy and production
+   // angles theta,phi. The formula is a parameterization of the linear
+   // polarization evaluated using the Dirac++ QED Monte Carlo generator.
+   // The argument theta2 is the production polar angle theta^2 expressed
+   // in units of (me/fBeamEnergy)^2.
+
+   double Acoeff[3][4] = {{0.93000, 0.64250, 0.66598, 1.62506},
+                          {0.73000, 1.05648, 0.84643, 1.97061},
+                          {0.87610, 0.57510, 0.74918, 1.52849}};
+   double a[3];
+   for (int n=0; n < 3; ++n) {
+      double A = pow(Acoeff[n][0], 2) +
+                 pow(Acoeff[n][1], 2) * pow(x, 2) +
+                 pow(Acoeff[n][2], 2) * pow(x, 4) +
+                 pow(Acoeff[n][3], 2) * pow(x, 16);
+      a[n] = A*A;
+   }
+   double ppol = theta2 / (a[0] + a[1] * theta2 + a[2] * theta2*theta2);
+   return ppol * cos(2 * phi);
 }
 
 double CobremsGeneration::Acceptance(double theta2, double phi,
@@ -1055,6 +1089,8 @@ double (CobremsGeneration::*Rate_dNcdx_1)(double) = &CobremsGeneration::Rate_dNc
 double (CobremsGeneration::*Rate_dNcdx_3)(double, double, double) = &CobremsGeneration::Rate_dNcdx;
 double (CobremsGeneration::*Acceptance_1)(double) = &CobremsGeneration::Acceptance;
 double (CobremsGeneration::*Acceptance_4)(double, double, double, double) = &CobremsGeneration::Acceptance;
+double (CobremsGeneration::*Polarization_2)(double, double) = &CobremsGeneration::Polarization;
+double (CobremsGeneration::*Polarization_3)(double, double, double) = &CobremsGeneration::Polarization;
 
 BOOST_PYTHON_MODULE(libcobrems)
 {
@@ -1123,7 +1159,8 @@ BOOST_PYTHON_MODULE(libcobrems)
       .def("Rate_dNidxdt2", &CobremsGeneration::Rate_dNidxdt2)
       .def("Rate_para", &CobremsGeneration::Rate_para)
       .def("Rate_ortho", &CobremsGeneration::Rate_ortho)
-      .def("Polarization", &CobremsGeneration::Polarization)
+      .def("Polarization", Polarization_2)
+      .def("Polarization", Polarization_3)
       .def("Acceptance", Acceptance_1)
       .def("Acceptance", Acceptance_4)
       .def("Sigma2MS", &CobremsGeneration::Sigma2MS)
