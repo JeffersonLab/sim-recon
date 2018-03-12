@@ -3234,10 +3234,12 @@ bool DTrackCandidate_factory_CDC::Calc_StereoPosition(const DCDCWire *wire, cons
 	double dz = dz1;
 	if(fabs(dz2) < fabs(dz1))
 		dz = dz2;
+	if (fabs(dz)>75.) // would intersect out side of CDC volume
+	  return false;
 		
 	// Compute the position for this hit
 	pos = origin + dz*dir;
- 
+	
 	// distance along wire relative to origin
 	double s = dz/cos(wire->stereo);
 	
