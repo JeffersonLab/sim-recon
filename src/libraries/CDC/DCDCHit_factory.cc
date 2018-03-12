@@ -138,12 +138,18 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   
   for (int k=0 ;k<(int) hits.size(); k++){
     const DCDCHit *hit = hits[k];
+
+    // remove hits with failed timing alorithm
+    if ( (hit->QF & 0x1) != 0 ) { 
+      continue;
+    }
     
-    // apply timing cut
+    // remove hits ouside of the timing cut
     if ( (hit->t < LowTCut) || (hit->t > HighTCut) ){
       continue;
     }
 
+    // removed hits correclated with Saturation hit on same connector/reamp/HV-board
     if (Mark4Removal[k]){
       continue;
     }
