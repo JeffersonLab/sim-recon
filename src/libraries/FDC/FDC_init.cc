@@ -9,6 +9,7 @@
 using namespace jana;
 
 #include "DFDCHit_factory.h"
+#include "DFDCHit_factory_Raw.h"
 #include "DFDCPseudo_factory.h"
 #include "DFDCCathodeCluster_factory.h"
 #include "DFDCSegment_factory.h"
@@ -24,6 +25,7 @@ jerror_t FDC_init(JEventLoop *loop)
 	loop->AddFactory(new JFactory<DFDCCathodeDigiHit>());
 	loop->AddFactory(new JFactory<DFDCWireDigiHit>());
 	loop->AddFactory(new DFDCHit_factory());
+	loop->AddFactory(new DFDCHit_factory_Raw());
 	loop->AddFactory(new JFactory<DFDCHit>("TRUTH"));
 	loop->AddFactory(new JFactory<DFDCHit>("CALIB"));
 	loop->AddFactory(new DFDCPseudo_factory());

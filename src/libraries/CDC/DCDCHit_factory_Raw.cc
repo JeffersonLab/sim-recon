@@ -1,17 +1,18 @@
 // $Id$
 //
-//    File: DCDCHit_factory_Calib.cc
+//    File: DCDCHit_factory_Raw.cc
 // Created: Fri Mar  9 16:57:04 EST 2018
 // Creator: B. Zihlmann, derived/copyed from DCDCHit_factory.cc
 //
-
+// Write out all hits, for conversion of raw data to HDDM
+//
 
 #include <iostream>
 #include <iomanip>
 using namespace std;
 
 
-#include <CDC/DCDCHit_factory_Calib.h>
+#include <CDC/DCDCHit_factory_Raw.h>
 #include <CDC/DCDCDigiHit.h>
 #include <CDC/DCDCWire.h>
 #include <DAQ/Df125PulseIntegral.h>
@@ -25,7 +26,7 @@ using namespace jana;
 //------------------
 // init
 //------------------
-jerror_t DCDCHit_factory_Calib::init(void)
+jerror_t DCDCHit_factory_Raw::init(void)
 {
 
     // default values
@@ -48,7 +49,7 @@ jerror_t DCDCHit_factory_Calib::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DCDCHit_factory_Calib::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
+jerror_t DCDCHit_factory_Raw::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
     // Only print messages for one thread whenever run number change
     static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -161,7 +162,7 @@ jerror_t DCDCHit_factory_Calib::brun(jana::JEventLoop *eventLoop, int32_t runnum
 //------------------
 // evnt
 //------------------
-jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
+jerror_t DCDCHit_factory_Raw::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
     /// Generate DCDCHit object for each DCDCDigiHit object.
     /// This is where the first set of calibration constants
@@ -180,7 +181,8 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     for (unsigned int i=0; i < digihits.size(); i++) {
         const DCDCDigiHit *digihit = digihits[i];
 
-        if ( (digihit->QF & 0x1) != 0 ) continue; // Cut bad timing quality factor hits... (should check effect on efficiency)
+	// do not do this cut here! do it in the DCDCHit factory
+        //if ( (digihit->QF & 0x1) != 0 ) continue; // Cut bad timing quality factor hits... (should check effect on efficiency)
 
         const int &ring  = digihit->ring;
         const int &straw = digihit->straw;
@@ -218,19 +220,19 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
             // Mode 7: Processed data only.
 
             // This error state is only present in mode 8
-            if (digihit->pulse_time==0.) continue;
+            //if (digihit->pulse_time==0.) continue;
 
             // There is a slight difference between Mode 7 and 8 data
             // The following condition signals an error state in the flash algorithm
             // Do not make hits out of these
-            if (PPobj != NULL){
-                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-                if (PPobj->pulse_number == 1) continue; // Unintentionally had 2 pulses found in fall 2014 data (0-1 counting issue)
-            }
+            //if (PPobj != NULL){
+            //    if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+            //    if (PPobj->pulse_number == 1) continue; // Unintentionally had 2 pulses found in fall 2014 data (0-1 counting issue)
+            //}
             
             const Df125PulseIntegral* PIobj = NULL;
             digihit->GetSingle(PIobj);
-            if (PPobj == NULL || PIobj == NULL) continue; // We don't want hits where ANY of the associated information is missing
+            //if (PPobj == NULL || PIobj == NULL) continue; // We don't want hits where ANY of the associated information is missing
 
             // this amplitude is not set in the translation table for this old data format, so make a (reasonable?) guess
             maxamp = digihit->pulse_integral / 28.8;
@@ -258,7 +260,7 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         int scaled_ped = raw_ped << PBIT;
         
         if (maxamp > 0) maxamp = maxamp << ABIT;
-        if (maxamp <= scaled_ped) continue;
+        //if (maxamp <= scaled_ped) continue;
 
         maxamp = maxamp - scaled_ped;
 
@@ -296,7 +298,7 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 //------------------
 // erun
 //------------------
-jerror_t DCDCHit_factory_Calib::erun(void)
+jerror_t DCDCHit_factory_Raw::erun(void)
 {
     return NOERROR;
 }
@@ -304,7 +306,7 @@ jerror_t DCDCHit_factory_Calib::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t DCDCHit_factory_Calib::fini(void)
+jerror_t DCDCHit_factory_Raw::fini(void)
 {
     return NOERROR;
 }
@@ -312,7 +314,7 @@ jerror_t DCDCHit_factory_Calib::fini(void)
 //------------------
 // CalcNstraws
 //------------------
-void DCDCHit_factory_Calib::CalcNstraws(jana::JEventLoop *eventLoop, int32_t runnumber, vector<unsigned int> &Nstraws)
+void DCDCHit_factory_Raw::CalcNstraws(jana::JEventLoop *eventLoop, int32_t runnumber, vector<unsigned int> &Nstraws)
 {
     DGeometry *dgeom;
     vector<vector<DCDCWire *> >cdcwires;
@@ -346,7 +348,7 @@ void DCDCHit_factory_Calib::CalcNstraws(jana::JEventLoop *eventLoop, int32_t run
 //------------------
 // FillCalibTable
 //------------------
-void DCDCHit_factory_Calib::FillCalibTable(vector< vector<double> > &table, vector<double> &raw_table, 
+void DCDCHit_factory_Raw::FillCalibTable(vector< vector<double> > &table, vector<double> &raw_table, 
         vector<unsigned int> &Nstraws)
 {
     int ring = 0;
@@ -376,7 +378,7 @@ void DCDCHit_factory_Calib::FillCalibTable(vector< vector<double> > &table, vect
 // GetConstant
 //   Allow a few different interfaces
 //------------------------------------
-const double DCDCHit_factory_Calib::GetConstant(const cdc_digi_constants_t &the_table,
+const double DCDCHit_factory_Raw::GetConstant(const cdc_digi_constants_t &the_table,
         const int in_ring, const int in_straw) const {
 
     char str[256];
@@ -399,7 +401,7 @@ const double DCDCHit_factory_Calib::GetConstant(const cdc_digi_constants_t &the_
     return the_table[in_ring-1][in_straw-1];
 }
 
-const double DCDCHit_factory_Calib::GetConstant(const cdc_digi_constants_t &the_table,
+const double DCDCHit_factory_Raw::GetConstant(const cdc_digi_constants_t &the_table,
         const DCDCDigiHit *in_digihit) const {
 
     char str[256];
@@ -425,7 +427,7 @@ const double DCDCHit_factory_Calib::GetConstant(const cdc_digi_constants_t &the_
     return the_table[in_digihit->ring-1][in_digihit->straw-1];
 }
 
-const double DCDCHit_factory_Calib::GetConstant(const cdc_digi_constants_t &the_table,
+const double DCDCHit_factory_Raw::GetConstant(const cdc_digi_constants_t &the_table,
         const DCDCHit *in_hit) const {
 
     char str[256];
