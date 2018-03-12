@@ -20,7 +20,6 @@ using namespace std;
 
 using namespace jana;
 
-static double DIGI_THRESHOLD = -1000000.0;
 //#define ENABLE_UPSAMPLING
 
 //------------------
@@ -28,9 +27,6 @@ static double DIGI_THRESHOLD = -1000000.0;
 //------------------
 jerror_t DCDCHit_factory_Calib::init(void)
 {
-    gPARMS->SetDefaultParameter("CDC:DIGI_THRESHOLD",DIGI_THRESHOLD,
-            "Do not convert CDC digitized hits into DCDCHit objects"
-            " that would have q less than this");
 
     // default values
     Nrings = 0;
@@ -263,7 +259,7 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         int scaled_ped = raw_ped << PBIT;
         
         if (maxamp > 0) maxamp = maxamp << ABIT;
-        if (maxamp <= scaled_ped) continue;
+        //if (maxamp <= scaled_ped) continue;
 
         maxamp = maxamp - scaled_ped;
 
@@ -274,9 +270,6 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         double amp =  maxamp;
 
         double t = t_scale * t_raw - time_offsets[ring-1][straw-1] + t_base;
-
-        if (q < DIGI_THRESHOLD) 
-            continue;
 
         DCDCHit *hit = new DCDCHit;
         hit->ring  = ring;
@@ -299,6 +292,7 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     return NOERROR;
 }
+
 
 //------------------
 // erun

@@ -12,12 +12,17 @@
 
 #include "DCDCHit_factory.h"
 
+static double DIGI_THRESHOLD = -1.0e8;
 
 //------------------
 // init
 //------------------
 jerror_t DCDCHit_factory::init(void)
 {
+  gPARMS->SetDefaultParameter("CDC:DIGI_THRESHOLD",DIGI_THRESHOLD,
+			      "Do not convert CDC digitized hits into DCDCHit objects"
+			      " that would have q less than this");
+  
   RemoveCorrelationHits = 1;
   
   gPARMS->SetDefaultParameter("CDCHit:RemoveCorrelationHits", RemoveCorrelationHits,
@@ -134,12 +139,20 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     
   }
 
-
   
   for (int k=0 ;k<(int) hits.size(); k++){
     const DCDCHit *hit = hits[k];
 
-    // remove hits with failed timing alorithm
+    // remove hits with small charge: not really used
+    if (hit->q < DIGI_THRESHOLD) 
+      continue;
+
+    // remove hits with amplitudes 0 or less
+    if ( hit->amp <= 0 ) { 
+      continue;
+    }
+
+   // remove hits with failed timing alorithm
     if ( (hit->QF & 0x1) != 0 ) { 
       continue;
     }
