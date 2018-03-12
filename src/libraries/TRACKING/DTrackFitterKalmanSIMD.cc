@@ -3161,18 +3161,22 @@ double DTrackFitterKalmanSIMD::GetdEdx(double q_over_p,double K_rho_Z_over_A,
 }
 
 // Calculate the variance in the energy loss in a Gaussian approximation.
-// The standard deviation of the energy loss distribution is
-// approximated by sigma=(scale factor) x Xi, where
-//      Xi=0.1535*density*(Z/A)*x/beta^2  [MeV]
+//      var=0.1535*density*(Z/A)*x*(1-0.5*beta^2)/(1-beta^2)  [MeV]
+// (Leo (2nd ed.), eq. 2.95)
 inline double DTrackFitterKalmanSIMD::GetEnergyVariance(double ds,
-      double one_over_beta2,
-      double K_rho_Z_over_A){
+      double one_over_beta2,double K_rho_Z_over_A){
    if (K_rho_Z_over_A<=0.) return 0.;
    //return 0;
 
-   double sigma=10.0*K_rho_Z_over_A*one_over_beta2*ds;
+   //   double sigma=10.0*K_rho_Z_over_A*one_over_beta2*ds;
+   //return sigma*sigma;
+   double betagamma2=1./(one_over_beta2-1.);
+   double gamma2=betagamma2*one_over_beta2;
+   double two_Me_betagamma_sq=two_m_e*betagamma2;
+   double Tmax=two_Me_betagamma_sq/(1.+2.*sqrt(gamma2)*m_ratio+m_ratio_sq);
+   double var=K_rho_Z_over_A*one_over_beta2*ds*Tmax*(1.-0.5/one_over_beta2);\
 
-   return sigma*sigma;
+   return var;
 }
 
 // Interface routine for Kalman filter
@@ -6540,13 +6544,13 @@ shared_ptr<TMatrixFSym> DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrix
    J(state_Pz,state_q_over_p)=-p*sinl/q_over_p_;
    J(state_Px,state_q_over_p)=tx_*J(state_Pz,state_q_over_p);
    J(state_Py,state_q_over_p)=ty_*J(state_Pz,state_q_over_p); 
-   J(state_Z,state_x)=-tx_*tanl2;
-   J(state_Z,state_y)=-ty_*tanl2;
+   J(state_Z,state_x)=tx_*tanl2;
+   J(state_Z,state_y)=ty_*tanl2;
    double diff=tx_*tx_-ty_*ty_;
    double frac=tanl2*tanl2;
-   J(state_Z,state_tx)=(x_*diff+2.*tx_*ty_*y_)*frac;
-   J(state_Z,state_ty)=(2.*tx_*ty_*x_-y_*diff)*frac;
-
+   J(state_Z,state_tx)=-(x_*diff+2.*tx_*ty_*y_)*frac;
+   J(state_Z,state_ty)=-(2.*tx_*ty_*x_-y_*diff)*frac;
+   
    // C'= JCJ^T
    *C7x7=C.Similarity(J);
 
@@ -8904,12 +8908,12 @@ void DTrackFitterKalmanSIMD::TransformCovariance(DMatrix5x5 &C){
    double tanl2=tanl_*tanl_;
    double tanl3=tanl2*tanl_;
    double factor=1./sqrt(1.+tsquare);
-   J(state_z,state_x)=-tx_/tsquare;
-   J(state_z,state_y)=-ty_/tsquare;
+   J(state_z,state_x)=tx_/tsquare;
+   J(state_z,state_y)=ty_/tsquare;
    double diff=tx_*tx_-ty_*ty_;
    double frac=1./(tsquare*tsquare);
-   J(state_z,state_tx)=(x_*diff+2.*tx_*ty_*y_)*frac;
-   J(state_z,state_ty)=(2.*tx_*ty_*x_-y_*diff)*frac;
+   J(state_z,state_tx)=-(x_*diff+2.*tx_*ty_*y_)*frac;
+   J(state_z,state_ty)=-(2.*tx_*ty_*x_-y_*diff)*frac;
    J(state_tanl,state_tx)=-tx_*tanl3;
    J(state_tanl,state_ty)=-ty_*tanl3;
    J(state_q_over_pt,state_q_over_p)=1./cosl;
@@ -9436,13 +9440,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     // scattering
     if (fit_type==kWireBased){
       GetProcessNoise(z,ds,chi2c_factor,chi2a_factor,chi2a_corr,S,Q);
-    
-      if (CORRECT_FOR_ELOSS){
-	double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
-	double one_over_beta2=1.+mass2*q_over_p_sq;
-	double varE=GetEnergyVariance(ds,one_over_beta2,K_rho_Z_over_A);
-	Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
-      }
+
       double theta_ms_ds_sq=3.*fabs(Q(state_x,state_x));
       s_theta_ms_sum+=sqrt(theta_ms_ds_sq);
       theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
@@ -9747,13 +9745,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     if (fit_type==kWireBased){
       // Multiple scattering
       GetProcessNoiseCentral(ds,chi2c_factor,chi2a_factor,chi2a_corr,S,Q);
-      
-      if (CORRECT_FOR_ELOSS){
-	double q_over_p_sq=q_over_p*q_over_p;
-	double one_over_beta2=1.+mass2*q_over_p*q_over_p;
-	double varE=GetEnergyVariance(ds,one_over_beta2,K_rho_Z_over_A);
-	Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
-      }
+     
       double theta_ms_ds_sq=3.*Q(state_D,state_D); 
       s_theta_ms_sum+=sqrt(theta_ms_ds_sq);
       theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
