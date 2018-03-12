@@ -162,7 +162,7 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
 
   // variances
   double var_lambda_res=0.;
-  double var_x0=0.01,var_y0=0.01;
+  double var_x0=0.25,var_y0=0.25;
   double var_pt_over_pt_sq=0.;
 
   // Loop over all the CDC hits looking for matches with the track
@@ -214,7 +214,7 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
 	    double var_k_over_k_sq_res=var*p_over_a*p_over_a*0.0720/double(N+4)/(s_sq*s_sq*sinl2)/cosl2;
 	    double sum_s_theta_ms=extrapolations[i].s_theta_ms_sum;
 	    double var_k_over_k_sq_ms
-	      =pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
+	      =(4./3.)*pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
 	    
 	    // Fractional variance in pt
 	    var_pt_over_pt_sq=var_k_over_k_sq_res+var_k_over_k_sq_ms; 
@@ -230,14 +230,14 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
 
 	  // Include uncertainty in phi due to uncertainty in the center of 
 	  // the circle
-	  var_phi+=0.09/(pt_over_a*pt_over_a);
+	  //var_phi+=0.09/(pt_over_a*pt_over_a);
 
 	  // Variance in position due to multiple scattering
 	  double var_pos_ms=extrapolations[i].theta2ms_sum/48.;
 
 	  // Hit doca and residual
 	  double doca=sqrt(d2);
-	  double dist=0.39;
+	  double dist=0.;
 	  double resi=dist-doca;
 
 	  // Variances in x and y due to uncertainty in track parameters
@@ -261,7 +261,7 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
 	  
 	  double dd_dx=dx/doca;
 	  double dd_dy=dy/doca;
-	  double var_d=dd_dx*dd_dx*var_x+dd_dy*dd_dy*var_y;
+	  double var_d=0.55*(dd_dx*dd_dx*var_x+dd_dy*dd_dy*var_y); // with empirical scale factor!
 	  double chisq=resi*resi/(var+var_d);
     
 	  // Use chi-sq probability function with Ndof=1 to calculate probability
@@ -383,7 +383,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
   double sinphi=sin(phi);
   
   double var_lambda_res=0.;
-  double var_x0=0.01,var_y0=0.01;
+  double var_x0=0.25,var_y0=0.25;
   double mass=rt->GetMass();
   double one_over_beta=sqrt(1.+mass*mass/(p*p));
   double var_pt_factor=0.016*one_over_beta/(cosl*a);
@@ -434,7 +434,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
 
     // Include uncertainty in phi due to uncertainty in the center of 
     // the circle
-    var_phi+=0.09/(pt_over_a*pt_over_a);
+    //var_phi+=0.09/(pt_over_a*pt_over_a);
 
     if (outermost_hit){   
       // Fractional variance in the curvature k due to resolution and multiple scattering
@@ -452,9 +452,9 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     // Include error in lambda due to measurements
     var_lambda+=var_lambda_res;
 
-    // Get "measured" distance to wire. 
-    // For matching purposes this is assumed to be half a cell size
-    double dist=0.39;
+    // Get "measured" distance to wire.  
+    // We don't have enough information to use the drift time, so set to 0.  
+    double dist=0.;
     
     // Residual
     double resi = dist - doca;
@@ -642,10 +642,10 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
     double u_cathodes = hit->s;
     double resic = u - u_cathodes;
 
-    // Get "measured" distance to wire.
-    // For matching purposes this is assumed to be half a cell size
-    double dist=0.25;
-    
+    // Get "measured" distance to wire.  
+    // We don't have enough information to use the drift time, so set to 0.  
+    double dist=0.;
+     
     // Take into account non-normal incidence to FDC plane
     double pz=last_step->mom.z();
     double tx=last_step->mom.x()/pz;
@@ -892,7 +892,7 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
 	    *0.0720/double(N+4)/(s_sq*s_sq)/cosl2;
 	  double sum_s_theta_ms=extrapolations[k].s_theta_ms_sum;
 	  double var_k_over_k_sq_ms
-	    =pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
+	    =(4./3.)*pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
 
 	  // Fractional variance in pt
 	  var_pt_over_pt_sq=var_k_over_k_sq_ms+var_k_over_k_sq_res;
@@ -926,9 +926,9 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
 	double u_cathodes = hit->s;
 	double resic = u - u_cathodes;
 
-	// Get "measured" distance to wire.
-	// For matching purposes this is assumed to be half a cell size
-	double dist=0.25;
+	// Get "measured" distance to wire.  
+	// We don't have enough information to use the drift time, so set to 0.
+	double dist=0.;
 	
 	// Take into account non-normal incidence to FDC plane
 	double pz=extrapolations[k].momentum.z();
@@ -977,8 +977,8 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
 	// Rotate from global coordinate system into FDC local system
 	double cos2a=cosa*cosa;
 	double sin2a=sina*sina;
-	double var_d=(cos2a*var_x+sin2a*var_y)/(cosalpha*cosalpha);
-	double var_u=cos2a*var_y+sin2a*var_x;    
+	double var_d=0.1*(cos2a*var_x+sin2a*var_y)/(cosalpha*cosalpha); // with empirical scale factor
+	double var_u=0.1*(cos2a*var_y+sin2a*var_x);    
 
 	// Calculate chisq
 	chisq = resi*resi/(var_d+var_anode)+resic*resic/(var_u+var_cathode);
