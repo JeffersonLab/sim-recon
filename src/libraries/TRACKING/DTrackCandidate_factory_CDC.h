@@ -285,6 +285,8 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 		size_t MAX_DCDCTrackCirclePoolSize;
 		size_t MAX_HelicalFitPoolSize;
 
+		double CDC_DZ_FIDUCIAL;
+
 		double TARGET_Z;
 		double VERTEX_Z_MIN;
 		double VERTEX_Z_MAX;
