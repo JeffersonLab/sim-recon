@@ -1206,12 +1206,12 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
    
    if (factory == NULL)
        return OBJECT_NOT_AVAILABLE;
-   if (tag != "" && tag != "TRUTH")
+   if (tag != "" && tag != "TRUTH" && tag != "Calib")
       return OBJECT_NOT_AVAILABLE;
    
    vector<DCDCHit*> data;
 
-   if (tag == "") {
+   if ( tag == "" || tag == "Calib" ) {
       vector<const DCDCHit*> locTruthHits;
       locEventLoop->Get(locTruthHits, "TRUTH");
 
@@ -1220,21 +1220,21 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
 		for(auto& locTruthHit : locTruthHits)
 			locTruthHitMap[std::make_pair(locTruthHit->ring, locTruthHit->straw)].push_back(locTruthHit);
 
-      const hddm_s::CdcStrawHitList &hits = record->getCdcStrawHits();
-      hddm_s::CdcStrawHitList::iterator iter;
-      int locIndex = 0;
-      for (iter = hits.begin(); iter != hits.end(); ++iter) {
-         DCDCHit *hit = new DCDCHit;
-         hit->ring   = iter->getRing();
-         hit->straw  = iter->getStraw();
-         hit->q      = iter->getQ();
-         hit->t      = iter->getT();
-         if(iter->getCdcDigihits().size() > 0) {
-             hit->amp  = iter->getCdcDigihit().getPeakAmp();
-         }
-         hit->d      = 0.; // initialize to zero to avoid any NaN
-         hit->itrack = 0;  // track information is in TRUTH tag
-         hit->ptype  = 0;  // ditto
+        const hddm_s::CdcStrawHitList &hits = record->getCdcStrawHits();
+        hddm_s::CdcStrawHitList::iterator iter;
+        int locIndex = 0;
+        for (iter = hits.begin(); iter != hits.end(); ++iter) {
+            DCDCHit *hit = new DCDCHit;
+            hit->ring   = iter->getRing();
+            hit->straw  = iter->getStraw();
+            hit->q      = iter->getQ();
+            hit->t      = iter->getT();
+            if(iter->getCdcDigihits().size() > 0) {
+                hit->amp  = iter->getCdcDigihit().getPeakAmp();
+            }
+            hit->d      = 0.; // initialize to zero to avoid any NaN
+            hit->itrack = 0;  // track information is in TRUTH tag
+            hit->ptype  = 0;  // ditto
 
 			//match hit between truth & recon
 			auto& locPotentialTruthHits = locTruthHitMap[std::make_pair(hit->ring, hit->straw)];
