@@ -1224,7 +1224,13 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
    
    if (factory == NULL)
        return OBJECT_NOT_AVAILABLE;
-   if (tag != "" && tag != "TRUTH" && tag != "Calib")
+
+   // Since we are writing out CDC hits with the new "Calib" tag by default
+   // assume that is what we are reading in, so that we don't support the
+   // default tag anymore
+   // sdobbs -- 3/13/2018
+   //if (tag != "" && tag != "TRUTH" && tag != "Calib")
+   if (tag != "TRUTH" && tag != "Calib")
       return OBJECT_NOT_AVAILABLE;
    
    vector<DCDCHit*> data;
@@ -1250,11 +1256,12 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
             if(iter->getCdcDigihits().size() > 0) {
                 hit->amp  = iter->getCdcDigihit().getPeakAmp();
             }
-	    else{  
-	      // for generated events (not folded-in background events) for which we
-	      // have no digi hits we simply scale q using Naomi's factor of 28.8
-	      hit->amp=hit->q/28.8;
-	    }
+            else{  
+                // for generated events (not folded-in background events) for which we
+                // have no digi hits we simply scale q using Naomi's factor of 28.8
+                hit->amp=hit->q/28.8;
+            }
+
             hit->QF     = 0;
             if(iter->getCdcHitQFs().size() > 0) {
                 hit->QF  = iter->getCdcHitQF().getQF();
