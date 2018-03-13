@@ -9236,73 +9236,70 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
   double s_theta_ms_sum=0.;
   double theta2ms_sum=0.;
   unsigned int fdc_plane=0;
-  if (fit_type==kWireBased){
-    if (intersected_start_counter){
-      for (unsigned int k=inner_index;k>index_beyond_start_counter;k--){
-	double theta_ms_ds_sq=3.*fabs(forward_traj[k].Q(state_x,state_x));
-	s_theta_ms_sum+=sqrt(theta_ms_ds_sq);
-	double ds=forward_traj[k].s-forward_traj[k-1].s;
-	theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
-      }
+  if (intersected_start_counter){
+    for (unsigned int k=inner_index;k>index_beyond_start_counter;k--){
+      double theta_ms_ds_sq=3.*fabs(forward_traj[k].Q(state_x,state_x));
+      s_theta_ms_sum+=sqrt(theta_ms_ds_sq);
+      double ds=forward_traj[k].s-forward_traj[k-1].s;
+      theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
     }
-
-    // Deal with points within fiducial volume of chambers  
-    for (int k=intersected_start_counter?index_beyond_start_counter:inner_index;k>=0;k--){
-      double z=forward_traj[k].z;
-      double t=forward_traj[k].t*TIME_UNIT_CONVERSION;
-      double s=forward_traj[k].s;
-      DMatrix5x1 S=forward_traj[k].S;
-      double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
-      double tanl=1./sqrt(tsquare);
-      double cosl=cos(atan(tanl));
-      double pt=cosl/fabs(S(state_q_over_p));
-      double phi=atan2(S(state_ty),S(state_tx)); 
+  }
+  
+  // Deal with points within fiducial volume of chambers  
+  for (int k=intersected_start_counter?index_beyond_start_counter:inner_index;k>=0;k--){
+    double z=forward_traj[k].z;
+    double t=forward_traj[k].t*TIME_UNIT_CONVERSION;
+    double s=forward_traj[k].s;
+    DMatrix5x1 S=forward_traj[k].S;
+    double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
+    double tanl=1./sqrt(tsquare);
+    double cosl=cos(atan(tanl));
+    double pt=cosl/fabs(S(state_q_over_p));
+    double phi=atan2(S(state_ty),S(state_tx)); 
     
-      //multiple scattering terms
-      if (k>0){	
-	double theta_ms_ds_sq=3.*fabs(forward_traj[k].Q(state_x,state_x));
-	s_theta_ms_sum+=sqrt(theta_ms_ds_sq);  
-	double ds=forward_traj[k].s-forward_traj[k-1].s;
-	theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
+    //multiple scattering terms
+    if (k>0){	
+      double theta_ms_ds_sq=3.*fabs(forward_traj[k].Q(state_x,state_x));
+      s_theta_ms_sum+=sqrt(theta_ms_ds_sq);  
+      double ds=forward_traj[k].s-forward_traj[k-1].s;
+      theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
+    }
+    // Extrapolations in CDC region
+    if (z<endplate_z){
+      DVector3 position(S(state_x),S(state_y),z);
+      DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
+      extrapolations[SYS_CDC].push_back(Extrapolation_t(position,momentum,
+							t*TIME_UNIT_CONVERSION,s,
+							s_theta_ms_sum,theta2ms_sum));
+      
+    }
+    else{ // extrapolations in FDC region
+      if (fdc_plane==24){
+	break;	
       }
-      // Extrapolations in CDC region
-      if (z<endplate_z){
-	DVector3 position(S(state_x),S(state_y),z);
+      
+      // output step near wire plane  
+      if (z>fdc_z_wires[fdc_plane]-0.25){	
+	double dz=z-fdc_z_wires[fdc_plane];
+	//printf("extrp dz %f\n",dz);
+	if (fabs(dz)>EPS2){
+	  Step(z,fdc_z_wires[fdc_plane],0.,S);
+	  tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
+	  tanl=1./sqrt(tsquare);
+	  cosl=cos(atan(tanl));
+	  pt=cosl/fabs(S(state_q_over_p));
+	  phi=atan2(S(state_ty),S(state_tx)); 
+	}
+	DVector3 position(S(state_x),S(state_y),fdc_z_wires[fdc_plane]);
 	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-	extrapolations[SYS_CDC].push_back(Extrapolation_t(position,momentum,
+	extrapolations[SYS_FDC].push_back(Extrapolation_t(position,momentum,
 							  t*TIME_UNIT_CONVERSION,s,
 							  s_theta_ms_sum,theta2ms_sum));
-
-      }
-      else{ // extrapolations in FDC region
-	if (fdc_plane==24){
-	  break;	
-	}
 	
-	// output step near wire plane  
-	if (z>fdc_z_wires[fdc_plane]-0.25){	
-	  double dz=z-fdc_z_wires[fdc_plane];
-	  //printf("extrp dz %f\n",dz);
-	  if (fabs(dz)>EPS2){
-	    Step(z,fdc_z_wires[fdc_plane],0.,S);
-	    tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
-	    tanl=1./sqrt(tsquare);
-	    cosl=cos(atan(tanl));
-	    pt=cosl/fabs(S(state_q_over_p));
-	    phi=atan2(S(state_ty),S(state_tx)); 
-	  }
-	  DVector3 position(S(state_x),S(state_y),fdc_z_wires[fdc_plane]);
-	  DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-	  extrapolations[SYS_FDC].push_back(Extrapolation_t(position,momentum,
-							    t*TIME_UNIT_CONVERSION,s,
-							    s_theta_ms_sum,theta2ms_sum));
-	  
 	  fdc_plane++;
-	}
       }
     }
-  } // only after wire-based tracking...
-  
+  }
 
   //--------------------------------
   // Next swim to outer detectors...
@@ -9423,7 +9420,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       ds=(newz-z)/dz_ds;
     }
     bool got_fdc_hit=false;
-    if (fit_type==kWireBased && fdc_plane<24 && newz>fdc_z_wires[fdc_plane]){
+    if (fdc_plane<24 && newz>fdc_z_wires[fdc_plane]){
       newz=fdc_z_wires[fdc_plane];
       ds=(newz-z)/dz_ds;
       got_fdc_hit=true;
@@ -9438,13 +9435,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    if (fit_type==kWireBased){
-      GetProcessNoise(z,ds,chi2c_factor,chi2a_factor,chi2a_corr,S,Q);
-
-      double theta_ms_ds_sq=3.*fabs(Q(state_x,state_x));
-      s_theta_ms_sum+=sqrt(theta_ms_ds_sq);
-      theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
-    }
+    GetProcessNoise(z,ds,chi2c_factor,chi2a_factor,chi2a_corr,S,Q);
+    
+    double theta_ms_ds_sq=3.*fabs(Q(state_x,state_x));
+    s_theta_ms_sum+=sqrt(theta_ms_ds_sq);
+    theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
 
     // Step through field
     Step(z,newz,dEdx,S); 
@@ -9621,53 +9616,51 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
    // Accumulate multiple-scattering terms for use in matching routines
   double s_theta_ms_sum=0.,theta2ms_sum=0.;
   unsigned int fdc_plane=0;
-  if (fit_type==kWireBased){
-    for (unsigned int k=inner_index;k>index_beyond_start_counter;k--){
+  for (unsigned int k=inner_index;k>index_beyond_start_counter;k--){
+    double theta_ms_ds_sq=3.*fabs(central_traj[k].Q(state_D,state_D)); 
+    s_theta_ms_sum+=sqrt(theta_ms_ds_sq);  
+    double ds=central_traj[k].s-central_traj[k-1].s;
+    theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
+  }
+  
+  // Deal with points within fiducial volume of chambers 
+  for (int k=index_beyond_start_counter;k>=0;k--){ 
+    S=central_traj[k].S;
+    xy=central_traj[k].xy;
+    double t=central_traj[k].t*TIME_UNIT_CONVERSION; // convert to ns
+    double s=central_traj[k].s;
+    double tanl=S(state_tanl);
+    double pt=1/fabs(S(state_q_over_pt));
+    double phi=S(state_phi); 
+    
+    //multiple scattering terms
+    if (k>0){ 
       double theta_ms_ds_sq=3.*fabs(central_traj[k].Q(state_D,state_D)); 
       s_theta_ms_sum+=sqrt(theta_ms_ds_sq);  
       double ds=central_traj[k].s-central_traj[k-1].s;
       theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
     }
-  
-    // Deal with points within fiducial volume of chambers 
-    for (int k=index_beyond_start_counter;k>=0;k--){ 
-      S=central_traj[k].S;
-      xy=central_traj[k].xy;
-      double t=central_traj[k].t*TIME_UNIT_CONVERSION; // convert to ns
-      double s=central_traj[k].s;
-      double tanl=S(state_tanl);
-      double pt=1/fabs(S(state_q_over_pt));
-      double phi=S(state_phi); 
-      
-      //multiple scattering terms
-      if (k>0){ 
-	double theta_ms_ds_sq=3.*fabs(central_traj[k].Q(state_D,state_D)); 
-	s_theta_ms_sum+=sqrt(theta_ms_ds_sq);  
-	double ds=central_traj[k].s-central_traj[k-1].s;
-	theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
-      }
-      if (S(state_z)<endplate_z){
+    if (S(state_z)<endplate_z){
+      DVector3 position(xy.X(),xy.Y(),S(state_z));
+      DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl); 
+      extrapolations[SYS_CDC].push_back(Extrapolation_t(position,momentum,t,s,
+							s_theta_ms_sum,theta2ms_sum));
+	
+    }
+    else{
+      if (fdc_plane==24) break;	
+      // output step near wire plane
+      if (S(state_z)>fdc_z_wires[fdc_plane]-0.1){
 	DVector3 position(xy.X(),xy.Y(),S(state_z));
 	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl); 
-	extrapolations[SYS_CDC].push_back(Extrapolation_t(position,momentum,t,s,
+	extrapolations[SYS_FDC].push_back(Extrapolation_t(position,momentum,t,s,
 							  s_theta_ms_sum,theta2ms_sum));
 	
-      }
-      else{
-	if (fdc_plane==24) break;	
-	// output step near wire plane
-	if (S(state_z)>fdc_z_wires[fdc_plane]-0.1){
-	  DVector3 position(xy.X(),xy.Y(),S(state_z));
-	  DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl); 
-	  extrapolations[SYS_FDC].push_back(Extrapolation_t(position,momentum,t,s,
-							    s_theta_ms_sum,theta2ms_sum));
-	  
-	  fdc_plane++;
-	}
+	fdc_plane++;
       }
     }
-  } // .. only do this after wire-based tracking...
-
+  }
+  
   //------------------------------
   // Next swim to outer detectors
   //------------------------------
@@ -9742,14 +9735,12 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     if (one_over_beta2>BIG) one_over_beta2=BIG;
     t+=ds*sqrt(one_over_beta2); // in units where c=1
     
-    if (fit_type==kWireBased){
-      // Multiple scattering
-      GetProcessNoiseCentral(ds,chi2c_factor,chi2a_factor,chi2a_corr,S,Q);
-     
-      double theta_ms_ds_sq=3.*Q(state_D,state_D); 
-      s_theta_ms_sum+=sqrt(theta_ms_ds_sq);
-      theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
-    }
+    // Multiple scattering
+    GetProcessNoiseCentral(ds,chi2c_factor,chi2a_factor,chi2a_corr,S,Q);
+    
+    double theta_ms_ds_sq=3.*Q(state_D,state_D); 
+    s_theta_ms_sum+=sqrt(theta_ms_ds_sq);
+    theta2ms_sum+=theta_ms_ds_sq/(ds*ds);
       
     // Propagate the state through the field
     Step(xy,ds,S,dedx);
@@ -9780,7 +9771,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
       }
     }
     // Check if we have more FDC planes to pass by
-    else if (fit_type==kWireBased && fdc_plane<24 && S(state_z)>fdc_z_wires[fdc_plane]-0.5){   
+    else if (fdc_plane<24 && S(state_z)>fdc_z_wires[fdc_plane]-0.5){   
       // output step near wire plane 
       double tanl=S(state_tanl);
       double pt=1/fabs(S(state_q_over_pt));
