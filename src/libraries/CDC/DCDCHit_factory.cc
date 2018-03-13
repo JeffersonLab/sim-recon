@@ -61,6 +61,8 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     HighTCut = cdc_timing_cuts[1];
     //jout<<"CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
   }
+
+  eventLoop->Get(ttab);
   
   return NOERROR;
 }
@@ -86,19 +88,36 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     vector <const Df125CDCPulse*> pulse;
     hit->Get(pulse);
 
-    // ignore hits without raw hit info, e.g. those from HDDM files
-    if(pulse.size()==0)
-        continue;
-
     cdchit_info_t hit_info;
-    hit_info.rocid = pulse[0]->rocid;
-    hit_info.slot = pulse[0]->slot;
-    hit_info.connector = pulse[0]->channel / 24;
+    if(pulse.size()==0) {
+        // for hits without lower-level hit info, e.g. HDDM data, we have to use the translation table
+        // to figure out which DAQ channels his hit corresponds to
+        try {
+            DTranslationTable::DChannelInfo channel_info;
+            channel_info.det_sys = DTranslationTable::CDC;
+            channel_info.cdc.ring = hit->ring;
+            channel_info.cdc.straw = hit->straw;
+            DTranslationTable::csc_t daq_index = ttab[0]->GetDAQIndex(channel_info);
+
+            hit_info.rocid = daq_index.rocid;
+            hit_info.slot = daq_index.slot;
+            hit_info.connector = daq_index.channel / 24;
+        } catch(...) { 
+            cout << "Cannot find Translation Table data for hit on ring " << hit->ring
+                 << " straw " << hit->straw << ", skipping this info ..." << endl;
+            continue;
+        }
+    } else {
+        hit_info.rocid = pulse[0]->rocid;
+        hit_info.slot = pulse[0]->slot;
+        hit_info.connector = pulse[0]->channel / 24;
+    }
+
     hit_info.time = hit->t;
     hit_info.max = 0;
 
     if (hit->QF > 1) {
-      hit_info.max = 1;
+        hit_info.max = 1;
     }
 
     hit_info_vec.push_back(hit_info);

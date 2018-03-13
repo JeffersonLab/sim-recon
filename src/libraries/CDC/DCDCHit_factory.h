@@ -10,6 +10,7 @@
 
 #include <JANA/JFactory.h>
 #include <DAQ/Df125CDCPulse.h>
+#include <TTAB/DTranslationTable.h>
 
 #include "DCDCHit.h"
 
@@ -51,7 +52,7 @@ class DCDCHit_factory: public jana::JFactory<DCDCHit>{
   jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-  
+  vector<const DTranslationTable *> ttab;
 };
 
 #endif // _DCDCHit_factory_
