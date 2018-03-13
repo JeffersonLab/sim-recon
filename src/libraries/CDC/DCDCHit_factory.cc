@@ -86,6 +86,10 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     vector <const Df125CDCPulse*> pulse;
     hit->Get(pulse);
 
+    // ignore hits without raw hit info, e.g. those from HDDM files
+    if(pulse.size()==0)
+        continue;
+
     cdchit_info_t hit_info;
     hit_info.rocid = pulse[0]->rocid;
     hit_info.slot = pulse[0]->slot;
@@ -136,13 +140,14 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     const DCDCHit *hit = hits[k];
 
     // remove hits with small charge: not really used
-    if (hit->q < DIGI_THRESHOLD) 
+    if (hit->q < DIGI_THRESHOLD) {
       continue;
+    }
 
     // remove hits with amplitudes 0 or less
     if ( hit->amp <= 0 ) { 
       continue;
-    }
+     }
 
     // remove hits with failed timing alorithm
     if ( (hit->QF & 0x1) != 0 ) { 
@@ -155,7 +160,8 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
 
     // removed hits correclated with Saturation hit on same connector/reamp/HV-board
-    if (Mark4Removal[k]){
+    // this vector should not be filled if we are running over HDDM data
+    if (Mark4Removal.size() > 0 && Mark4Removal[k]){
       continue;
     }
     
