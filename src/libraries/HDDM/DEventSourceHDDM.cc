@@ -1224,12 +1224,12 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
    
    if (factory == NULL)
        return OBJECT_NOT_AVAILABLE;
-   if (tag != "" && tag != "TRUTH")
+   if (tag != "" && tag != "TRUTH" && tag != "Calib")
       return OBJECT_NOT_AVAILABLE;
    
    vector<DCDCHit*> data;
 
-   if (tag == "") {
+   if ( tag == "" || tag == "Calib" ) {
       vector<const DCDCHit*> locTruthHits;
       locEventLoop->Get(locTruthHits, "TRUTH");
 
@@ -1259,6 +1259,7 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
             if(iter->getCdcHitQFs().size() > 0) {
                 hit->QF  = iter->getCdcHitQF().getQF();
             }            
+
             hit->d      = 0.; // initialize to zero to avoid any NaN
             hit->itrack = 0;  // track information is in TRUTH tag
             hit->ptype  = 0;  // ditto
