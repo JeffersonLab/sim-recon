@@ -223,7 +223,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
-    if (VERBOSE>=4) printf("BCAL_attenlength_gainratio::evnt()  event %4lu points %3lu\n", eventnumber, dbcalpoints.size());
+    if (VERBOSE>=4) printf("BCAL_attenlength_gainratio::evnt()  event %4lu points %3lu          \n", eventnumber, dbcalpoints.size());
 	for(unsigned int i=0; i<dbcalpoints.size(); i++) {
 		const DBCALPoint *point = dbcalpoints[i];
 		int module = point->module();
@@ -356,6 +356,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::fini(void)
 	// }
 	printf("BCAL_attenlength_gainratio::fini >>  Fitting all histograms\n");
 
+    TF1 *intfit = new TF1("intfit","pol1");
     if (VERBOSEHISTOGRAMS) {
         for (int module=0; module<nummodule; module++) {
             for (int layer=0; layer<numlayer; layer++) {
@@ -367,8 +368,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::fini(void)
                         int layersect = (layer)*4 + sector + 1;
                         int entries = hist->GetEntries();
                         if (entries>10) {
-                            hist->Fit("pol1","q");
-                            TF1 *intfit = (TF1*)hist->GetFunction("pol1");
+                            hist->Fit(intfit,"q");
                             float p0 = intfit->GetParameter(0);
                             float p1 = intfit->GetParameter(1);
                             //float p0err = intfit->GetParError(0);
@@ -393,14 +393,14 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::fini(void)
             }
         }
     }
+    TF1 *peakfit = new TF1("peakfit","pol1");
 	for (int module=0; module<nummodule; module++) {
 		for (int layer=0; layer<numlayer; layer++) {
 			for (int sector=0; sector<numsector; sector++) {
 				int layersect = (layer)*4 + sector + 1;
 				int entries = logintratiovsZ[module][layer][sector]->GetEntries();
 				if (entries>10) {
-					logintratiovsZ[module][layer][sector]->Fit("pol1","q");
-					TF1 *intfit = (TF1*)logintratiovsZ[module][layer][sector]->GetFunction("pol1");
+					logintratiovsZ[module][layer][sector]->Fit(intfit,"q");
 					float p0 = intfit->GetParameter(0);
 					float p1 = intfit->GetParameter(1);
 					float p0err = intfit->GetParError(0);
@@ -423,8 +423,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::fini(void)
 					hist2D_intgainratio->SetBinError(module+1,layersect,gainratioerr);
 
                     if (VERBOSEHISTOGRAMS) {
-                        logpeakratiovsZ[module][layer][sector]->Fit("pol1","q");
-                        TF1 *peakfit = (TF1*)logpeakratiovsZ[module][layer][sector]->GetFunction("pol1");
+                        logpeakratiovsZ[module][layer][sector]->Fit(peakfit,"q");
                         p0 = peakfit->GetParameter(0);
                         p1 = peakfit->GetParameter(1);
                         p0err = peakfit->GetParError(0);
