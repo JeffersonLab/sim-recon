@@ -623,9 +623,35 @@ void DEVIOWorkerThread::ParseTSscalerBank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 // Parsef250scalerBank
 //---------------------------------
-void DEVIOWorkerThread::Parsef250scalerBank(uint32_t* &iptr, uint32_t *iend)
+void DEVIOWorkerThread::Parsef250scalerBank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
 {
-	iptr = &iptr[(*iptr) + 1];
+  
+  uint32_t Nwords = ((uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t);
+
+  if(Nwords < 4){
+    _DBG_ << "250Scaler bank size does not match expected!!" << endl;
+    _DBG_ << "Found " << Nwords << endl;
+    throw JExceptionDataFormat("250scaler bank size does not match expected", __FILE__, __LINE__);
+  } else {
+
+    DParsedEvent *pe = current_parsed_events.back();
+    
+    Df250Scaler  *sc = pe->NEW_Df250Scaler();
+ 
+    sc->nsync        =   *iptr++; 
+    sc->trig_number  =   *iptr++;
+    sc->version      =   *iptr++;
+    sc->crate        =    rocid;
+    
+    while(iptr < iend){
+      //      cout << "  " << *iptr << endl;
+      sc->fa250_sc.push_back(*iptr++);
+    }
+    
+  }
+
+  iptr = iend;
+
 }
 
 //---------------------------------
@@ -854,10 +880,10 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 				ParseTSscalerBank(iptr, iend);
 				break;
 			case 0xE05:
-				Parsef250scalerBank(iptr, iend);
+			  //				Parsef250scalerBank(iptr, iend);
 				break;
 			case 0xE10:  // really wish Sascha would share when he does this stuff!
-				Parsef250scalerBank(iptr, iend);
+			  Parsef250scalerBank(rocid, iptr, iend);
 				break;
 
             // When we write out single events in the offline, we also can save some

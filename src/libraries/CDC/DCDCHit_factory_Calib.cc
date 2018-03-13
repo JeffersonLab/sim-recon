@@ -180,7 +180,6 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     for (unsigned int i=0; i < digihits.size(); i++) {
         const DCDCDigiHit *digihit = digihits[i];
 
-	// do not do this cut here! do it in the DCDCHit factory
         //if ( (digihit->QF & 0x1) != 0 ) continue; // Cut bad timing quality factor hits... (should check effect on efficiency)
 
         const int &ring  = digihit->ring;

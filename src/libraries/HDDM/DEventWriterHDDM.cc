@@ -47,7 +47,12 @@ DEventWriterHDDM::DEventWriterHDDM(JEventLoop* locEventLoop, string locOutputFil
             CCDB_CONTEXT_STRING = jcalib->GetContext();
         }
     }
-
+    
+    CDC_TAG = "Calib";
+    gPARMS->SetDefaultParameter("HDDMOUT:CDCTAG", CDC_TAG, "Tag (string) to use when selecting CDC hits to read out.");
+    
+    FDC_TAG = "";
+    gPARMS->SetDefaultParameter("HDDMOUT:FDCTAG", FDC_TAG, "Tag (string) to use when selecting FDC hits to read out.");
 }
 
 bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
@@ -67,15 +72,15 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	vector<const DTPOLHit*> TPOLHits;
 	vector<const DRFTime*> RFtimes;
 
-	locEventLoop->Get(CDCHits);
-	locEventLoop->Get(TOFHits);
+	locEventLoop->Get(CDCHits, CDC_TAG.c_str());	
+	locEventLoop->Get(FDCHits, FDC_TAG.c_str());
+    locEventLoop->Get(TOFHits);
 	locEventLoop->Get(FCALHits);
 	locEventLoop->Get(BCALDigiHits);
 	locEventLoop->Get(BCALTDCDigiHits);
 	locEventLoop->Get(SCHits);
 	locEventLoop->Get(PSHits);
 	locEventLoop->Get(PSCHits);
-	locEventLoop->Get(FDCHits);
 	locEventLoop->Get(TAGHHits);
 	locEventLoop->Get(TAGMHits);
 	locEventLoop->Get(TPOLHits);
@@ -644,6 +649,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		cdcstrawhitit->setT(CDCHits[i]->t);
         cdcstrawhitit->addCdcDigihits();
         cdcstrawhitit->getCdcDigihits().begin()->setPeakAmp(CDCHits[i]->amp);
+        cdcstrawhitit->addCdcHitQFs();
+        cdcstrawhitit->getCdcHitQFs().begin()->setQF(CDCHits[i]->QF);
 	}
 
 	//========================================RFtime=======================================================
