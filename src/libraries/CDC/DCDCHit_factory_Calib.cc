@@ -180,7 +180,7 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     for (unsigned int i=0; i < digihits.size(); i++) {
         const DCDCDigiHit *digihit = digihits[i];
 
-        if ( (digihit->QF & 0x1) != 0 ) continue; // Cut bad timing quality factor hits... (should check effect on efficiency)
+        //if ( (digihit->QF & 0x1) != 0 ) continue; // Cut bad timing quality factor hits... (should check effect on efficiency)
 
         const int &ring  = digihit->ring;
         const int &straw = digihit->straw;
@@ -258,7 +258,7 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         int scaled_ped = raw_ped << PBIT;
         
         if (maxamp > 0) maxamp = maxamp << ABIT;
-        if (maxamp <= scaled_ped) continue;
+        //if (maxamp <= scaled_ped) continue;
 
         maxamp = maxamp - scaled_ped;
 

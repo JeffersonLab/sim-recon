@@ -144,6 +144,11 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       continue;
     }
 
+    // remove hits with failed timing alorithm
+    if ( (hit->QF & 0x1) != 0 ) { 
+        continue;
+    }
+
     // remove hits ouside of the timing cut
     if ( (hit->t < LowTCut) || (hit->t > HighTCut) ){
       continue;
