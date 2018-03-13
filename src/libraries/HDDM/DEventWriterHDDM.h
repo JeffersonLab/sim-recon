@@ -52,6 +52,10 @@ class DEventWriterHDDM : public JObject
         // these should be consistent during program execution
         string HDDM_DATA_VERSION_STRING;
         string CCDB_CONTEXT_STRING;
+
+        // Information for optional tags
+        string CDC_TAG;
+        string FDC_TAG;
 };
 
 #endif //_DEventWriterHDDM_
