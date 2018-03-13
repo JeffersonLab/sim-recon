@@ -649,6 +649,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 		cdcstrawhitit->setT(CDCHits[i]->t);
         cdcstrawhitit->addCdcDigihits();
         cdcstrawhitit->getCdcDigihits().begin()->setPeakAmp(CDCHits[i]->amp);
+        cdcstrawhitit->addCdcHitQFs();
+        cdcstrawhitit->getCdcHitQFs().begin()->setQF(CDCHits[i]->QF);
 	}
 
 	//========================================RFtime=======================================================
