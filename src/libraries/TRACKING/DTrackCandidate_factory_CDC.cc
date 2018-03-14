@@ -132,8 +132,6 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 	// when searching for unused axial hits to add to the track, require that the hit be within this #-degrees in phi to the circle fit
 	MAX_UNUSED_HIT_LINK_ANGLE = 10.0; //degrees
 
-	CDC_DZ_FIDUCIAL=100.; // greater than half-length of CDC to allow for some slop in the intersection of the circles with the stereo straws
-
 	TARGET_Z = 65.0;
 	VERTEX_Z_MIN = -100.0;
 	VERTEX_Z_MAX = 200.0;
@@ -177,7 +175,6 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int32_t run
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_UNUSED_HIT_LINK_ANGLE", MAX_UNUSED_HIT_LINK_ANGLE);
 	gPARMS->SetDefaultParameter("TRKFIND:VERTEX_Z_MIN", VERTEX_Z_MIN);
 	gPARMS->SetDefaultParameter("TRKFIND:VERTEX_Z_MAX", VERTEX_Z_MAX);
-	gPARMS->SetDefaultParameter("TRKFIND:CDC_DZ_FIDUCIAL", CDC_DZ_FIDUCIAL);
 
 	MAX_HIT_DIST2 = MAX_HIT_DIST*MAX_HIT_DIST;
 
@@ -3237,10 +3234,7 @@ bool DTrackCandidate_factory_CDC::Calc_StereoPosition(const DCDCWire *wire, cons
 	double dz = dz1;
 	if(fabs(dz2) < fabs(dz1))
 		dz = dz2;
-
-	if (fabs(dz)>CDC_DZ_FIDUCIAL) // would intersect outside of CDC volume
-	  return false;
-
+		
 	// Compute the position for this hit
 	pos = origin + dz*dir;
  
