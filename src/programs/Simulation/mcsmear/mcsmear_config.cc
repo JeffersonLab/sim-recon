@@ -22,6 +22,7 @@ mcsmear_config_t::mcsmear_config_t()
 	IGNORE_SEEDS   = false;
     DUMP_RCDB_CONFIG = false;
 	APPLY_EFFICIENCY_CORRECTIONS = true;
+	APPLY_HITS_TRUNCATION = true;
     FCAL_ADD_LIGHTGUIDE_HITS = false;
 		
 	TRIGGER_LOOKBACK_TIME = -100; // ns
@@ -165,6 +166,79 @@ bool mcsmear_config_t::ParseRCDBConfigFile(int runNumber)
     }
 
 	// then we get stuff out of it
+
+    double dvalue;
+    std::stringstream deco;
+    vector<string>::iterator iter;
+    vector<string> fadc250_sys = {"FCAL", "BCAL", "TOF", "ST", "TAGH",
+                                  "TAGM", "PS", "PSC", "TPOL"};
+    for (iter = fadc250_sys.begin(); iter != fadc250_sys.end(); ++iter) {
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["FADC250_NPEAK"]);
+        deco >> dvalue;
+        readout[*iter]["NPEAK"] = dvalue;
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["FADC250_NSA"]);
+        deco >> dvalue;
+        readout[*iter]["NSA"] = dvalue;
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["FADC250_NSB"]);
+        deco >> dvalue;
+        readout[*iter]["NSB"] = dvalue;
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["FADC250_W_WIDTH"]);
+        deco >> dvalue;
+        readout[*iter]["WINDOW"] = dvalue;
+    }
+
+    vector<string> fadc125_sys = {"FDC", "CDC"};
+    for (iter = fadc125_sys.begin(); iter != fadc125_sys.end(); ++iter) {
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["FADC125_NPEAK"]);
+        deco >> dvalue;
+        readout[*iter]["NPEAK"] = dvalue;
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["FADC125_IE"]);
+        deco >> dvalue;
+        readout[*iter]["IE"] = dvalue;
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["FADC125_PG"]);
+        deco >> dvalue;
+        readout[*iter]["PG"] = dvalue;
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["FADC125_W_WIDTH"]);
+        deco >> dvalue;
+        readout[*iter]["WINDOW"] = dvalue;
+    }
+
+    vector<string> f1tdc_sys = {"BCAL", "ST", "TAGH", "TAGM", "PSC", "FDC"};
+    for (iter = f1tdc_sys.begin(); iter != f1tdc_sys.end(); ++iter) {
+        readout[*iter]["NHITS"] = 8.;
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["F1TDC_WINDOW"]);
+        deco >> dvalue;
+        readout[*iter]["WINDOW"] = dvalue;
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["DSC2_WIDTH"]);
+        deco >> dvalue;
+        readout[*iter]["WIDTH"] = dvalue;
+    }
+
+    vector<string> tdc1290_sys = {"TOF"};
+    for (iter = tdc1290_sys.begin(); iter != tdc1290_sys.end(); ++iter) {
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["TDC1290_N_HITS"]);
+        deco >> dvalue;
+        readout[*iter]["NHITS"] = dvalue;
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["TDC1290_W_WIDTH"]);
+        deco >> dvalue;
+        readout[*iter]["WINDOW"] = dvalue;
+        deco.clear();
+        deco.str(result.Sections.at(*iter).NameValues["DSC2_WIDTH"]);
+        deco >> dvalue;
+        readout[*iter]["WIDTH"] = dvalue;
+    }
 
 	return true;
 }
