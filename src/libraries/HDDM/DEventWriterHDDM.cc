@@ -53,6 +53,12 @@ DEventWriterHDDM::DEventWriterHDDM(JEventLoop* locEventLoop, string locOutputFil
     
     FDC_TAG = "";
     gPARMS->SetDefaultParameter("HDDMOUT:FDCTAG", FDC_TAG, "Tag (string) to use when selecting FDC hits to read out.");
+    
+    TAGM_TAG = "Calib";
+    gPARMS->SetDefaultParameter("HDDMOUT:TAGMTAG", TAGM_TAG, "Tag (string) to use when selecting TAGM hits to read out.");
+
+    TAGH_TAG = "Calib";
+    gPARMS->SetDefaultParameter("HDDMOUT:TAGHTAG", TAGH_TAG, "Tag (string) to use when selecting TAGH hits to read out.");
 }
 
 bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
@@ -81,8 +87,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	locEventLoop->Get(SCHits);
 	locEventLoop->Get(PSHits);
 	locEventLoop->Get(PSCHits);
-	locEventLoop->Get(TAGHHits);
-	locEventLoop->Get(TAGMHits);
+	locEventLoop->Get(TAGHHits, TAGH_TAG.c_str());
+	locEventLoop->Get(TAGMHits, TAGM_TAG.c_str());
 	locEventLoop->Get(TPOLHits);
 	locEventLoop->Get(RFtimes);
 
