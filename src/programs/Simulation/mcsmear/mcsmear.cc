@@ -53,6 +53,7 @@ using namespace jana;
 // being set every time mcsmear is run.
 DRandom2 gDRandom(0); // declared extern in DRandom2.h
 
+const mcsmear_config_t *mcsmear_config;
 
 //-----------
 // main
@@ -61,6 +62,7 @@ int main(int narg,char* argv[])
 {
    mcsmear_config_t *config = new mcsmear_config_t();
    ParseCommandLineArguments(narg, argv, config);
+   mcsmear_config = config;
 
    // Create DApplication object
    DApplication dapp(narg, argv);
@@ -100,6 +102,7 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
           case 'd': config->DROP_TRUTH_HITS=true;                break;
           case 'D': config->DUMP_RCDB_CONFIG=true;               break;
           case 'e': config->APPLY_EFFICIENCY_CORRECTIONS=false;  break;
+          case 'm': config->APPLY_HITS_TRUNCATION=false;         break;
           case 'E': config->FCAL_ADD_LIGHTGUIDE_HITS=true;       break;
 
 	      // BCAL parameters
