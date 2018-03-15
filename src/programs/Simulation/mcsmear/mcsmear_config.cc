@@ -226,7 +226,6 @@ bool mcsmear_config_t::ParseRCDBConfigFile(int runNumber)
         else {
              dvalue = 50; // default value;
         }
-std::cout << *iter << " WIDTH=" << dvalue << std::endl;
         readout[*iter]["WIDTH"] = dvalue;
     }
 
@@ -248,7 +247,6 @@ std::cout << *iter << " WIDTH=" << dvalue << std::endl;
         else {
             dvalue = 50; // default value
         }
-std::cout << *iter << " WIDTH=" << dvalue << std::endl;
         readout[*iter]["WIDTH"] = dvalue;
     }
 
