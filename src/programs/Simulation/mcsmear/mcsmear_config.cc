@@ -219,8 +219,14 @@ bool mcsmear_config_t::ParseRCDBConfigFile(int runNumber)
         deco >> dvalue;
         readout[*iter]["WINDOW"] = dvalue;
         deco.clear();
-        deco.str(result.Sections.at(*iter).NameValues["DSC2_WIDTH"]);
-        deco >> dvalue;
+        if (result.Sections.at(*iter).NameVectors["DSC2_WIDTH"].size() > 0) {
+            deco.str(result.Sections.at(*iter).NameVectors["DSC2_WIDTH"][0]);
+            deco >> dvalue;
+        }
+        else {
+             dvalue = 50; // default value;
+        }
+std::cout << *iter << " WIDTH=" << dvalue << std::endl;
         readout[*iter]["WIDTH"] = dvalue;
     }
 
@@ -235,8 +241,14 @@ bool mcsmear_config_t::ParseRCDBConfigFile(int runNumber)
         deco >> dvalue;
         readout[*iter]["WINDOW"] = dvalue;
         deco.clear();
-        deco.str(result.Sections.at(*iter).NameValues["DSC2_WIDTH"]);
-        deco >> dvalue;
+        if (result.Sections.at(*iter).NameVectors["DSC2_WIDTH"].size() > 0) {
+            deco.str(result.Sections.at(*iter).NameVectors["DSC2_WIDTH"][0]);
+            deco >> dvalue;
+        }
+        else {
+            dvalue = 50; // default value
+        }
+std::cout << *iter << " WIDTH=" << dvalue << std::endl;
         readout[*iter]["WIDTH"] = dvalue;
     }
 
