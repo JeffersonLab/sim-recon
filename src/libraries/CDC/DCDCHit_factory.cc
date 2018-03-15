@@ -296,6 +296,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->d = 0.0;
         hit->itrack = -1;
         hit->ptype = 0;
+        hit->QF = digihit->QF;
 
         hit->AddAssociatedObject(digihit);
 
