@@ -1683,7 +1683,23 @@ bool DGeometry::GetFCALZ(double &z_fcal) const
       return true;
    }
 }
+//---------------------------------
+// GetDIRCZ
+//---------------------------------
+bool DGeometry::GetDIRCZ(double &z_dirc) const
+{
+   vector<double> DIRCpos;
+   bool good = Get("//section/composition/posXYZ[@volume='DIRC']/@X_Y_Z", DIRCpos);
 
+   if(!good){
+      _DBG_<<"Unable to retrieve ForwardEMcal position."<<endl;
+      z_dirc=0.0;
+      return false;
+   }else{
+      z_dirc = DIRCpos[2];
+      return true;
+   }
+}
 //---------------------------------
 // GetTOFZ
 //---------------------------------
