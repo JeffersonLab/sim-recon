@@ -56,6 +56,8 @@ class DEventWriterHDDM : public JObject
         // Information for optional tags
         string CDC_TAG;
         string FDC_TAG;
+        string TAGM_TAG;
+        string TAGH_TAG;
 };
 
 #endif //_DEventWriterHDDM_
