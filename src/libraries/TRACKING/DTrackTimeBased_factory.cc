@@ -867,6 +867,15 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
     }
 
   }
+
+  // if the fit returns chisq=-1, something went terribly wrong.  We may still 
+  // have a usable track if there are enough hits in the FDC in the previous 
+  // pass.  In this case set kFitNoImprovement so we can save the wire-based 
+  // results.
+  if (fitter->GetChisq()<0){
+    if (myfdchits.size()>3) status=DTrackFitter::kFitNoImprovement;
+    else status=DTrackFitter::kFitFailed;
+  }
   
   // In the transition region between the CDC and the FDC where the track 
   // contains both CDC and FDC hits, sometimes too many hits are discarded in 
