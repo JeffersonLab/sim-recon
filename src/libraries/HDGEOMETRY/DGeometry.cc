@@ -1688,17 +1688,26 @@ bool DGeometry::GetFCALZ(double &z_fcal) const
 //---------------------------------
 bool DGeometry::GetDIRCZ(double &z_dirc) const
 {
-   vector<double> DIRCpos;
-   bool good = Get("//section/composition/posXYZ[@volume='DIRC']/@X_Y_Z", DIRCpos);
+  vector<double> dirc_face;
+  bool good = Get("//section/composition/posXYZ[@volume='DIRC']/@X_Y_Z",dirc_face);
 
-   if(!good){
-      _DBG_<<"Unable to retrieve ForwardEMcal position."<<endl;
-      z_dirc=0.0;
-      return false;
-   }else{
-      z_dirc = DIRCpos[2];
-      return true;
-   }
+  if(!good){
+    _DBG_<<"Unable to retrieve DIRC position."<<endl;
+    z_dirc=0.0;
+    return false;
+  }
+  else{ 
+    vector<double>dirc_plane;
+    vector<double>dirc_shift;
+    vector<double>bar_plane;
+    Get("//composition[@name='DRCC']/mposY[@volume='DCML']/@Z_X/plane[@value='1']", dirc_plane);
+    Get("//composition[@name='DIRC']/posXYZ[@volume='DRCC']/@X_Y_Z", dirc_shift);
+    Get("//composition[@name='DCBR']/mposX[@volume='QZBL']/@Y_Z", bar_plane);
+    z_dirc=dirc_face[2]+dirc_plane[0]+dirc_shift[2]+bar_plane[1]; 
+
+    jout << "DIRC z position = " << z_dirc << " cm." << endl;
+    return true;
+  }
 }
 //---------------------------------
 // GetTOFZ
