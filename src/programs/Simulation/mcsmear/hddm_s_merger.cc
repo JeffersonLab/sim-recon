@@ -21,22 +21,65 @@
 
 #include <iostream>
 #include <hddm_s_merger.h>
+#include <mcsmear_config.h>
+
+const double fadc125_period_ns(8.);
+const double fadc250_period_ns(4.);
 
 static thread_local double t_shift_ns(0);
-static thread_local double cdc_min_delta_t_ns(25.);
-static thread_local double fdc_min_delta_t_ns(25.);
+
+static thread_local int    cdc_max_hits(1);
+static thread_local double cdc_integration_window_ns(800.);
+
+static thread_local int    fdc_wires_max_hits(8);
+static thread_local double fdc_wires_min_delta_t_ns(35.);
+static thread_local int    fdc_strips_max_hits(1);
+static thread_local double fdc_strips_integration_window_ns(200.);
+
+static thread_local int    stc_adc_max_hits(3);
+static thread_local int    stc_tdc_max_hits(8);
 static thread_local double stc_min_delta_t_ns(25.);
-static thread_local double bcal_min_delta_t_ns(50.);
+static thread_local double stc_integration_window_ns(100.);
+
+static thread_local int    bcal_adc_max_hits(1);
+static thread_local int    bcal_tdc_max_hits(8);
+static thread_local double bcal_min_delta_t_ns(25.);
+static thread_local double bcal_integration_window_ns(114.);
+static thread_local double bcal_fadc_counts_per_ns(16.);
+static thread_local double bcal_tdc_counts_per_ns(16.13);
+
+static thread_local int    ftof_adc_max_hits(3);
+static thread_local int    ftof_tdc_max_hits(64);
 static thread_local double ftof_min_delta_t_ns(25.);
-static thread_local double fcal_min_delta_t_ns(75.);
-static thread_local double ccal_min_delta_t_ns(75.);
-static thread_local double ps_min_delta_t_ns(25.);
+static thread_local double ftof_integration_window_ns(104.);
+
+static thread_local int    fcal_max_hits(3);
+static thread_local double fcal_min_delta_t_ns(70.);
+static thread_local double fcal_integration_window_ns(64.);
+
+static thread_local int    ccal_max_hits(3);
+static thread_local double ccal_min_delta_t_ns(70.);
+static thread_local double ccal_integration_window_ns(64.);
+
+static thread_local int    ps_max_hits(3);
+static thread_local double ps_integration_window_ns(72.);
+static thread_local int    psc_adc_max_hits(3);
+static thread_local int    psc_tdc_max_hits(3);
 static thread_local double psc_min_delta_t_ns(25.);
-static thread_local double ttag_min_delta_t_ns(25.);
-static thread_local double tpol_min_delta_t_ns(2500.);
+static thread_local double psc_integration_window_ns(36.);
+
+static thread_local int    tag_adc_max_hits(3);
+static thread_local int    tag_tdc_max_hits(8);
+static thread_local double tag_min_delta_t_ns(25.);
+static thread_local double tag_integration_window_ns(36.);
+
+static thread_local int    tpol_max_hits(1);
+static thread_local double tpol_integration_window_ns(2500.);
+
+static thread_local int    fmwpc_max_hits(1);
 static thread_local double fmwpc_min_delta_t_ns(400.);
-static thread_local double fadc_counts_per_ns(16.);
-static thread_local double tdc_counts_per_ns(16.13);
+
+extern const mcsmear_config_t *mcsmear_config;
 
 namespace hddm_s_merger {
 
@@ -48,22 +91,70 @@ namespace hddm_s_merger {
       t_shift_ns = dt_ns;
    }
 
-   double get_cdc_min_delta_t_ns() {
-      return cdc_min_delta_t_ns;
+   int get_cdc_max_hits() {
+      return cdc_max_hits;
    }
 
-   void set_cdc_min_delta_t_ns(double dt_ns) {
-      cdc_min_delta_t_ns = dt_ns;
+   void set_cdc_max_hits(int maxhits) {
+      cdc_max_hits = maxhits;
    }
 
-   double get_fdc_min_delta_t_ns() {
-      return fdc_min_delta_t_ns;
+   double get_cdc_integration_window_ns() {
+      return cdc_integration_window_ns;
    }
 
-   void set_fdc_min_delta_t_ns(double dt_ns) {
-      fdc_min_delta_t_ns = dt_ns;
+   void set_cdc_integration_window_ns(double dt_ns) {
+      cdc_integration_window_ns = dt_ns;
    }
-      
+
+   int get_fdc_wires_max_hits() {
+      return fdc_wires_max_hits;
+   }
+
+   void set_fdc_wires_max_hits(int maxhits) {
+      fdc_wires_max_hits = maxhits;
+   }
+
+   double get_fdc_wires_min_delta_t_ns() {
+      return fdc_wires_min_delta_t_ns;
+   }
+
+   void set_fdc_wires_min_delta_t_ns(double dt_ns) {
+      fdc_wires_min_delta_t_ns = dt_ns;
+   }
+
+   int get_fdc_strips_max_hits() {
+      return fdc_strips_max_hits;
+   }
+
+   void set_fdc_strips_max_hits(int maxhits) {
+      fdc_strips_max_hits = maxhits;
+   }
+
+   double get_fdc_strips_integration_window_ns() {
+      return fdc_strips_integration_window_ns;
+   }
+
+   void set_fdc_strips_integration_window_ns(double dt_ns) {
+      fdc_strips_integration_window_ns = dt_ns;
+   }
+
+   int get_stc_adc_max_hits() {
+      return stc_adc_max_hits;
+   }
+
+   void set_stc_adc_max_hits(int maxhits) {
+      stc_adc_max_hits = maxhits;
+   }
+
+   int get_stc_tdc_max_hits() {
+      return stc_tdc_max_hits;
+   }
+
+   void set_stc_tdc_max_hits(int maxhits) {
+      stc_tdc_max_hits = maxhits;
+   }
+
    double get_stc_min_delta_t_ns() {
       return stc_min_delta_t_ns;
    }
@@ -71,13 +162,77 @@ namespace hddm_s_merger {
    void set_stc_min_delta_t_ns(double dt_ns) {
       stc_min_delta_t_ns = dt_ns;
    }
-      
+
+   double get_stc_integration_window_ns() {
+      return stc_integration_window_ns;
+   }
+
+   void set_stc_integration_window_ns(double dt_ns) {
+      stc_integration_window_ns = dt_ns;
+   }
+
+   int get_bcal_adc_max_hits() {
+      return bcal_adc_max_hits;
+   }
+
+   void set_bcal_adc_max_hits(int maxhits) {
+      bcal_adc_max_hits = maxhits;
+   }
+
+   int get_bcal_tdc_max_hits() {
+      return bcal_tdc_max_hits;
+   }
+
+   void set_bcal_tdc_max_hits(int maxhits) {
+      bcal_tdc_max_hits = maxhits;
+   }
+
    double get_bcal_min_delta_t_ns() {
       return bcal_min_delta_t_ns;
    }
 
    void set_bcal_min_delta_t_ns(double dt_ns) {
       bcal_min_delta_t_ns = dt_ns;
+   }
+
+   double get_bcal_integration_window_ns() {
+      return bcal_integration_window_ns;
+   }
+
+   void set_bcal_integration_window_ns(double dt_ns) {
+      bcal_integration_window_ns = dt_ns;
+   }
+
+   double get_bcal_fadc_counts_per_ns() {
+      return bcal_fadc_counts_per_ns;
+   }
+
+   void set_bcal_fadc_counts_per_ns(double slope) {
+      bcal_fadc_counts_per_ns = slope;
+   }
+
+   double get_bcal_tdc_counts_per_ns() {
+      return bcal_tdc_counts_per_ns;
+   }
+
+   void set_bcal_tdc_counts_per_ns(double slope) {
+      bcal_tdc_counts_per_ns = slope;
+   }
+
+   int get_ftof_adc_max_hits() {
+      return ftof_adc_max_hits;
+   }
+
+   void set_ftof_adc_max_hits(int maxhits) {
+      ftof_adc_max_hits = maxhits;
+   }
+
+   int get_ftof_tdc_max_hits() {
+      return ftof_tdc_max_hits;
+   }
+
+   void set_ftof_tdc_max_hits(int maxhits) {
+      ftof_tdc_max_hits = maxhits;
    }
 
    double get_ftof_min_delta_t_ns() {
@@ -87,7 +242,23 @@ namespace hddm_s_merger {
    void set_ftof_min_delta_t_ns(double dt_ns) {
       ftof_min_delta_t_ns = dt_ns;
    }
-      
+
+   double get_ftof_integration_window_ns() {
+      return ftof_integration_window_ns;
+   }
+
+   void set_ftof_integration_window_ns(double dt_ns) {
+      ftof_integration_window_ns = dt_ns;
+   }
+
+   int get_fcal_max_hits() {
+      return fcal_max_hits;
+   }
+
+   void set_fcal_max_hits(int maxhits) {
+      fcal_max_hits = maxhits;
+   }
+
    double get_fcal_min_delta_t_ns() {
       return fcal_min_delta_t_ns;
    }
@@ -95,7 +266,23 @@ namespace hddm_s_merger {
    void set_fcal_min_delta_t_ns(double dt_ns) {
       fcal_min_delta_t_ns = dt_ns;
    }
-      
+
+   double get_fcal_integration_window_ns() {
+      return fcal_integration_window_ns;
+   }
+
+   void set_fcal_integration_window_ns(double dt_ns) {
+      fcal_integration_window_ns = dt_ns;
+   }
+
+   int get_ccal_max_hits() {
+      return ccal_max_hits;
+   }
+
+   void set_ccal_max_hits(int maxhits) {
+      ccal_max_hits = maxhits;
+   }
+
    double get_ccal_min_delta_t_ns() {
       return ccal_min_delta_t_ns;
    }
@@ -103,15 +290,47 @@ namespace hddm_s_merger {
    void set_ccal_min_delta_t_ns(double dt_ns) {
       ccal_min_delta_t_ns = dt_ns;
    }
-      
-   double get_ps_min_delta_t_ns() {
-      return ps_min_delta_t_ns;
+
+   double get_ccal_integration_window_ns() {
+      return ccal_integration_window_ns;
    }
 
-   void set_ps_min_delta_t_ns(double dt_ns) {
-      ps_min_delta_t_ns = dt_ns;
+   void set_ccal_integration_window_ns(double dt_ns) {
+      ccal_integration_window_ns = dt_ns;
    }
-      
+
+   int get_ps_max_hits() {
+      return ps_max_hits;
+   }
+
+   void set_ps_max_hits(int maxhits) {
+      ps_max_hits = maxhits;
+   }
+
+   double get_ps_integration_window_ns() {
+      return ps_integration_window_ns;
+   }
+
+   void set_ps_integration_window_ns(double dt_ns) {
+      ps_integration_window_ns = dt_ns;
+   }
+
+   int get_psc_adc_max_hits() {
+      return psc_adc_max_hits;
+   }
+
+   void set_psc_adc_max_hits(int maxhits) {
+      psc_adc_max_hits = maxhits;
+   }
+
+   int get_psc_tdc_max_hits() {
+      return psc_tdc_max_hits;
+   }
+
+   void set_psc_tdc_max_hits(int maxhits) {
+      psc_tdc_max_hits = maxhits;
+   }
+
    double get_psc_min_delta_t_ns() {
       return psc_min_delta_t_ns;
    }
@@ -119,47 +338,74 @@ namespace hddm_s_merger {
    void set_psc_min_delta_t_ns(double dt_ns) {
       psc_min_delta_t_ns = dt_ns;
    }
-      
-   double get_ttag_min_delta_t_ns() {
-      return ttag_min_delta_t_ns;
+
+   double get_psc_integration_window_ns() {
+      return psc_integration_window_ns;
    }
 
-   void set_ttag_min_delta_t_ns(double dt_ns) {
-      ttag_min_delta_t_ns = dt_ns;
-   }
-      
-   double get_tpol_min_delta_t_ns() {
-      return tpol_min_delta_t_ns;
+   void set_psc_integration_window_ns(double dt_ns) {
+      psc_integration_window_ns = dt_ns;
    }
 
-   void set_tpol_min_delta_t_ns(double dt_ns) {
-      tpol_min_delta_t_ns = dt_ns;
+   int get_tag_adc_max_hits() {
+      return tag_adc_max_hits;
    }
-      
+
+   void set_tag_adc_max_hits(int maxhits) {
+      tag_adc_max_hits = maxhits;
+   }
+
+   int get_tag_tdc_max_hits() {
+      return tag_tdc_max_hits;
+   }
+
+   void set_tag_tdc_max_hits(int maxhits) {
+      tag_tdc_max_hits = maxhits;
+   }
+
+   double get_tag_min_delta_t_ns() {
+      return tag_min_delta_t_ns;
+   }
+
+   void set_tag_min_delta_t_ns(double dt_ns) {
+      tag_min_delta_t_ns = dt_ns;
+   }
+
+   double get_tag_integration_window_ns() {
+      return tag_integration_window_ns;
+   }
+
+   void set_tag_integration_window_ns(double dt_ns) {
+      tag_integration_window_ns = dt_ns;
+   }
+
+   int get_tpol_max_hits() {
+      return tpol_max_hits;
+   }
+
+   void set_tpol_max_hits(int maxhits) {
+      tpol_max_hits = maxhits;
+   }
+
+   double get_tpol_integration_window_ns() {
+      return tpol_integration_window_ns;
+   }
+
+   void set_tpol_integration_window_ns(double dt_ns) {
+      tpol_integration_window_ns = dt_ns;
+   }
+ 
+   int get_fmwpc_max_hits() {
+      return fmwpc_max_hits;
+   }
+
+   void set_fmwpc_max_hits(int maxhits) {
+      fmwpc_max_hits = maxhits;
+   }
+
    double get_fmwpc_min_delta_t_ns() {
       return fmwpc_min_delta_t_ns;
    }
-
-   void set_fmwpc_min_delta_t_ns(double dt_ns) {
-      fmwpc_min_delta_t_ns = dt_ns;
-   }
-      
-   double get_fadc_counts_per_ns() {
-      return fadc_counts_per_ns;
-   }
-
-   void set_fadc_counts_per_ns(double slope) {
-      fadc_counts_per_ns = slope;
-   }
-      
-   double get_tdc_counts_per_ns() {
-      return tdc_counts_per_ns;
-   }
-
-   void set_tdc_counts_per_ns(double slope) {
-      tdc_counts_per_ns = slope;
-   }
-      
 }
 
 hddm_s::HDDM &operator+=(hddm_s::HDDM &dst, hddm_s::HDDM &src)
@@ -258,12 +504,13 @@ hddm_s::CdcStrawList &operator+=(hddm_s::CdcStrawList &dst,
 hddm_s::CdcStrawHitList &operator+=(hddm_s::CdcStrawHitList &dst,
                                     hddm_s::CdcStrawHitList &src)
 {
-   // order by t, merge with existing hit if dt < dtmin
+   // order by t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::CdcStrawHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
-      double dt = cdc_min_delta_t_ns;
+      double ti = cdc_integration_window_ns;
+      double dt = ti + 2*fadc125_period_ns;
       double newQ = iter->getQ();
       while (iord > 0 && dst(iord).getT() > t)
          --iord;
@@ -271,13 +518,17 @@ hddm_s::CdcStrawHitList &operator+=(hddm_s::CdcStrawHitList &dst,
          ++iord;
       if (iord > 0 && t - dst(iord - 1).getT() < dt) {
          double oldQ = dst(iord - 1).getQ();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / dt;
-         dst(iord - 1).setQ(oldQ + newQ * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setQ(oldQ + newQ * pulse_fraction);
       }
       else if (iord < dst.size() && dst(iord).getT() - t < dt) {
          double oldQ = dst(iord).getQ();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
-         dst(iord).setQ(newQ + oldQ * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setQ(newQ + oldQ * pulse_fraction);
+         else
+            dst(iord).setQ(newQ);
          dst(iord).setT(t);
       }
       else {
@@ -374,12 +625,12 @@ hddm_s::FdcAnodeWireList &operator+=(hddm_s::FdcAnodeWireList &dst,
 hddm_s::FdcAnodeHitList &operator+=(hddm_s::FdcAnodeHitList &dst,
                                     hddm_s::FdcAnodeHitList &src)
 {
-   // order by t, merge with existing hit if dt < dtmin
+   // order by t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::FdcAnodeHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
-      double dt = fdc_min_delta_t_ns;
+      double dt = fdc_wires_min_delta_t_ns;
       double newDE = iter->getDE();
       while (iord > 0 && dst(iord).getT() > t)
          --iord;
@@ -392,7 +643,7 @@ hddm_s::FdcAnodeHitList &operator+=(hddm_s::FdcAnodeHitList &dst,
       }
       else if (iord < dst.size() && dst(iord).getT() - t < dt) {
          double oldDE = dst(iord).getDE();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / dt;
          dst(iord).setDE(newDE + oldDE * pulse_fraction);
          dst(iord).setT(t);
       }
@@ -445,12 +696,13 @@ hddm_s::FdcCathodeStripList &operator+=(hddm_s::FdcCathodeStripList &dst,
 hddm_s::FdcCathodeHitList &operator+=(hddm_s::FdcCathodeHitList &dst,
                                       hddm_s::FdcCathodeHitList &src)
 {
-   // order by t, merge with existing hit if dt < dtmin
+   // order by t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::FdcCathodeHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
-      double dt = fdc_min_delta_t_ns;
+      double ti = fdc_strips_integration_window_ns;
+      double dt = ti + 2*fadc125_period_ns;
       double newQ = iter->getQ();
       while (iord > 0 && dst(iord).getT() > t)
          --iord;
@@ -458,13 +710,17 @@ hddm_s::FdcCathodeHitList &operator+=(hddm_s::FdcCathodeHitList &dst,
          ++iord;
       if (iord > 0 && t - dst(iord - 1).getT() < dt) {
          double oldQ = dst(iord - 1).getQ();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / dt;
-         dst(iord - 1).setQ(oldQ + newQ * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setQ(oldQ + newQ * pulse_fraction);
       }
       else if (iord < dst.size() && dst(iord).getT() - t < dt) {
          double oldQ = dst(iord).getQ();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
-         dst(iord).setQ(newQ + oldQ * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setQ(newQ + oldQ * pulse_fraction);
+         else
+            dst(iord).setQ(newQ);
          dst(iord).setT(t);
       }
       else {
@@ -520,11 +776,12 @@ hddm_s::StcPaddleList &operator+=(hddm_s::StcPaddleList &dst,
 hddm_s::StcHitList &operator+=(hddm_s::StcHitList &dst,
                                hddm_s::StcHitList &src)
 {
-   // order by t, merge with existing hit if dt < dtmin
+   // order by t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::StcHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
+      double ti = stc_integration_window_ns;
       double dt = stc_min_delta_t_ns;
       double newDE = iter->getDE();
       while (iord > 0 && dst(iord).getT() > t)
@@ -533,19 +790,37 @@ hddm_s::StcHitList &operator+=(hddm_s::StcHitList &dst,
          ++iord;
       if (iord > 0 && t - dst(iord - 1).getT() < dt) {
          double oldDE = dst(iord - 1).getDE();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / dt;
-         dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
       }
       else if (iord < dst.size() && dst(iord).getT() - t < dt) {
          double oldDE = dst(iord).getDE();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
-         dst(iord).setDE(newDE + oldDE * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setDE(newDE + oldDE * pulse_fraction);
+         else
+            dst(iord).setDE(newDE);
          dst(iord).setT(t);
       }
       else {
          dst.add(1, (iord < dst.size())? iord : -1);
-         dst(iord).setDE(newDE);
          dst(iord).setT(t);
+         if (iord > 0 && t - dst(iord - 1).getT() < ti) {
+            double oldDE = dst(iord - 1).getDE();
+            double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+            dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
+            dst(iord).setDE(0);
+         }
+         else if (iord < dst.size() - 1 && dst(iord + 1).getT() - t < ti) {
+            double oldDE = dst(iord + 1).getDE();
+            double pulse_fraction = 1 - (dst(iord + 1).getT() - t) / ti;
+            dst(iord).setDE(newDE + oldDE * pulse_fraction);
+            dst(iord + 1).setDE(0);
+         }
+         else {
+            dst(iord).setDE(newDE);
+         }
       }
    }
    return dst;
@@ -617,12 +892,13 @@ hddm_s::BcalCellList &operator+=(hddm_s::BcalCellList &dst,
 hddm_s::BcalfADCHitList &operator+=(hddm_s::BcalfADCHitList &dst,
                                     hddm_s::BcalfADCHitList &src)
 {
-   // order by end, t, merge with existing hit if dt < dtmin
+   // order by end, t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::BcalfADCHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
-      double dt = bcal_min_delta_t_ns;
+      double ti = bcal_integration_window_ns;
+      double dt = ti + 2*fadc250_period_ns;
       double newE = iter->getE();
       int end = iter->getEnd();
       while (iord > 0) {
@@ -645,15 +921,19 @@ hddm_s::BcalfADCHitList &operator+=(hddm_s::BcalfADCHitList &dst,
           dst(iord - 1).getEnd() == end && t - dst(iord - 1).getT() < dt)
       {
          double oldE = dst(iord - 1).getE();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / dt;
-         dst(iord - 1).setE(oldE + newE * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setE(oldE + newE * pulse_fraction);
       }
       else if (iord < dst.size() &&
                dst(iord).getEnd() == end && dst(iord).getT() - t < dt)
       {
          double oldE = dst(iord).getE();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
-         dst(iord).setE(newE + oldE * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setE(newE + oldE * pulse_fraction);
+         else
+            dst(iord).setE(newE);
          dst(iord).setT(t);
       }
       else {
@@ -669,7 +949,7 @@ hddm_s::BcalfADCHitList &operator+=(hddm_s::BcalfADCHitList &dst,
 hddm_s::BcalTDCHitList &operator+=(hddm_s::BcalTDCHitList &dst,
                                    hddm_s::BcalTDCHitList &src)
 {
-   // order by end, t, merge with existing hit if dt < dtmin
+   // order by end, t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::BcalTDCHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
@@ -714,12 +994,13 @@ hddm_s::BcalTDCHitList &operator+=(hddm_s::BcalTDCHitList &dst,
 hddm_s::BcalfADCDigiHitList &operator+=(hddm_s::BcalfADCDigiHitList &dst,
                                         hddm_s::BcalfADCDigiHitList &src)
 {
-   // order by end, t, merge with existing hit if dt < dtmin
+   // order by end, t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::BcalfADCDigiHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
-      double t = iter->getPulse_time() + t_shift_ns * fadc_counts_per_ns;
-      double dt = bcal_min_delta_t_ns * fadc_counts_per_ns;
+      double t = iter->getPulse_time() + t_shift_ns * bcal_fadc_counts_per_ns;
+      double ti = bcal_integration_window_ns * bcal_fadc_counts_per_ns;
+      double dt = ti + 2;
       double newE = iter->getPulse_integral();
       int end = iter->getEnd();
       while (iord > 0) {
@@ -742,15 +1023,19 @@ hddm_s::BcalfADCDigiHitList &operator+=(hddm_s::BcalfADCDigiHitList &dst,
                       t - dst(iord - 1).getPulse_time() < dt)
       {
          double oldE = dst(iord - 1).getPulse_integral();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getPulse_time()) / dt;
-         dst(iord - 1).setPulse_integral(oldE + newE * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getPulse_time()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setPulse_integral(oldE + newE * pulse_fraction);
       }
       else if (iord < dst.size() && dst(iord).getEnd() == end &&
                                     dst(iord).getPulse_time() - t < dt)
       {
          double oldE = dst(iord).getPulse_integral();
-         double pulse_fraction = 1 - (dst(iord - 1).getPulse_time() - t) / dt;
-         dst(iord).setPulse_integral(newE + oldE * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getPulse_time() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setPulse_integral(newE + oldE * pulse_fraction);
+         else
+            dst(iord).setPulse_integral(newE);
          dst(iord).setPulse_time(t);
       }
       else {
@@ -770,8 +1055,8 @@ hddm_s::BcalTDCDigiHitList &operator+=(hddm_s::BcalTDCDigiHitList &dst,
    int iord = 0;
    hddm_s::BcalTDCDigiHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
-      double t = iter->getTime() + t_shift_ns * tdc_counts_per_ns;
-      double dt = bcal_min_delta_t_ns * tdc_counts_per_ns;
+      double t = iter->getTime() + t_shift_ns * bcal_tdc_counts_per_ns;
+      double dt = bcal_min_delta_t_ns * bcal_tdc_counts_per_ns;
       int end = iter->getEnd();
       while (iord > 0) {
          if (iord == dst.size() ||
@@ -863,11 +1148,12 @@ hddm_s::FtofCounterList &operator+=(hddm_s::FtofCounterList &dst,
 hddm_s::FtofHitList &operator+=(hddm_s::FtofHitList &dst,
                                 hddm_s::FtofHitList &src)
 {
-   // order by end, t, merge with existing hit if dt < dtmin
+   // order by end, t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::FtofHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
+      double ti = ftof_integration_window_ns;
       double dt = ftof_min_delta_t_ns;
       double newDE = iter->getDE();
       int end = iter->getEnd();
@@ -891,21 +1177,43 @@ hddm_s::FtofHitList &operator+=(hddm_s::FtofHitList &dst,
           dst(iord - 1).getEnd() == end && t - dst(iord - 1).getT() < dt)
       {
          double oldDE = dst(iord - 1).getDE();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / dt;
-         dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
       }
       else if (iord < dst.size() && 
                dst(iord).getEnd() == end && dst(iord).getT() - t < dt)
       {
          double oldDE = dst(iord).getDE();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
-         dst(iord).setDE(newDE + oldDE * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setDE(newDE + oldDE * pulse_fraction);
+         else
+            dst(iord).setDE(newDE);
          dst(iord).setT(t);
       }
       else {
          dst.add(1, (iord < dst.size())? iord : -1);
          dst(iord).setEnd(end);
-         dst(iord).setDE(newDE);
+         if (iord > 0 && dst(iord - 1).getEnd() == end &&
+                         t - dst(iord - 1).getT() < ti)
+         {
+            double oldDE = dst(iord - 1).getDE();
+            double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+            dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
+            dst(iord).setDE(0);
+         }
+         else if (iord < dst.size() - 1 && dst(iord + 1).getEnd() == end &&
+                                           dst(iord + 1).getT() - t < ti)
+         {
+            double oldDE = dst(iord + 1).getDE();
+            double pulse_fraction = 1 - (dst(iord + 1).getT() - t) / ti;
+            dst(iord).setDE(newDE + oldDE * pulse_fraction);
+            dst(iord + 1).setDE(0);
+         }
+         else {
+            dst(iord).setDE(newDE);
+         }
          dst(iord).setT(t);
       }
    }
@@ -967,12 +1275,13 @@ hddm_s::FcalBlockList &operator+=(hddm_s::FcalBlockList &dst,
 hddm_s::FcalHitList &operator+=(hddm_s::FcalHitList &dst,
                                 hddm_s::FcalHitList &src)
 {
-   // order by t, merge with existing hit if dt < dtmin
+   // order by t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::FcalHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
-      double dt = fcal_min_delta_t_ns;
+      double ti = fcal_integration_window_ns;
+      double dt = ti + 2*fadc250_period_ns;
       double newE = iter->getE();
       while (iord > 0 && dst(iord).getT() > t)
          --iord;
@@ -980,13 +1289,17 @@ hddm_s::FcalHitList &operator+=(hddm_s::FcalHitList &dst,
          ++iord;
       if (iord > 0 && t - dst(iord - 1).getT() < dt) {
          double oldE = dst(iord - 1).getE();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / dt;
-         dst(iord - 1).setE(oldE + newE * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setE(oldE + newE * pulse_fraction);
       }
       else if (iord < dst.size() && dst(iord).getT() - t < dt) {
          double oldE = dst(iord).getE();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
-         dst(iord).setE(newE + oldE * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setE(newE + oldE * pulse_fraction);
+         else
+            dst(iord).setE(newE);
          dst(iord).setT(t);
       }
       else {
@@ -1053,12 +1366,13 @@ hddm_s::CcalBlockList &operator+=(hddm_s::CcalBlockList &dst,
 hddm_s::CcalHitList &operator+=(hddm_s::CcalHitList &dst,
                                 hddm_s::CcalHitList &src)
 {
-   // order by t, merge with existing hit if dt < dtmin
+   // order by t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::CcalHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
-      double dt = ccal_min_delta_t_ns;
+      double ti = ccal_integration_window_ns;
+      double dt = ti + 2*fadc250_period_ns;
       double newE = iter->getE();
       while (iord > 0 && dst(iord).getT() > t)
          --iord;
@@ -1066,13 +1380,17 @@ hddm_s::CcalHitList &operator+=(hddm_s::CcalHitList &dst,
          ++iord;
       if (iord > 0 && t - dst(iord - 1).getT() < dt) {
          double oldE = dst(iord - 1).getE();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / dt;
-         dst(iord - 1).setE(oldE + newE * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setE(oldE + newE * pulse_fraction);
       }
       else if (iord < dst.size() && dst(iord).getT() - t < dt) {
          double oldE = dst(iord).getE();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
-         dst(iord).setE(newE + oldE * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setE(newE + oldE * pulse_fraction);
+         else
+            dst(iord).setE(newE);
          dst(iord).setT(t);
       }
       else {
@@ -1170,12 +1488,13 @@ hddm_s::HodoChannelList &operator+=(hddm_s::HodoChannelList &dst,
 hddm_s::TaggerHitList &operator+=(hddm_s::TaggerHitList &dst,
                                   hddm_s::TaggerHitList &src)
 {
-   // order by t, merge with existing hit if dt < dtmin
+   // order by t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::TaggerHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
-      double dt = ttag_min_delta_t_ns;
+      double ti = tag_integration_window_ns;
+      double dt = tag_min_delta_t_ns;
       double newNpe = iter->getNpe();
       while (iord > 0 && dst(iord).getT() > t)
          --iord;
@@ -1183,19 +1502,37 @@ hddm_s::TaggerHitList &operator+=(hddm_s::TaggerHitList &dst,
          ++iord;
       if (iord > 0 && t - dst(iord - 1).getT() < dt) {
          double oldNpe = dst(iord - 1).getNpe();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / dt;
-         dst(iord - 1).setNpe(oldNpe + newNpe * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setNpe(oldNpe + newNpe * pulse_fraction);
       }
       else if (iord < dst.size() && dst(iord).getT() - t < dt) {
          double oldNpe = dst(iord).getNpe();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
-         dst(iord).setNpe(newNpe + oldNpe * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setNpe(newNpe + oldNpe * pulse_fraction);
+         else
+            dst(iord).setNpe(newNpe);
          dst(iord).setTADC(iter->getTADC());
          dst(iord).setT(t);
       }
       else {
          dst.add(1, (iord < dst.size())? iord : -1);
-         dst(iord).setNpe(newNpe);
+         if (iord > 0 && t - dst(iord - 1).getT() < ti) {
+            double oldNpe = dst(iord - 1).getNpe();
+            double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+            dst(iord - 1).setNpe(oldNpe + newNpe * pulse_fraction);
+            dst(iord).setNpe(0);
+         }
+         else if (iord < dst.size() - 1 && dst(iord + 1).getT() - t < ti) {
+            double oldNpe = dst(iord + 1).getNpe();
+            double pulse_fraction = 1 - (dst(iord + 1).getT() - t) / ti;
+            dst(iord).setNpe(newNpe + oldNpe * pulse_fraction);
+            dst(iord + 1).setNpe(0);
+         }
+         else {
+            dst(iord).setNpe(newNpe);
+         }
          dst(iord).setTADC(iter->getTADC());
          dst(iord).setT(t);
       }
@@ -1259,12 +1596,13 @@ hddm_s::PsTileList &operator+=(hddm_s::PsTileList &dst,
 hddm_s::PsHitList &operator+=(hddm_s::PsHitList &dst,
                               hddm_s::PsHitList &src)
 {
-   // order by t, merge with existing hit if dt < dtmin
+   // order by t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::PsHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
-      double dt = ps_min_delta_t_ns;
+      double ti = ps_integration_window_ns;
+      double dt = ti + 2*fadc250_period_ns;
       double newDE = iter->getDE();
       while (iord > 0 && dst(iord).getT() > t)
          --iord;
@@ -1272,13 +1610,17 @@ hddm_s::PsHitList &operator+=(hddm_s::PsHitList &dst,
          ++iord;
       if (iord > 0 && t - dst(iord - 1).getT() < dt) {
          double oldDE = dst(iord - 1).getDE();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / dt;
-         dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
       }
       else if (iord < dst.size() && dst(iord).getT() - t < dt) {
          double oldDE = dst(iord).getDE();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
-         dst(iord).setDE(newDE + oldDE * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setDE(newDE + oldDE * pulse_fraction);
+         else
+            dst(iord).setDE(newDE);
          dst(iord).setT(t);
       }
       else {
@@ -1346,11 +1688,12 @@ hddm_s::PscPaddleList &operator+=(hddm_s::PscPaddleList &dst,
 hddm_s::PscHitList &operator+=(hddm_s::PscHitList &dst,
                                hddm_s::PscHitList &src)
 {
-   // order by t, merge with existing hit if dt < dtmin
+   // order by t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::PscHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
+      double ti = psc_integration_window_ns;
       double dt = psc_min_delta_t_ns;
       double newDE = iter->getDE();
       while (iord > 0 && dst(iord).getT() > t)
@@ -1359,18 +1702,36 @@ hddm_s::PscHitList &operator+=(hddm_s::PscHitList &dst,
          ++iord;
       if (iord > 0 && t - dst(iord - 1).getT() < dt) {
          double oldDE = dst(iord - 1).getDE();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / dt;
-         dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
       }
       else if (iord < dst.size() && dst(iord).getT() - t < dt) {
          double oldDE = dst(iord).getDE();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
-         dst(iord).setDE(newDE + oldDE * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setDE(newDE + oldDE * pulse_fraction);
+         else
+            dst(iord).setDE(newDE);
          dst(iord).setT(t);
       }
       else {
          dst.add(1, (iord < dst.size())? iord : -1);
-         dst(iord).setDE(newDE);
+         if (iord > 0 && t - dst(iord - 1).getT() < ti) {
+            double oldDE = dst(iord - 1).getDE();
+            double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+            dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
+            dst(iord).setDE(0);
+         }
+         else if (iord < dst.size() - 1 && dst(iord + 1).getT() - t < ti) {
+            double oldDE = dst(iord + 1).getDE();
+            double pulse_fraction = 1 - (dst(iord + 1).getT() - t) / ti;
+            dst(iord).setDE(newDE + oldDE * pulse_fraction);
+            dst(iord + 1).setDE(0);
+         }
+         else {
+            dst(iord).setDE(newDE);
+         }
          dst(iord).setT(t);
       }
    }
@@ -1422,12 +1783,13 @@ hddm_s::TpolSectorList &operator+=(hddm_s::TpolSectorList &dst,
 hddm_s::TpolHitList &operator+=(hddm_s::TpolHitList &dst,
                                 hddm_s::TpolHitList &src)
 {
-   // order by t, merge with existing hit if dt < dtmin
+   // order by t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::TpolHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
       double t = iter->getT() + t_shift_ns;
-      double dt = tpol_min_delta_t_ns;
+      double ti = tpol_integration_window_ns;
+      double dt = ti + 2*fadc250_period_ns;
       double newDE = iter->getDE();
       while (iord > 0 && dst(iord).getT() > t)
          --iord;
@@ -1435,13 +1797,17 @@ hddm_s::TpolHitList &operator+=(hddm_s::TpolHitList &dst,
          ++iord;
       if (iord > 0 && t - dst(iord - 1).getT() < dt) {
          double oldDE = dst(iord - 1).getDE();
-         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / dt;
-         dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
+         double pulse_fraction = 1 - (t - dst(iord - 1).getT()) / ti;
+         if (pulse_fraction > 0)
+            dst(iord - 1).setDE(oldDE + newDE * pulse_fraction);
       }
       else if (iord < dst.size() && dst(iord).getT() - t < dt) {
          double oldDE = dst(iord).getDE();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
-         dst(iord).setDE(newDE + oldDE * pulse_fraction);
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / ti;
+         if (pulse_fraction > 0)
+            dst(iord).setDE(newDE + oldDE * pulse_fraction);
+         else
+            dst(iord).setDE(newDE);
          dst(iord).setT(t);
       }
       else {
@@ -1508,7 +1874,7 @@ hddm_s::FmwpcChamberList &operator+=(hddm_s::FmwpcChamberList &dst,
 hddm_s::FmwpcHitList &operator+=(hddm_s::FmwpcHitList &dst,
                                  hddm_s::FmwpcHitList &src)
 {
-   // order by t, merge with existing hit if dt < dtmin
+   // order by t, merge with existing hit if close enough
    int iord = 0;
    hddm_s::FmwpcHitList::iterator iter;
    for (iter = src.begin(); iter != src.end(); ++iter) {
@@ -1526,7 +1892,7 @@ hddm_s::FmwpcHitList &operator+=(hddm_s::FmwpcHitList &dst,
       }
       else if (iord < dst.size() && dst(iord).getT() - t < dt) {
          double oldDE = dst(iord).getDE();
-         double pulse_fraction = 1 - (dst(iord - 1).getT() - t) / dt;
+         double pulse_fraction = 1 - (dst(iord).getT() - t) / dt;
          dst(iord).setDE(newDE + oldDE * pulse_fraction);
          dst(iord).setT(t);
       }
@@ -1537,4 +1903,332 @@ hddm_s::FmwpcHitList &operator+=(hddm_s::FmwpcHitList &dst,
       }
    }
    return dst;
+}
+
+void hddm_s_merger::truncate_hits(hddm_s::HDDM &record) {
+   hddm_s::CdcStrawList straws = record.getCdcStraws();
+   hddm_s::CdcStrawList::iterator istraw;
+   for (istraw = straws.begin(); istraw != straws.end(); ++istraw) {
+      truncate_cdc_hits(istraw->getCdcStrawHits());
+   }
+
+   hddm_s::FdcAnodeWireList wires = record.getFdcAnodeWires();
+   hddm_s::FdcAnodeWireList::iterator iwire;
+   for (iwire = wires.begin(); iwire != wires.end(); ++iwire) {
+      truncate_fdc_wire_hits(iwire->getFdcAnodeHits());
+   }
+   hddm_s::FdcCathodeStripList strips = record.getFdcCathodeStrips();
+   hddm_s::FdcCathodeStripList::iterator istrip;
+   for (istrip = strips.begin(); istrip != strips.end(); ++istrip) {
+      truncate_fdc_strip_hits(istrip->getFdcCathodeHits());
+   }
+
+   hddm_s::StcPaddleList paddles = record.getStcPaddles();
+   hddm_s::StcPaddleList::iterator ipad;
+   for (ipad = paddles.begin(); ipad != paddles.end(); ++ipad) {
+      truncate_stc_hits(ipad->getStcHits());
+   }
+
+   hddm_s::BcalCellList cells = record.getBcalCells();
+   hddm_s::BcalCellList::iterator icell;
+   for (icell = cells.begin(); icell != cells.end(); ++icell) {
+      truncate_bcal_adc_hits(icell->getBcalfADCHits());
+      truncate_bcal_tdc_hits(icell->getBcalTDCHits());
+      truncate_bcal_adc_digihits(icell->getBcalfADCDigiHits());
+      truncate_bcal_tdc_digihits(icell->getBcalTDCDigiHits());
+   }
+
+   hddm_s::FtofCounterList counters = record.getFtofCounters();
+   hddm_s::FtofCounterList::iterator icntr;
+   for (icntr = counters.begin(); icntr != counters.end(); ++icntr) {
+      truncate_ftof_hits(icntr->getFtofHits());
+   }
+
+   hddm_s::FcalBlockList blocks = record.getFcalBlocks();
+   hddm_s::FcalBlockList::iterator iblock;
+   for (iblock = blocks.begin(); iblock != blocks.end(); ++iblock) {
+      truncate_fcal_hits(iblock->getFcalHits());
+   }
+
+   hddm_s::CcalBlockList modules = record.getCcalBlocks();
+   hddm_s::CcalBlockList::iterator imod;
+   for (imod = modules.begin(); imod != modules.end(); ++imod) {
+      truncate_ccal_hits(imod->getCcalHits());
+   }
+
+   hddm_s::MicroChannelList columns = record.getMicroChannels();
+   hddm_s::MicroChannelList::iterator icol;
+   for (icol = columns.begin(); icol != columns.end(); ++icol) {
+      truncate_tag_hits(icol->getTaggerHits());
+   }
+   hddm_s::HodoChannelList channels = record.getHodoChannels();
+   hddm_s::HodoChannelList::iterator ichan;
+   for (ichan = channels.begin(); ichan != channels.end(); ++ichan) {
+      truncate_tag_hits(ichan->getTaggerHits());
+   }
+
+   hddm_s::PsTileList tiles = record.getPsTiles();
+   hddm_s::PsTileList::iterator itile;
+   for (itile = tiles.begin(); itile != tiles.end(); ++itile) {
+      truncate_ps_hits(itile->getPsHits());
+   }
+   hddm_s::PscPaddleList bricks = record.getPscPaddles();
+   hddm_s::PscPaddleList::iterator ibrick;
+   for (ibrick = bricks.begin(); ibrick != bricks.end(); ++ibrick) {
+      truncate_psc_hits(ibrick->getPscHits());
+   }
+
+   hddm_s::TpolSectorList sectors = record.getTpolSectors();
+   hddm_s::TpolSectorList::iterator isector;
+   for (isector = sectors.begin(); isector != sectors.end(); ++isector) {
+      truncate_tpol_hits(isector->getTpolHits());
+   }
+
+   hddm_s::FmwpcChamberList chambers = record.getFmwpcChambers();
+   hddm_s::FmwpcChamberList::iterator ichamber;
+   for (ichamber = chambers.begin(); ichamber != chambers.end(); ++ichamber) {
+      truncate_fmwpc_hits(ichamber->getFmwpcHits());
+   }
+}
+
+void hddm_s_merger::truncate_cdc_hits(hddm_s::CdcStrawHitList &hits) {
+   if (hits.size() > cdc_max_hits) {
+#if VERBOSE_TRUNCATION
+      printf("found %d cdc hits, truncating to %d\n", hits.size(), cdc_max_hits);
+#endif
+      hits.del(-1, cdc_max_hits);
+   }
+}
+
+void hddm_s_merger::truncate_fdc_wire_hits(hddm_s::FdcAnodeHitList &hits) {
+   if (hits.size() > fdc_wires_max_hits) {
+#if VERBOSE_TRUNCATION
+      printf("found %d fdc wire hits, truncating to %d\n", hits.size(), fdc_wires_max_hits);
+#endif
+      hits.del(-1, fdc_wires_max_hits);
+   }
+}
+
+void hddm_s_merger::truncate_fdc_strip_hits(hddm_s::FdcCathodeHitList &hits) {
+   if (hits.size() > fdc_strips_max_hits) {
+#if VERBOSE_TRUNCATION
+      printf("found %d fdc strip hits, truncating to %d\n", hits.size(), fdc_strips_max_hits);
+#endif
+      hits.del(-1, fdc_strips_max_hits);
+   }
+}
+
+void hddm_s_merger::truncate_stc_hits(hddm_s::StcHitList &hits) {
+   if (hits.size() > stc_tdc_max_hits) {
+#if VERBOSE_TRUNCATION
+      printf("found %d stc tdc hits, truncating to %d\n", hits.size(), stc_tdc_max_hits);
+#endif
+      hits.del(-1, stc_tdc_max_hits);
+   }
+   if (hits.size() > stc_adc_max_hits) {
+      int nadc=0;
+      hddm_s::StcHitList::iterator iter;
+      for (iter = hits.begin(); iter != hits.end(); ++iter) {
+         if (iter->getDE() > 0)
+            if (++nadc > stc_adc_max_hits)
+               iter->setDE(0);
+      }
+#if VERBOSE_TRUNCATION
+      if (nadc > stc_adc_max_hits)
+         printf("found %d stc adc hits, truncating to %d\n", nadc, stc_adc_max_hits);
+#endif
+   }
+}
+
+void hddm_s_merger::truncate_bcal_adc_hits(hddm_s::BcalfADCHitList &hits) {
+   int nadc[2] = {0,0};
+   if (hits.size() > bcal_adc_max_hits) {
+      hddm_s::BcalfADCHitList::iterator iter;
+      int n=0;
+      for (iter = hits.begin(); iter != hits.end(); ++iter, ++n) {
+         if (++nadc[iter->getEnd()] > bcal_adc_max_hits) {
+            --iter;
+            hits.del(1, n--);
+         }
+      }
+#if VERBOSE_TRUNCATION
+      if (nadc[0] > bcal_adc_max_hits)
+         printf("found %d bcal adc end=0 hits, truncating to %d\n", nadc[0], bcal_adc_max_hits);
+      if (nadc[1] > bcal_adc_max_hits)
+         printf("found %d bcal adc end=1 hits, truncating to %d\n", nadc[1], bcal_adc_max_hits);
+#endif
+   }
+}
+
+void hddm_s_merger::truncate_bcal_tdc_hits(hddm_s::BcalTDCHitList &hits) {
+   int ntdc[2] = {0,0};
+   if (hits.size() > bcal_tdc_max_hits) {
+      hddm_s::BcalTDCHitList::iterator iter;
+      int n=0;
+      for (iter = hits.begin(); iter != hits.end(); ++iter, ++n) {
+         if (++ntdc[iter->getEnd()] > bcal_tdc_max_hits) {
+            --iter;
+            hits.del(1, n--);
+         }
+      }
+#if VERBOSE_TRUNCATION
+      if (ntdc[0] > bcal_tdc_max_hits)
+         printf("found %d bcal tdc end=0 hits, truncating to %d\n", ntdc[0], bcal_adc_max_hits);
+      if (ntdc[1] > bcal_tdc_max_hits)
+         printf("found %d bcal tdc end=1 hits, truncating to %d\n", ntdc[1], bcal_adc_max_hits);
+#endif
+   }
+}
+
+void hddm_s_merger::truncate_bcal_adc_digihits(hddm_s::BcalfADCDigiHitList &hits) {
+   int nadc[2] = {0,0};
+   if (hits.size() > bcal_adc_max_hits) {
+      hddm_s::BcalfADCDigiHitList::iterator iter;
+      int n=0;
+      for (iter = hits.begin(); iter != hits.end(); ++iter, ++n) {
+         if (++nadc[iter->getEnd()] > bcal_adc_max_hits) {
+            --iter;
+            hits.del(1, n--);
+         }
+      }
+#if VERBOSE_TRUNCATION
+      if (nadc[0] > bcal_adc_max_hits)
+         printf("found %d bcal adc end=0 digihits, truncating to %d\n", nadc[0], bcal_adc_max_hits);
+      if (nadc[1] > bcal_adc_max_hits)
+         printf("found %d bcal adc end=1 digihits, truncating to %d\n", nadc[1], bcal_adc_max_hits);
+#endif
+   }
+}
+
+void hddm_s_merger::truncate_bcal_tdc_digihits(hddm_s::BcalTDCDigiHitList &hits) {
+   int ntdc[2] = {0,0};
+   if (hits.size() > bcal_tdc_max_hits) {
+      hddm_s::BcalTDCDigiHitList::iterator iter;
+      int n=0;
+      for (iter = hits.begin(); iter != hits.end(); ++iter, ++n) {
+         if (++ntdc[iter->getEnd()] > bcal_tdc_max_hits) {
+            --iter;
+            hits.del(1, n--);
+         }
+      }
+#if VERBOSE_TRUNCATION
+      if (ntdc[0] > bcal_tdc_max_hits)
+         printf("found %d bcal tdc end=0 digihits, truncating to %d\n", ntdc[0], bcal_tdc_max_hits);
+      if (ntdc[1] > bcal_tdc_max_hits)
+         printf("found %d bcal tdc end=1 digihits, truncating to %d\n", ntdc[1], bcal_tdc_max_hits);
+#endif
+   }
+}
+
+void hddm_s_merger::truncate_ftof_hits(hddm_s::FtofHitList &hits) {
+   int nadc[2] = {0,0};
+   int ntdc[2] = {0,0};
+   hddm_s::FtofHitList::iterator iter;
+   int n=0;
+   for (iter = hits.begin(); iter != hits.end(); ++iter, ++n) {
+      if (++ntdc[iter->getEnd()] > ftof_tdc_max_hits) {
+         --iter;
+         hits.del(1, n--);
+      }
+      else if (iter->getDE() > 0 && ++nadc[iter->getEnd()] > ftof_adc_max_hits) {
+         iter->setDE(0);
+      }
+   }
+#if VERBOSE_TRUNCATION
+   if (ntdc[0] > ftof_tdc_max_hits)
+      printf("found %d ftof tdc end=0 hits, truncating to %d\n", ntdc[0], ftof_tdc_max_hits);
+   if (ntdc[1] > ftof_tdc_max_hits)
+      printf("found %d ftof tdc end=1 hits, truncating to %d\n", ntdc[1], ftof_tdc_max_hits);
+   if (nadc[0] > ftof_adc_max_hits)
+      printf("found %d ftof adc end=0 hits, truncating to %d\n", nadc[0], ftof_adc_max_hits);
+   if (nadc[1] > ftof_adc_max_hits)
+      printf("found %d ftof adc end=1 hits, truncating to %d\n", nadc[1], ftof_adc_max_hits);
+#endif
+}
+
+void hddm_s_merger::truncate_fcal_hits(hddm_s::FcalHitList &hits) {
+   if (hits.size() > fcal_max_hits) {
+#if VERBOSE_TRUNCATION
+      printf("found %d fcal hits, truncating to %d\n", hits.size(), fcal_max_hits);
+#endif
+      hits.del(-1, fcal_max_hits);
+   }
+}
+
+void hddm_s_merger::truncate_ccal_hits(hddm_s::CcalHitList &hits) {
+   if (hits.size() > ccal_max_hits) {
+#if VERBOSE_TRUNCATION
+      printf("found %d ccal hits, truncating to %d\n", hits.size(), ccal_max_hits);
+#endif
+      hits.del(-1, ccal_max_hits);
+   }
+}
+
+void hddm_s_merger::truncate_tag_hits(hddm_s::TaggerHitList &hits) {
+   if (hits.size() > tag_tdc_max_hits) {
+#if VERBOSE_TRUNCATION
+      printf("found %d tag tdc hits, truncating to %d\n", hits.size(), tag_tdc_max_hits);
+#endif
+      hits.del(-1, tag_tdc_max_hits);
+   }
+   if (hits.size() > tag_adc_max_hits) {
+      int nadc=0;
+      hddm_s::TaggerHitList::iterator iter;
+      for (iter = hits.begin(); iter != hits.end(); ++iter) {
+         if (iter->getNpe() > 0)
+            if (++nadc > tag_adc_max_hits)
+               iter->setNpe(0);
+      }
+#if VERBOSE_TRUNCATION
+      printf("found %d tag adc hits, truncating to %d\n", hits.size(), tag_adc_max_hits);
+#endif
+   }
+}
+
+void hddm_s_merger::truncate_ps_hits(hddm_s::PsHitList &hits) {
+   if (hits.size() > ps_max_hits) {
+#if VERBOSE_TRUNCATION
+      printf("found %d ps hits, truncating to %d\n", hits.size(), ps_max_hits);
+#endif
+      hits.del(-1, ps_max_hits);
+   }
+}
+
+void hddm_s_merger::truncate_psc_hits(hddm_s::PscHitList &hits) {
+   if (hits.size() > psc_tdc_max_hits) {
+#if VERBOSE_TRUNCATION
+      printf("found %d psc hits, truncating to %d\n", hits.size(), psc_tdc_max_hits);
+#endif
+      hits.del(-1, psc_tdc_max_hits);
+   }
+   if (hits.size() > psc_adc_max_hits) {
+      int nadc=0;
+      hddm_s::PscHitList::iterator iter;
+      for (iter = hits.begin(); iter != hits.end(); ++iter) {
+         if (iter->getDE() > 0)
+            if (++nadc > psc_adc_max_hits)
+               iter->setDE(0);
+      }
+#if VERBOSE_TRUNCATION
+      printf("found %d psc hits, truncating to %d\n", nadc, psc_adc_max_hits);
+#endif
+   }
+}
+
+void hddm_s_merger::truncate_tpol_hits(hddm_s::TpolHitList &hits) {
+   if (hits.size() > tpol_max_hits) {
+#if VERBOSE_TRUNCATION
+      printf("found %d tpol hits, truncating to %d\n", hits.size(), tpol_max_hits);
+#endif
+      hits.del(-1, tpol_max_hits);
+   }
+}
+
+void hddm_s_merger::truncate_fmwpc_hits(hddm_s::FmwpcHitList &hits) {
+   if (hits.size() > fmwpc_max_hits) {
+#if VERBOSE_TRUNCATION
+      printf("found %d fmwpc hits, truncating to %d\n", hits.size(), fmwpc_max_hits);
+#endif
+      hits.del(-1, fmwpc_max_hits);
+   }
 }
