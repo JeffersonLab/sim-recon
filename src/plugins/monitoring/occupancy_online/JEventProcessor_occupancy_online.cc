@@ -89,6 +89,8 @@ JEventProcessor_occupancy_online::~JEventProcessor_occupancy_online()
 //------------------
 jerror_t JEventProcessor_occupancy_online::init(void)
 {
+	japp->RootWriteLock();
+
 	// All histograms go in the "occupancy" directory
 	TDirectory *main = gDirectory;
 	gDirectory->mkdir("occupancy")->cd();
@@ -235,7 +237,7 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 
 	digihits_trig1 = new TH2I("digihits_trig1", "Digihits", digihitbinmap.size(), 0.5, 0.5+(double)digihitbinmap.size(), 151, 0.0,  151.0);
 	digihits_trig1->SetYTitle("Nhits/event");
-	digihits_scale_factors = new TH2I("digihits_scale_factors", "Digihits scale factors", digihitbinmap.size(), 0.5, 0.5+(double)digihitbinmap.size(), 25, 0.5,  25.5);
+	digihits_scale_factors = new TH1F("digihits_scale_factors", "Digihits scale factors", digihitbinmap.size()+1, 0.5, 0.5+(double)digihitbinmap.size()+1.0);
 	for(auto p : digihitbinmap){
 		digihits_trig1->GetXaxis()->SetBinLabel(p.second, p.first.c_str());
 		digihits_scale_factors->GetXaxis()->SetBinLabel(p.second, p.first.c_str());
@@ -243,22 +245,27 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	digihits_trig3 = (TH2I*)digihits_trig1->Clone("digihits_trig3");
 	digihits_trig4 = (TH2I*)digihits_trig1->Clone("digihits_trig4");
 	
-	// Some detectors have a much higher rate so we scale the number of hits to fit them
-	// on the same histogram. In order to pass this info to the macro in RootSpy we must
-	// put it in a 2D histo. Keep in mind that RootSpy will sum histos from all servers
-	// so by putting it in a 2D histo we can take the mean of the summed histo and still
-	// get back the number. (Tricky eh?). To make this clean, these scale factors should
-	// all be integers.
+	// Some detectors have a much higher or lower rates so we scale the number of hits to
+	// fit them on the same histogram. We pass this to the RootSpy GUI in the form of a
+	// histogram with one extra bin. The extra (last) bin will have its content set to
+	// 1 so when RootSpy adds up N histograms, the last bin will keep track of how many
+	// histos where added. This can then be divided out of the other values to get back
+	// the original scale factors.
 	digihitsclmap["DFDCCathodeDigiHit"] = 3000.0/150.0;
 	digihitsclmap["DFDCWireDigiHit"]    = 1500.0/150.0;
 	digihitsclmap["DCDCDigiHit"]        =  900.0/150.0;
-	digihitsclmap["DBCALDigiHit"]       =  450.0/150.0;
-	digihitsclmap["DBCALTDCDigiHit"]    =  450.0/150.0;
+	digihitsclmap["DBCALDigiHit"]       =  300.0/150.0;
+	digihitsclmap["DBCALTDCDigiHit"]    =  300.0/150.0;
+	digihitsclmap["DPSCDigiHit"]        =  1.0/10.0;
+	digihitsclmap["DPSCTDCDigiHit"]     =  1.0/10.0;
 	for(auto p : digihitsclmap) digihits_scale_factors->Fill(digihitbinmap[p.first], p.second);
+	digihits_scale_factors->Fill((double)digihitbinmap.size()+1.0, 1.0); // set last bin content to 1.0
 
 	// back to main dir
 	main->cd();
   
+	japp->RootUnLock();
+ 
 	return NOERROR;
 }
 

@@ -104,7 +104,7 @@ class DEVIOWorkerThread{
 		void         ParseEPICSbank(uint32_t* &iptr, uint32_t *iend);
 		void           ParseBORbank(uint32_t* &iptr, uint32_t *iend);
 		void      ParseTSscalerBank(uint32_t* &iptr, uint32_t *iend);
-		void    Parsef250scalerBank(uint32_t* &iptr, uint32_t *iend);
+		void    Parsef250scalerBank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 		void      ParseControlEvent(uint32_t* &iptr, uint32_t *iend);
 		void       ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend);
 		void  ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend);

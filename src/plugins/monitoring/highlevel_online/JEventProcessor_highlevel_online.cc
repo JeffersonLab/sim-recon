@@ -175,6 +175,8 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dTimingCutMap[Positron][SYS_BCAL] = 2.5;
 	dTimingCutMap[Positron][SYS_FCAL] = 3.0;
 
+	japp->RootWriteLock();
+
 	// All histograms go in the "highlevel" directory
 	TDirectory *main = gDirectory;
 
@@ -276,7 +278,7 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dpip_pim_pi0 = new TH1I("PiPlusPiMinusPiZero", "#pi^{+}#pi^{-}#pi^{o} inv. mass w/ identified proton;#pi^{+}#pi^{-}#pi^{o} inv. mass (GeV)", 200, 0.035, 2.0);
 	dptrans = new TH1I("PiPlusPiMinusPiZeroProton_t", ";#pi^{+}#pi^{-}#pi^{o}p transverse momentum(GeV)", 500, 0.0, 1.0);
 	
-	dbeta_vs_p = new TH2I("BetaVsP", "#beta vs. p (best FOM all charged tracks);p (GeV);#beta", 200, 0.0, 2.0, 100, 0.0, 1.1);
+	dbeta_vs_p = new TH2I("BetaVsP", "#beta vs. p (best FOM all charged tracks);p (GeV);#beta", 200, 0.0, 2.0, 100, 0.0, 1.2);
 
 	/*************************************************************** F1 TDC - fADC time ***************************************************************/
 
@@ -321,6 +323,8 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	// back to main dir
 	main->cd();
   
+	japp->RootUnLock();
+ 
 	return NOERROR;
 }
 

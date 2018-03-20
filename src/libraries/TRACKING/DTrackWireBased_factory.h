@@ -81,6 +81,13 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		double MIN_FIT_P;
 		bool dIsNoFieldFlag;
 
+		double dFCALz,dTOFz;  
+		// start counter geom info
+		vector<vector<DVector3> >sc_dir; // direction vector in plane of plastic
+		vector<vector<DVector3> >sc_pos;
+		vector<vector<DVector3> >sc_norm;
+		double SC_BARREL_R,SC_END_NOSE_Z,SC_PHI_SECTOR1;
+
 		const DParticleID* dPIDAlgorithm;
 };
 

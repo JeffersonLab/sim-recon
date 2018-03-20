@@ -6,9 +6,9 @@
 // hnamepath: /highlevel/L1bits_gtp
 //
 // e-mail: davidl@jlab.org
-// e-mail: pmatt@jlab.org
 // e-mail: staylor@jlab.org
 // e-mail: sdobbs@jlab.org
+// e-mail: tbritton@jlab.org
 //
 
 #include <time.h>

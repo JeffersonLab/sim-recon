@@ -50,6 +50,7 @@ using namespace jana;
 #include <DAQ/DCODAEventInfo.h>
 #include <DAQ/DCODAControlEvent.h>
 #include <DAQ/DCODAROCInfo.h>
+#include <DAQ/Df250Scaler.h>
 #include <DAQ/DL1Info.h>
 #include <DAQ/DEPICSvalue.h>
 #include <DAQ/DEventTag.h>
@@ -98,6 +99,7 @@ using namespace jana;
 		X(DCODAControlEvent) \
 		X(DCODAROCInfo) \
 		X(DL1Info) \
+		X(Df250Scaler) \
 		X(DEPICSvalue) \
 		X(DEventTag) 
 

@@ -22,7 +22,7 @@ C
       hbarc=1.973269718e-16    !Planck's constant * speed of light (GeV m)
       Z=6                      !atomic number of diamond
 c     Z=14                     !atomic number of silicon
-      a=3.56e-10               !dimension of diamond unit cell (m)
+      a=3.5668e-10             !dimension of diamond unit cell (m)
 c     a=5.43e-10               !dimension of silicon unit cell (m)
       Aphonon=0.40e9           !phonon-free recoil constant (GeV**-2)
       betaFF=111*Z**(-1/3.)/me !cutoff for atomic form-factor (/GeV)
