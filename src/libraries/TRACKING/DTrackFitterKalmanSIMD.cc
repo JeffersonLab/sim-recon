@@ -726,7 +726,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
 
    // Order the cdc hits by ring number
    if (num_good_cdchits>0){
-      sort(my_cdchits.begin(),my_cdchits.end(),DKalmanSIMDCDCHit_cmp);
+      stable_sort(my_cdchits.begin(),my_cdchits.end(),DKalmanSIMDCDCHit_cmp);
 
       // Find earliest time to use for estimate for T0
       for (unsigned int i=0;i<my_cdchits.size();i++){
@@ -753,7 +753,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
    }
    // Order the fdc hits by z
    if (num_good_fdchits>0){
-      sort(my_fdchits.begin(),my_fdchits.end(),DKalmanSIMDFDCHit_cmp);
+      stable_sort(my_fdchits.begin(),my_fdchits.end(),DKalmanSIMDFDCHit_cmp);
 
       // Find earliest time to use for estimate for T0
       for (unsigned int i=0;i<my_fdchits.size();i++){
