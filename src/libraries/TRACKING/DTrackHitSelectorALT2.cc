@@ -214,7 +214,7 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
 	    double var_k_over_k_sq_res=var*p_over_a*p_over_a*0.0720/double(N+4)/(s_sq*s_sq*sinl2)/cosl2;
 	    double sum_s_theta_ms=extrapolations[i].s_theta_ms_sum;
 	    double var_k_over_k_sq_ms
-	      =pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
+	      =(4./3.)*pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
 	    
 	    // Fractional variance in pt
 	    var_pt_over_pt_sq=var_k_over_k_sq_res+var_k_over_k_sq_ms; 
@@ -892,7 +892,7 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
 	    *0.0720/double(N+4)/(s_sq*s_sq)/cosl2;
 	  double sum_s_theta_ms=extrapolations[k].s_theta_ms_sum;
 	  double var_k_over_k_sq_ms
-	    =pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
+	    =(4./3.)*pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
 
 	  // Fractional variance in pt
 	  var_pt_over_pt_sq=var_k_over_k_sq_ms+var_k_over_k_sq_res;
