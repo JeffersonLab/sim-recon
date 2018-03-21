@@ -40,10 +40,10 @@ TwoPiAngles_primakoff::calcAmplitude( GDouble** pKin ) const {
 
   // for Primakoff, all calculations are in the lab frame. Keep recoil but remember that it cannot be measured by detector.
   
-	TLorentzVector beam   ( pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0] ); 
-	TLorentzVector recoil ( pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0] );
-	TLorentzVector p1     ( pKin[2][1], pKin[2][2], pKin[2][3], pKin[2][0] ); 
-	TLorentzVector p2     ( pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0] ); 
+	TLorentzVector beam   ( pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0] );
+	TLorentzVector p1     ( pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0] ); 
+	TLorentzVector p2     ( pKin[2][1], pKin[2][2], pKin[2][3], pKin[2][0] ); 
+	TLorentzVector recoil ( pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0] ); 
 	TLorentzVector resonance = p1 + p2;
 
         TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab

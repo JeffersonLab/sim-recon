@@ -197,9 +197,13 @@ TwoPiWt_primakoff::calcAmplitude( GDouble** pKin ) const
     string num; num += m_daughters.first[i];
     int index = atoi(num.c_str());
     Ptemp.SetPxPyPzE( pKin[index][1], pKin[index][2],
-                      pKin[index][3], pKin[index][0] );
+                      pKin[index][3], pKin[index][0] );    // pi+ is index 1
     P1 += Ptemp;
     Ptot += Ptemp;
+
+    /* cout << " 1i=" << i << " num=" << num << " index=" << index  << " P1.M=" << P1.M() << endl;
+    P1.Print();
+    Ptot.Print();*/
   }
   
   for( unsigned int i = 0; i < m_daughters.second.size(); ++i ){
@@ -207,9 +211,13 @@ TwoPiWt_primakoff::calcAmplitude( GDouble** pKin ) const
     string num; num += m_daughters.second[i];
     int index = atoi(num.c_str());
     Ptemp.SetPxPyPzE( pKin[index][1], pKin[index][2],
-                      pKin[index][3], pKin[index][0] );
+                      pKin[index][3], pKin[index][0] );    // pi- is index 2
     P2 += Ptemp;
-    Ptot += Ptemp;
+    Ptot += Ptemp;   
+
+    /* cout << " 2i=" << i << " num=" << num << " index=" << index << " P2.M=" << P2.M() << endl;
+    P2.Print();
+    Ptot.Print();*/
   }
   
   GDouble Wpipi  = Ptot.M();
@@ -217,12 +225,12 @@ TwoPiWt_primakoff::calcAmplitude( GDouble** pKin ) const
   // GDouble mass2 = P2.M();
 
   // get momentum transfer
-  Precoil.SetPxPyPzE (pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0]);
+  Precoil.SetPxPyPzE (pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0]);   // Recoil is particle 3
   GDouble Et = Precoil.E();
   GDouble Mt = Precoil.M();
   GDouble t = -2*Precoil.M()*(Et - Mt);      
 
-  // cout << "Precoil.M()=" << Precoil.M() << " T=" << Precoil.E() - Precoil.M() << " t=" << t << endl; Precoil.Print();
+  // cout << "Precoil.M()=" << Precoil.M() << " T=" << Precoil.E() - Precoil.M() << " t=" << t << endl; Precoil.Print();cout << endl << endl;
 
   // call sigma (gamma gamma -> pi pi) cross section
 
