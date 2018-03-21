@@ -90,10 +90,15 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   
   // now compute attentuation factors for each end based on distance
   // the light must travel
-  
+  // Make sure not to correct the energy by a distance longer than the length
+  // of the BCAL.
+
   float dUp = 0.5 * fibLen + m_zLocal;
   float dDown = 0.5 * fibLen - m_zLocal;
-
+  if (dUp>fibLen)   dUp=fibLen;
+  if (dUp<0)        dUp=0;
+  if (dDown>fibLen) dDown=fibLen;
+  if (dDown<0)      dDown=0;
   float attUp = exp( -dUp / attenuation_length );
   float attDown = exp( -dDown / attenuation_length );
  
