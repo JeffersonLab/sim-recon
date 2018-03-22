@@ -31,9 +31,6 @@ class DCDCHit_factory_Calib:public jana::JFactory<DCDCHit>{
   ~DCDCHit_factory_Calib(){};
   const char* Tag(void){return "Calib";}
 
-  // timing cut limits
-  double LowTCut;
-  double HighTCut;
   // overall scale factors.
   double a_scale;
   double t_scale;
