@@ -19,21 +19,25 @@ static double DIGI_THRESHOLD = -1.0e8;
 //------------------
 jerror_t DCDCHit_factory::init(void)
 {
+  Dissable_CDC_TimingCuts = 0; // this can be changed by a parameter in brun()
+  // Note: That has to be done in brun() because the parameters are read from ccdb at every call to brun()
+  gPARMS->SetDefaultParameter("CDCHit:Dissable_TimingCuts", Dissable_CDC_TimingCuts,
+			      "Dissable CDC timing Cuts if this variable is not zero!");
+  
+
   gPARMS->SetDefaultParameter("CDC:DIGI_THRESHOLD",DIGI_THRESHOLD,
-			      "Do not convert CDC digitized hits into DCDCHit objects"
-			      " that would have q less than this");
+			      "Do not convert CDC digitized hits into DCDCHit objects with Q less than this");
   
   RemoveCorrelationHits = 1;
   
   gPARMS->SetDefaultParameter("CDCHit:RemoveCorrelationHits", RemoveCorrelationHits,
 			      "Remove hits correlated in time with saturation hits!");
   
-  RemoveCorrelationHitsCut = 1.5;
-  gPARMS->SetDefaultParameter("CDCHit:RemoveCorrelationHitsCut", RemoveCorrelationHitsCut,
+  CorrelationHitsCut = 1.5;
+  gPARMS->SetDefaultParameter("CDCHit:CorrelationHitsCut", CorrelationHitsCut,
 			      "Cut in units of 8ns bins to remove correlated hits with Saturation hits!");
+
   
-
-
   // Setting this flag makes it so that JANA does not delete the objects in _data.
   // This factory will manage this memory.
   SetFactoryFlag(NOT_OBJECT_OWNER);
@@ -60,6 +64,15 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     HighTCut = cdc_timing_cuts[1];
     //jout<<"CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
   }
+
+  if (Dissable_CDC_TimingCuts) {
+
+    LowTCut = -10000.;
+    HighTCut = 10000.;
+    jout << "Dissable CDC Hit Timing Cuts!" << endl;
+
+  }
+
   
   return NOERROR;
 }
@@ -126,7 +139,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  if ((RocID[k] == RocID[n]) && (Slot[k] == Slot[n]) && (Connector[k] == Connector[n]) ){
 	    
 	    double dt = (Time[k] - Time[n])/8.; // units of samples (8ns)
-	    if ( fabs(dt+3.5)<RemoveCorrelationHitsCut) {
+	    if ( fabs(dt+3.5)<CorrelationHitsCut) {
 	      Mark4Removal[n] = 1;
 	      //cout<<"remove "<<hits[n]->ring<<" "<<hits[n]->straw<<endl;
 	    }

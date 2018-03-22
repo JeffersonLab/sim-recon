@@ -20,6 +20,8 @@ using namespace std;
 
 using namespace jana;
 
+int CDC_HIT_THRESHOLD = 0;
+
 //#define ENABLE_UPSAMPLING
 
 //------------------
@@ -28,21 +30,24 @@ using namespace jana;
 jerror_t DCDCHit_factory_Calib::init(void)
 {
 
-    // default values
-    Nrings = 0;
-    a_scale = 0.;
-    t_scale = 0.;
-    t_base = 0.;
-
-    // Set default number of number of detector channels
-    maxChannels = 3522;
-
-    /// set the base conversion scales
-    a_scale = 4.0E3/1.0E2; 
-    t_scale = 8.0/10.0;    // 8 ns/count and integer time is in 1/10th of sample
-    t_base  = 0.;       // ns
-
-    return NOERROR;
+  gPARMS->SetDefaultParameter("CDC:CDC_HIT_THRESHOLD", CDC_HIT_THRESHOLD,
+                              "Remove CDC Hits with peak amplitudes smaller than CDC_HIT_THRESHOLD");
+  
+  // default values
+  Nrings = 0;
+  a_scale = 0.;
+  t_scale = 0.;
+  t_base = 0.;
+  
+  // Set default number of number of detector channels
+  maxChannels = 3522;
+  
+  /// set the base conversion scales
+  a_scale = 4.0E3/1.0E2; 
+  t_scale = 8.0/10.0;    // 8 ns/count and integer time is in 1/10th of sample
+  t_base  = 0.;       // ns
+  
+  return NOERROR;
 }
 
 //------------------
@@ -262,6 +267,11 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         //if (maxamp <= scaled_ped) continue;
 
         maxamp = maxamp - scaled_ped;
+
+	if (maxamp<CDC_HIT_THRESHOLD) {
+	  continue;
+	}
+
 
         // Apply calibration constants here
         double t_raw = double(digihit->pulse_time);
