@@ -21,25 +21,26 @@ class DCDCHit_factory: public jana::JFactory<DCDCHit>{
  public:
   DCDCHit_factory(){};
   ~DCDCHit_factory(){};
-
+  
   // we need to store information on the hits with respect to their readout channels in order to look for correlated hits
   struct cdchit_info_t{
-      uint32_t rocid;
-      uint32_t slot;
-      uint32_t connector;
-
-      double time;
-      double max;
-
-      inline bool operator==(const struct cdchit_info_t &rhs) const {
-          return (rocid==rhs.rocid) && (slot==rhs.slot) && (connector==rhs.connector);
-      }
+    uint32_t rocid;
+    uint32_t slot;
+    uint32_t connector;
+    
+    double time;
+    double max;
+    
+    inline bool operator==(const struct cdchit_info_t &rhs) const {
+      return (rocid==rhs.rocid) && (slot==rhs.slot) && (connector==rhs.connector);
+    }
   };
-
-
+  
+  
   int RemoveCorrelationHits;
-  double RemoveCorrelationHitsCut;
+  double CorrelationHitsCut;
   double CorrelatedHitPeak;
+  int Disable_CDC_TimingCuts;
 
   // timing cut limits
   double LowTCut;
@@ -51,7 +52,7 @@ class DCDCHit_factory: public jana::JFactory<DCDCHit>{
   jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
   jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
-
+  
   vector<const DTranslationTable *> ttab;
 };
 
