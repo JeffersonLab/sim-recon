@@ -727,8 +727,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(string locOutputFileName, hddm_s::HDDM& l
 		{
 			//open: get pointer, write event
 			hddm_s::ostream* locOutputHDDMFileStream = Get_HDDMOutputFilePointers()[locOutputFileName].second;
-			*(locOutputHDDMFileStream) << locRecord;
 			japp->Unlock("HDDMWriter");
+			*(locOutputHDDMFileStream) << locRecord;
 			return true;
 		}
 
