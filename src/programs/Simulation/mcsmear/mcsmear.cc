@@ -116,8 +116,9 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
       }
       else {
          std::string filename(ptr);
-         size_t colon = filename.find_first_of(":");
-         if (colon != filename.npos) {
+         size_t slash = filename.find_last_of("/");
+         size_t colon = filename.find_last_of(":");
+         if (colon != filename.npos && (slash == filename.npos || colon > slash)) {
             double wgt = std::stod(filename.substr(colon + 1));
             size_t plus = filename.substr(colon + 1).find_first_of("+");
             size_t decimal = filename.substr(colon + 1, plus).find_first_of(".");
