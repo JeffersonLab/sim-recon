@@ -855,11 +855,8 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
   sort(fdchits_in_sorted.begin(),fdchits_in_sorted.end(),DTrackHitSelector_fdchit_in_cmp);
 
   // The variance on the residual due to measurement error.
-  double var_anode = 0.000225;// ONE_OVER_12;
-  const double VAR_CATHODE_STRIPS=0.000225;  
-  // Cathode variance due to Lorentz deflection
-  //double max_deflection=0.1458*Bz*0.5;
-  double var_cathode=VAR_CATHODE_STRIPS;//+max_deflection*max_deflection/12.;
+  double var_anode = 0.0001;
+  double var_cathode=0.0001;
   double var_tot=var_anode+var_cathode;
 
   // To estimate the impact of errors in the track momentum on the variance of the residual,
@@ -881,7 +878,7 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
   // variances
   double var_lambda=0.,var_phi=0.,var_lambda_res=0.;
   double var_phi_radial=0.;
-  double var_x0=0.01,var_y0=0.01; 
+  double var_x0=0.25,var_y0=0.25; 
   double var_pt_over_pt_sq=0.;
 
   // Loop over hits
