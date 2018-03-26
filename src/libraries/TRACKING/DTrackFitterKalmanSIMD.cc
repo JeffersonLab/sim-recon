@@ -425,7 +425,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    FORWARD_PARMS_COV=false;
    gPARMS->SetDefaultParameter("KALMAN:FORWARD_PARMS_COV",FORWARD_PARMS_COV); 
 
-   CDC_VAR_SCALE_FACTOR=36.;
+   CDC_VAR_SCALE_FACTOR=1.;
    gPARMS->SetDefaultParameter("KALMAN:CDC_VAR_SCALE_FACTOR",CDC_VAR_SCALE_FACTOR); 
    CDC_T_DRIFT_MIN=-8.; // One f125 clock
    gPARMS->SetDefaultParameter("KALMAN:CDC_T_DRIFT_MIN",CDC_T_DRIFT_MIN);
@@ -9350,10 +9350,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
       if (extrapolations.at(SYS_BCAL).size()>299){
 	return VALUE_OUT_OF_RANGE;
       }
-      if (fabs(S(state_q_over_p))>20.){
-	return NOERROR;
-      }
-
       if (z<406.){
 	double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
 	double tanl=1./sqrt(tsquare);
@@ -9365,10 +9361,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 	extrapolations[SYS_BCAL].push_back(Extrapolation_t(position,momentum,
 							   t*TIME_UNIT_CONVERSION,s));
       }
-      else if (extrapolations.at(SYS_BCAL).size()<10){
+      else if (extrapolations.at(SYS_BCAL).size()<5){
 	// There needs to be some steps inside the the volume of the BCAL for 
 	// the extrapolation to be useful.  If this is not the case, clear 
-	// the extrolation vector.
+	// the extrapolation vector.
 	extrapolations[SYS_BCAL].clear();
       }
     }    
@@ -9772,13 +9768,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 	double phi=S(state_phi);
 	DVector3 position(xy.X(),xy.Y(),S(state_z));   
 	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-	if (momentum.Mag()<0.05){
-	  return NOERROR;
-	}
 	extrapolations[SYS_BCAL].push_back(Extrapolation_t(position,momentum,
 							   t*TIME_UNIT_CONVERSION,s));
       }
-      else if (extrapolations.at(SYS_BCAL).size()<10){
+      else if (extrapolations.at(SYS_BCAL).size()<5){
 	// There needs to be some steps inside the the volume of the BCAL for 
 	// the extrapolation to be useful.  If this is not the case, clear 
 	// the extrolation vector.
