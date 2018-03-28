@@ -1238,6 +1238,11 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
             if(iter->getCdcDigihits().size() > 0) {
                 hit->amp  = iter->getCdcDigihit().getPeakAmp();
             }
+	    else{  
+	      // for generated events (not folded-in background events) for which we
+	      // have no digi hits we simply scale q using Naomi's factor of 28.8
+	      hit->amp=hit->q/28.8;
+	    }
             hit->QF     = 0;
             if(iter->getCdcHitQFs().size() > 0) {
                 hit->QF  = iter->getCdcHitQF().getQF();

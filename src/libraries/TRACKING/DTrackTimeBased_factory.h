@@ -56,11 +56,8 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
 
   DTrackFitter *fitter;
   const DParticleID* pid_algorithm;
-  vector<DReferenceTrajectory*> rtv;	
   vector<int> mass_hypotheses_positive;
   vector<int> mass_hypotheses_negative;
-  size_t MAX_DReferenceTrajectoryPoolSize;
-
  
   // Optional debugging histograms
   TH1F *fom_chi2_trk;
