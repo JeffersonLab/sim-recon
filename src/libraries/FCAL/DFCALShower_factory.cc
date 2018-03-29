@@ -15,6 +15,7 @@ using namespace std;
 #include "FCAL/DFCALGeometry.h"
 #include "FCAL/DFCALCluster.h"
 #include "FCAL/DFCALHit.h"
+#include "TRACKING/DTrackWireBased.h"
 #include <JANA/JEvent.h>
 #include <JANA/JApplication.h>
 using namespace jana;
@@ -184,9 +185,11 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
  
   // Use the center of the target as an approximation for the vertex position
   DVector3 vertex(0.0, 0.0, m_zTarget);
+  
+  vector< const DTrackWireBased* > allWBTracks;
+  eventLoop->Get( allWBTracks );
+  vector< const DTrackWireBased* > wbTracks = filterWireBasedTracks( allWBTracks );
 
-  
-  
   // Loop over list of DFCALCluster objects and calculate the "Non-linear" corrected
   // energy and position for each. We'll use a logarithmic energy-weighting to 
   // find the final position and error. 
@@ -213,7 +216,8 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
       cTime -= ( m_FCALfront + DFCALGeometry::blockLength() - pos_corrected.Z() )/FCAL_C_EFFECTIVE;
 
       //Apply time-walk correction/global timing offset
-      cTime += ( timeConst0  +  timeConst1 * Ecorrected  +  timeConst2 * TMath::Power( Ecorrected, 2 ) + timeConst3 * TMath::Power( Ecorrected, 3 )  +  timeConst4 * TMath::Power( Ecorrected, 4 ) );
+      cTime += ( timeConst0  +  timeConst1 * Ecorrected  +  timeConst2 * TMath::Power( Ecorrected, 2 ) +
+		 timeConst3 * TMath::Power( Ecorrected, 3 )  +  timeConst4 * TMath::Power( Ecorrected, 4 ) );
 
       // Make the DFCALShower object
       DFCALShower* shower = new DFCALShower;
@@ -221,11 +225,9 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
       shower->setEnergy( Ecorrected );
       shower->setPosition( pos_corrected );   
       shower->setTime ( cTime );
-      // shower->getClassifierOutput( 0 );   // need to set this
+      FillCovarianceMatrix( shower );
 
-
-      FillCovarianceMatrix(shower);
-      if (VERBOSE>2) {
+      if( VERBOSE > 2 ){
 	printf("FCAL shower:    E=%f   x=%f   y=%f   z=%f   t=%f\n",
 	       shower->getEnergy(),shower->getPosition().X(),shower->getPosition().Y(),shower->getPosition().Z(),shower->getTime());
 	printf("FCAL shower:   dE=%f  dx=%f  dy=%f  dz=%f  dt=%f\n",
@@ -236,7 +238,70 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 	       shower->XZcorr(),shower->XTcorr(),shower->YZcorr(),shower->YTcorr(),shower->ZTcorr());
       }
 
-      shower->AddAssociatedObject(cluster);
+      // now fill information related to shower shape and nearby
+      // tracks -- useful for splitoff rejection later
+
+      double docaTr = 1E6;
+      double timeTr = 1E6;
+      double xTr = 0;
+      double yTr = 0;
+
+      double flightTime;
+      DVector3 projPos, projMom;
+
+      // find the closest track to the shower -- here we loop over the best FOM
+      // wire-based track for every track candidate not just the ones associated
+      // with the topology
+      for( size_t iTrk = 0; iTrk < wbTracks.size(); ++iTrk ){
+
+	if( !wbTracks[iTrk]->GetProjection( SYS_FCAL, projPos, &projMom, &flightTime ) ) continue;
+	
+	// need to swim fcalPos to common z for DOCA calculation -- this really
+	// shouldn't be in the loop if the z-value of projPos doesn't change
+	// with each track
+	
+	DVector3 fcalFacePos = ( shower->getPosition() - vertex );
+	fcalFacePos.SetMag( fcalFacePos.Mag() * projPos.Z() / fcalFacePos.Z() );
+ 
+	double distance = ( fcalFacePos - projPos ).Mag();
+	
+	if( distance < docaTr ){
+
+	  docaTr = distance;
+	  // this is the time from the center of the target to the detector -- to compare with
+	  // the FCAL time, one needs to have the t0RF at the center of the target.  That
+	  // comparison happens at a later stage in the analysis.
+	  timeTr = ( wbTracks[iTrk]->position().Z() - vertex.Z() ) / SPEED_OF_LIGHT + flightTime;
+	  xTr = projPos.X();
+	  yTr = projPos.Y();
+	}
+      }
+
+      shower->setDocaTrack( docaTr );
+      shower->setTimeTrack( timeTr );
+
+      // now compute some variables at the hit level
+      
+      vector< const DFCALHit* > fcalHits;
+      cluster->Get( fcalHits );
+      
+      double e9e25, e1e9;
+      getE1925FromHits( e1e9, e9e25, fcalHits, getMaxHit( fcalHits ) );
+      shower->setE1E9( e1e9 );
+      shower->setE9E25( e9e25 );
+
+      double sumU = 0;
+      double sumV = 0;
+      // if there is no nearest track, the defaults for xTr and yTr will result
+      // in using the beam axis as the directional axis
+      getUVFromHits( sumU, sumV, fcalHits,
+		     DVector3( shower->getPosition().X(), shower->getPosition().Y(), 0 ),
+		     DVector3( xTr, yTr, 0 ) );
+      
+      shower->setSumU( sumU );
+      shower->setSumV( sumV );
+      
+      shower->AddAssociatedObject( cluster );
 
       _data.push_back(shower);
     }
@@ -287,7 +352,6 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
   
   // End Correction  
   
-
 
   // then depth corrections 
   if ( Egamma > 0 ) { 
@@ -495,14 +559,135 @@ DFCALShower_factory::LoadCovarianceLookupTables(){
   return NOERROR;
 }
 
-double
-DFCALShower_factor::getQuality( const DFCALShower& shower ){
+unsigned int
+DFCALShower_factory::getMaxHit( const vector< const DFCALHit* >& hitVec ) const {
+  
+  unsigned int maxIndex = 0;
+  
+  double eMaxSh = 0;
+  
+  for( vector< const DFCALHit* >::const_iterator hit = hitVec.begin();
+       hit != hitVec.end(); ++hit ){
 
-  vector< const DFCALCluster* > clusterVec;
-  shower->Get( clusterVec );
-  const DFCALCluster* cluster = clusterVec[0];
- 
-   
+    if( (**hit).E > eMaxSh ){
 
+      eMaxSh = (**hit).E;
+      maxIndex = hit - hitVec.begin();
+    }
+  }
+
+  return maxIndex;
 }
 
+void
+DFCALShower_factory::getUVFromHits( double& sumUSh, double& sumVSh, 
+				    const vector< const DFCALHit* >& hits,
+				    const DVector3& showerVec,
+				    const DVector3& trackVec ) const {
+
+  // This method forms an axis pointing from the shower to nearest track
+  // and computes the energy-weighted second moment of the shower along
+  // and perpendicular to this axis.  True photons are fairly symmetric
+  // and have similar values of sumU and sumV whereas splitoffs tend
+  // to be asymmetric in these variables.
+
+  DVector3 u = ( showerVec - trackVec ).Unit();
+  DVector3 z( 0, 0, 1 );
+  DVector3 v = u.Cross( z );
+
+  DVector3 hitLoc( 0, 0, 0 );
+
+  sumUSh = 0;
+  sumVSh = 0;
+
+  double sumE = 0;
+  
+  for( vector< const DFCALHit* >::const_iterator hit = hits.begin();
+       hit != hits.end(); ++hit ){
+
+    hitLoc.SetX( (**hit).x - showerVec.X() );
+    hitLoc.SetY( (**hit).y - showerVec.Y() );
+
+    sumUSh += (**hit).E * pow( u.Dot( hitLoc ), 2 );
+    sumVSh += (**hit).E * pow( v.Dot( hitLoc ), 2 );
+
+    sumE += (**hit).E;
+  }
+
+  sumUSh /= sumE;
+  sumVSh /= sumE;
+}
+
+void
+DFCALShower_factory::getE1925FromHits( double& e1e9Sh, double& e9e25Sh, 
+				       const vector< const DFCALHit* >& hits,
+				       unsigned int maxIndex ) const {
+
+  double E9 = 0;
+  double E25 = 0;
+
+  const DFCALHit* maxHit = hits[maxIndex];
+  
+  for( vector< const DFCALHit* >::const_iterator hit = hits.begin();
+       hit != hits.end(); ++hit ){
+     
+    if( fabs( (**hit).x - maxHit->x ) < 4.5 && fabs( (**hit).y - maxHit->y ) < 4.5 )
+      E9 += (**hit).E;
+
+    if( fabs( (**hit).x - maxHit->x ) < 8.5 && fabs( (**hit).y - maxHit->y ) < 8.5 )
+      E25 += (**hit).E;
+  }
+
+  e1e9Sh = maxHit->E/E9;
+  e9e25Sh = E9/E25;
+}
+
+
+vector< const DTrackWireBased* >
+DFCALShower_factory::filterWireBasedTracks( vector< const DTrackWireBased* >& wbTracks ) const {
+
+  vector< const DTrackWireBased* > finalTracks;
+  map< unsigned int, vector< const DTrackWireBased* > > sortedTracks;
+
+  // first sort the wire based tracks into lists with a common candidate id
+  // this means that they all come from the same track in the detector
+  
+  for( unsigned int i = 0; i < wbTracks.size(); ++i ){
+
+    unsigned int id = wbTracks[i]->candidateid;
+
+    if( sortedTracks.find( id ) == sortedTracks.end() ){
+      
+      sortedTracks[id] = vector< const DTrackWireBased* >();
+    }
+
+    sortedTracks[id].push_back( wbTracks[i] );
+  }
+
+  // now loop through that list of unique tracks and for each set
+  // of wire based tracks, choose the one with the highest FOM
+  // (this is choosing among different particle hypotheses)
+  
+  for( map< unsigned int, vector< const DTrackWireBased* > >::const_iterator
+	 anId = sortedTracks.begin();
+       anId != sortedTracks.end(); ++anId ){
+
+    double maxFOM = 0;
+    unsigned int bestIndex = 0;
+
+    for( unsigned int i = 0; i < anId->second.size(); ++i ){
+
+      if( anId->second[i]->Ndof < 15 ) continue;
+      
+      if( anId->second[i]->FOM > maxFOM ){
+
+	maxFOM = anId->second[i]->FOM;
+	bestIndex = i;
+      }
+    }
+
+    finalTracks.push_back( anId->second[bestIndex] );
+  }
+  
+  return finalTracks;
+}
