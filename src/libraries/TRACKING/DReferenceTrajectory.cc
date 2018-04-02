@@ -2587,6 +2587,7 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
   double q2=rt2->q;
   double mass_sq1=this->mass_sq;
   double mass_sq2=rt2->mass_sq;
+  vertex_chi2=0.;
   
   // Initialize the doca and traverse both particles' trajectories
   doca=1000.;
