@@ -335,7 +335,7 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 
 		//BCAL
 		locHistName = "BCALShowerEnergy";
-		dHist_BCALShowerEnergy = GetOrCreate_Histogram<TH1I>(locHistName, ";BCAL Shower Energy (GeV)", dNumShowerEnergyBins, dMinShowerEnergy, dMaxBCALP);
+		dHist_BCALShowerEnergy = GetOrCreate_Histogram<TH1I>(locHistName, ";BCAL Shower Energy (GeV)", dNumShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy);
 		locHistName = "BCALShowerPhi";
 		dHist_BCALShowerPhi = GetOrCreate_Histogram<TH1I>(locHistName, ";BCAL Shower #phi#circ", dNumPhiBins, dMinPhi, dMaxPhi);
 		locHistName = "BCALShowerPhiVsZ";
@@ -2149,11 +2149,11 @@ void DHistogramAction_Neutrals::Initialize(JEventLoop* locEventLoop)
 		locHistName = "BCALTrackDeltaZ";
 		dHist_BCALTrackDeltaZ = GetOrCreate_Histogram<TH1I>(locHistName, ";BCAL Shower #DeltaZ to Nearest Track (cm)", dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackDOCA);
 		locHistName = "BCALNeutralShowerEnergy";
-		dHist_BCALNeutralShowerEnergy = GetOrCreate_Histogram<TH1I>(locHistName, ";BCAL Neutral Shower Energy (GeV)", dNumShowerEnergyBins, dMinShowerEnergy, dMaxBCALP);
+		dHist_BCALNeutralShowerEnergy = GetOrCreate_Histogram<TH1I>(locHistName, ";BCAL Neutral Shower Energy (GeV)", dNumShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy);
 		locHistName = "BCALNeutralShowerDeltaT";
 		dHist_BCALNeutralShowerDeltaT = GetOrCreate_Histogram<TH1I>(locHistName, ";BCAL Neutral Shower #Deltat (Propagated - RF) (ns)", dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 		locHistName = "BCALNeutralShowerDeltaTVsE";
-		dHist_BCALNeutralShowerDeltaTVsE = GetOrCreate_Histogram<TH2I>(locHistName, ";BCAL Neutral Shower Energy (GeV);BCAL Neutral Shower #Deltat (ns)", dNum2DShowerEnergyBins, dMinShowerEnergy, dMaxBCALP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+		dHist_BCALNeutralShowerDeltaTVsE = GetOrCreate_Histogram<TH2I>(locHistName, ";BCAL Neutral Shower Energy (GeV);BCAL Neutral Shower #Deltat (ns)", dNum2DShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 		locHistName = "BCALNeutralShowerDeltaTVsZ";
 		dHist_BCALNeutralShowerDeltaTVsZ = GetOrCreate_Histogram<TH2I>(locHistName, ";BCAL Neutral Shower Z (cm);BCAL Neutral Shower #Deltat (ns)", dNum2DBCALZBins, 0.0, 450.0, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 
@@ -2319,7 +2319,7 @@ void DHistogramAction_DetectorMatchParams::Initialize(JEventLoop* locEventLoop)
 				//BCAL
 				locHistName = "BCALShowerEnergy";
 				locHistTitle = locParticleROOTName + ";BCAL Shower Energy (GeV)";
-				dHistMap_BCALShowerEnergy[locPIDPair] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumShowerEnergyBins, dMinShowerEnergy, dMaxBCALP);
+				dHistMap_BCALShowerEnergy[locPIDPair] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy);
 
 				locHistName = "BCALShowerTrackDepth";
 				locHistTitle = locParticleROOTName + ";BCAL Shower Track Depth (cm)";
