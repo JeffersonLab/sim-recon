@@ -956,7 +956,7 @@ uint32_t HDEVIO::swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 		case 0x00:  // 32 bit unknown (not swapped)
 		case 0x07:  // 8 bit unsigned int
 		case 0x06:  // 8 bit signed int
-			memcpy((uint8_t*)&outbuff[2], (uint8_t*)&inbuff[2], Nwords*sizeof(uint32_t));
+			if( inbuff!=outbuff ) memcpy((uint8_t*)&outbuff[2], (uint8_t*)&inbuff[2], Nwords*sizeof(uint32_t));
 			Nswapped += Nwords;
 			break;
 		case 0x0c:
@@ -1105,7 +1105,7 @@ uint32_t HDEVIO::swap_segment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 		case 0x00:  // 32 bit unknown (not swapped)
 		case 0x07:  // 8 bit unsigned int
 		case 0x06:  // 8 bit signed int
-			memcpy((uint8_t*)&outbuff[1], (uint8_t*)&inbuff[1], Nwords*sizeof(uint32_t));
+			if( inbuff!=outbuff ) memcpy((uint8_t*)&outbuff[1], (uint8_t*)&inbuff[1], Nwords*sizeof(uint32_t));
 			Nswapped += Nwords;
 			break;
 	}
