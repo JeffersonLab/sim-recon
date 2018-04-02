@@ -177,7 +177,7 @@ jerror_t JEventProcessor_imaging::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  //TwoTrackProb->Fill(vertex_prob);
 	  DocaPull->Fill(doca/sqrt(var_doca));
 
-	  //if (vertex_chi2<100.)
+	  if (vertex_chi2<100.)
 	    {  
 	      
 	    TwoTrackDoca->Fill(doca);
