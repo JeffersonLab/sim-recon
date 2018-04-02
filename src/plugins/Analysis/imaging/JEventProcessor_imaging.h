@@ -43,6 +43,8 @@ class JEventProcessor_imaging:public jana::JEventProcessor{
 		
 		const DGeometry *geom;
 		const DMagneticFieldMap *bfield;
+
+		bool FIT_VERTEX;
 };
 
 #endif // _JEventProcessor_imaging_

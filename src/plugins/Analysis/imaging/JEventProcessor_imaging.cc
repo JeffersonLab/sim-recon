@@ -93,6 +93,11 @@ jerror_t JEventProcessor_imaging::brun(JEventLoop *eventLoop, int32_t runnumber)
   //Therefore, allocate them at the beginning before the available memory becomes randomly populated
   while(rtv.size() < 50)
     rtv.push_back(new DReferenceTrajectory(bfield));
+
+  
+
+  FIT_VERTEX=false;
+  gPARMS->SetDefaultParameter("IMAGING:FIT_VERTEX",FIT_VERTEX, "Turn on/off vertex fitting");
   
   return NOERROR;
 }
@@ -165,7 +170,7 @@ jerror_t JEventProcessor_imaging::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  DVector3 pos;
 	  double doca,var_doca,vertex_chi2;
 	  DKinematicData kd1=*track1,kd2=*track2;
-	  rt1->IntersectTracks(rt2,&kd1,&kd2,pos,doca,var_doca,vertex_chi2);
+	  rt1->IntersectTracks(rt2,&kd1,&kd2,pos,doca,var_doca,vertex_chi2,FIT_VERTEX);
 	  // rt1->IntersectTracks(rt2,NULL,NULL,pos,doca,var_doca,vertex_chi2);
 	  TwoTrackChi2->Fill(vertex_chi2);
 	  //double vertex_prob=TMath::Prob(vertex_chi2,1);
