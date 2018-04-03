@@ -32,6 +32,7 @@
         <cdcStraw maxOccurs="unbounded" minOccurs="0" ring="int" straw="int">
           <cdcStrawHit q="float" maxOccurs="unbounded" t="float">
             <cdcDigihit minOccurs="0" peakAmp="float"/>
+            <cdcHitQF minOccurs="0" QF="float"/>
           </cdcStrawHit>
           <cdcStrawTruthHit q="float" maxOccurs="unbounded" t="float" d="float" itrack="int" ptype="int"/>
         </cdcStraw>
