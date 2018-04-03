@@ -118,7 +118,7 @@
           <trackID minOccurs="0" itrack="int"/>
         </dircTruthPoint>
         <dircTruthBarHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float" px="float" py="float" pz="float" E="float" pdg="int" bar="int" track="int"/>
-        <dircTruthPmtHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float" E="float" ch="int" key_bar="int"/>
+        <dircTruthPmtHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float" E="float" ch="int" key_bar="int" path="long" refl="int"/>
       </DIRC>
       <forwardTOF minOccurs="0">
         <ftofCounter bar="int" maxOccurs="unbounded" minOccurs="0" plane="int">

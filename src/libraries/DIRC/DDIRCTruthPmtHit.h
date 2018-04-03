@@ -21,6 +21,8 @@ public:
   float E;	   // poton energy
   int   ch;        // PMT channel of the hit
   int   key_bar;   // key of the corresponding bar hit
+  int64_t path;	   // path id of the photon in the optical box 
+  int refl;	   // number of reflection in the optical box
   
   void toStrings(vector<pair<string, string> >&items) const {
     AddString(items, "x", "%1.3f", x);
@@ -30,6 +32,8 @@ public:
     AddString(items, "E", "%1.3f", E);
     AddString(items, "ch", "%d", ch);
     AddString(items, "key_bar", "%d", key_bar);
+    AddString(items, "path", "%ld", path);
+    AddString(items, "refl", "%d", refl);
   }
 };
 

@@ -40,8 +40,40 @@ jerror_t DEventProcessor_pid_dirc::init(void) {
   fcEvent = new TClonesArray("DrcEvent");
   // fEvent = new DrcEvent();
   //fTree->Branch("DrcEvent","DrcEvent",&fEvent,256000,0);
-  fTree->Branch("DrcEvent",&fcEvent,256000,0);
+  fTree->Branch("DrcEvent",&fcEvent,256000,2);
   return NOERROR;
+}
+
+jerror_t DEventProcessor_pid_dirc::brun(jana::JEventLoop *loop, int32_t runnumber)
+{
+   // Get the geometry
+   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
+   DGeometry *geom = dapp->GetDGeometry(runnumber);
+
+   // Outer detector geometry parameters
+   vector<double>tof_face;
+   geom->Get("//section/composition/posXYZ[@volume='ForwardTOF']/@X_Y_Z", tof_face);
+   vector<double>tof_plane;  
+   geom->Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='0']", tof_plane);
+   double dTOFz=tof_face[2]+tof_plane[2]; 
+   geom->Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='1']", tof_plane);
+   dTOFz+=tof_face[2]+tof_plane[2];
+   dTOFz*=0.5;  // mid plane between tof Planes
+   std::cout<<"dTOFz "<<dTOFz<<std::endl;
+
+   double dDIRCz;
+   vector<double>dirc_face;
+   vector<double>dirc_plane;
+   vector<double>dirc_shift;
+   vector<double>bar_plane;
+   geom->Get("//section/composition/posXYZ[@volume='DIRC']/@X_Y_Z", dirc_face);
+   geom->Get("//composition[@name='DRCC']/mposY[@volume='DCML']/@Z_X/plane[@value='1']", dirc_plane);
+   geom->Get("//composition[@name='DIRC']/posXYZ[@volume='DRCC']/@X_Y_Z", dirc_shift);
+   geom->Get("//composition[@name='DCBR']/mposX[@volume='QZBL']/@Y_Z", bar_plane);
+   
+   dDIRCz=dirc_face[2]+dirc_plane[0]+dirc_shift[2]+bar_plane[1]; // 585.862
+
+   return NOERROR;
 }
 
 jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) {
@@ -126,6 +158,7 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
     if(dircPmtHits.size() > 0.){
       fEvent = new DrcEvent();
       DrcHit hit;
+      
       // loop over PMT's hits
       for (unsigned int h = 0; h < dircPmtHits.size(); h++){
 	int relevant(0);
@@ -149,7 +182,7 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	    fEvent->SetPosition(TVector3(dircBarHits[j]->x, dircBarHits[j]->y, dircBarHits[j]->z)); // position where the charged particle hit the radiator
 	    relevant++;
 	  }
-	}
+	}	
 	
 	if(relevant<1) continue;
 	int ch=dircPmtHits[h]->ch;
@@ -160,14 +193,14 @@ jerror_t DEventProcessor_pid_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
 	hit.SetPmtId(pmt);
 	hit.SetPixelId(pix);
 	hit.SetPosition(TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z));
-	hit.SetEnergy(dircPmtHits[h]->key_bar);
+	hit.SetEnergy(dircPmtHits[h]->E);
 	hit.SetLeadTime(dircPmtHits[h]->t);
-	hit.SetPathId(dircPmtHits[h]->E);
+	hit.SetPathId(dircPmtHits[h]->path);
+	hit.SetNreflections(dircPmtHits[h]->refl);
 	fEvent->AddHit(hit);
       }
       
-      if(fEvent->GetHitSize()>0) new (cevt[ cevt.GetEntriesFast()]) DrcEvent(*fEvent);
-      
+      if(fEvent->GetHitSize()>0) new (cevt[ cevt.GetEntriesFast()]) DrcEvent(*fEvent);      
     }
   }
   

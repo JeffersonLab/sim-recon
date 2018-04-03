@@ -11,7 +11,7 @@ DrcLutNode::DrcLutNode(){
 DrcLutNode::DrcLutNode(Int_t nodeId):fLutId(0),fDetectorId(nodeId),fSize(0){ 
 }
 
-void DrcLutNode::AddEntry(Int_t lutId, Int_t detectorId, TVector3 dir, Double_t pathid, Int_t nrefl, Double_t time, TVector3 hitpos, TVector3 digipos, Double_t weight) {
+void DrcLutNode::AddEntry(Int_t lutId, Int_t detectorId, TVector3 dir, Long64_t pathid, Int_t nrefl, Double_t time, TVector3 hitpos, TVector3 digipos, Double_t weight) {
   fLutId = lutId;
   fDetectorId = detectorId; 
   fNodeArray.push_back(dir);
@@ -24,7 +24,7 @@ void DrcLutNode::AddEntry(Int_t lutId, Int_t detectorId, TVector3 dir, Double_t 
   fSize++;
 }
 
-void DrcLutNode::AddEntry(Int_t lutId, Int_t detectorId, TVector3 dir, Double_t pathid, Int_t nrefl, Double_t time, TVector3 hitpos, TVector3 digipos, Double_t weight,
+void DrcLutNode::AddEntry(Int_t lutId, Int_t detectorId, TVector3 dir, Long64_t pathid, Int_t nrefl, Double_t time, TVector3 hitpos, TVector3 digipos, Double_t weight,
 			  TVector3 d1,TVector3 d2,TVector3 d3,TVector3 d4, TVector3 d5,TVector3 d6,TVector3 d7,TVector3 d8) {
   fLutId = lutId;
   fDetectorId = detectorId; 

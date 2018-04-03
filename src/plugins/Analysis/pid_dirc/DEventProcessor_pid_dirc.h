@@ -15,6 +15,9 @@ using namespace std;
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JApplication.h>
+#include <DANA/DApplication.h>
+#include <HDGEOMETRY/DGeometry.h>
+
 using namespace jana;
 
 #include <TRACKING/DMCThrown.h>
@@ -79,6 +82,7 @@ public:
 
 private:
   jerror_t init(void);
+  jerror_t brun(jana::JEventLoop *loop, int32_t runnumber);
   jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);
   jerror_t erun(void);
   jerror_t fini(void); // called after last event

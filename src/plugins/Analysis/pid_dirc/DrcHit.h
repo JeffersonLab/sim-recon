@@ -24,7 +24,7 @@ public:
   // Accessors 
   Int_t GetType()        { return fType; }
   Int_t GetNreflections()  { return fNreflections; }
-  Double_t GetPathId()  { return fPathId; }
+  Long64_t GetPathId()  { return fPathId; }
   //  TVector3 GetMomentum()     { return fMomentum; }
   Double_t GetEnergy()       { return fEnergy; }
   TVector3 GetPosition()     { return fPosition; }
@@ -38,7 +38,7 @@ public:
   // Mutators
   void SetType(Int_t val)    { fType = val; }
   void SetNreflections(Int_t val)  { fNreflections = val; }
-  void SetPathId(Double_t val) { fPathId = val; }
+  void SetPathId(Long64_t val) { fPathId = val; }
   //  void SetMomentum(TVector3 val)    { fMomentum = val; }
   void SetEnergy(Double_t val)    { fEnergy = val; }
   void SetPosition(TVector3 val)    { fPosition = val; }
@@ -53,7 +53,7 @@ protected:
 
   Int_t fType;
   Int_t fNreflections;
-  Double_t fPathId;
+  Long64_t fPathId;
   //  TVector3 fMomentum;
   Double_t fEnergy;
   TVector3 fPosition;

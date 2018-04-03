@@ -62,11 +62,16 @@ jerror_t DEventProcessor_lut_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
   if(mcthrowns.size()<1) return NOERROR;
   //if(dircBarHits.size()<1) return NOERROR;
   if(dircPmtHits.size()!=1) return NOERROR;
-  int nrefl=0;
-  if(dircBarHits.size()>0) nrefl = dircBarHits[0]->pdg; // n of reflections
   
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK
-    
+
+  TVector3 mom(0,0,0);
+  if(dircBarHits.size()>0){
+    mom =  TVector3(dircBarHits[0]->px,
+		    dircBarHits[0]->py,
+		    dircBarHits[0]->pz).Unit();
+  }
+  
   // loop over PMT's hits
   for (unsigned int h = 0; h < dircPmtHits.size(); h++){
     
@@ -78,14 +83,18 @@ jerror_t DEventProcessor_lut_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
     TVector3 dir =  TVector3(mcthrowns[0]->momentum().X(),
 			     mcthrowns[0]->momentum().Y(),
 			     mcthrowns[0]->momentum().Z()).Unit();
+
+    std::cout<<"dir.X() "<<dir.X() <<" "<<dir.Y() <<" "<<dir.Z() << " | "
+	     <<mom.X() <<" "<<mom.Y() <<" "<<mom.Z() <<std::endl;
+    
     
     if(lutId>=0 && lutId<48)
       ((DrcLutNode*)(fLut[lutId]->At(id)))->
 	AddEntry(lutId,               // lut/bar id
 		 id,                  // pixel id
 		 dir,
-		 dircPmtHits[h]->E,   // path id
-		 nrefl,
+		 dircPmtHits[h]->path,
+		 dircPmtHits[h]->refl,
 		 dircPmtHits[h]->t,
 		 TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z),
 		 TVector3(dircPmtHits[h]->x,dircPmtHits[h]->y,dircPmtHits[h]->z));
