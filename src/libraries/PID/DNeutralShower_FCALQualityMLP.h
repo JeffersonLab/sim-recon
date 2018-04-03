@@ -101,14 +101,14 @@ class IClassifierReader {
 
 #endif
 
-class DFCALShowerQualityMLP : public IClassifierReader {
+class DNeutralShower_FCALQualityMLP : public IClassifierReader {
 
  public:
 
    // constructor
-   DFCALShowerQualityMLP( std::vector<std::string>& theInputVars ) 
+   DNeutralShower_FCALQualityMLP( std::vector<std::string>& theInputVars ) 
       : IClassifierReader(),
-        fClassName( "DFCALShowerQualityMLP" ),
+        fClassName( "DNeutralShower_FCALQualityMLP" ),
         fNvars( 8 ),
         fIsNormalised( false )
    {      
@@ -172,7 +172,7 @@ class DFCALShowerQualityMLP : public IClassifierReader {
    }
 
    // destructor
-   virtual ~DFCALShowerQualityMLP() {
+   virtual ~DNeutralShower_FCALQualityMLP() {
       Clear(); // method-specific
    }
 
@@ -232,7 +232,7 @@ class DFCALShowerQualityMLP : public IClassifierReader {
    double * fWeights[3];
 };
 
-inline void DFCALShowerQualityMLP::Initialize()
+inline void DNeutralShower_FCALQualityMLP::Initialize()
 {
    // build network structure
    fLayers = 3;
@@ -354,7 +354,7 @@ inline void DFCALShowerQualityMLP::Initialize()
    fWeightMatrix1to2[0][11] = 0.68727802568716;
 }
 
-inline double DFCALShowerQualityMLP::GetMvaValue__( const std::vector<double>& inputValues ) const
+inline double DNeutralShower_FCALQualityMLP::GetMvaValue__( const std::vector<double>& inputValues ) const
 {
    if (inputValues.size() != (unsigned int)fLayerSize[0]-1) {
       std::cout << "Input vector needs to be of size " << fLayerSize[0]-1 << std::endl;
@@ -390,24 +390,24 @@ inline double DFCALShowerQualityMLP::GetMvaValue__( const std::vector<double>& i
    return fWeights[2][0];
 }
 
-double DFCALShowerQualityMLP::ActivationFnc(double x) const {
+inline double DNeutralShower_FCALQualityMLP::ActivationFnc(double x) const {
    // radial
    return exp(-x*x/2.0);
 }
-double DFCALShowerQualityMLP::OutputActivationFnc(double x) const {
+inline double DNeutralShower_FCALQualityMLP::OutputActivationFnc(double x) const {
    // sigmoid
    return 1.0/(1.0+exp(-x));
 }
    
 // Clean up
-inline void DFCALShowerQualityMLP::Clear() 
+inline void DNeutralShower_FCALQualityMLP::Clear() 
 {
    // clean up the arrays
    for (int lIdx = 0; lIdx < 3; lIdx++) {
       delete[] fWeights[lIdx];
    }
 }
-   inline double DFCALShowerQualityMLP::GetMvaValue( const std::vector<double>& inputValues ) const
+   inline double DNeutralShower_FCALQualityMLP::GetMvaValue( const std::vector<double>& inputValues ) const
    {
       // classifier response value
       double retval = 0;
@@ -447,7 +447,7 @@ inline void DFCALShowerQualityMLP::Clear()
    }
 
 //_______________________________________________________________________
-inline void DFCALShowerQualityMLP::InitTransform_1()
+inline void DNeutralShower_FCALQualityMLP::InitTransform_1()
 {
    // Normalization transformation, initialisation
    fMin_1[0][0] = 2;
@@ -501,7 +501,7 @@ inline void DFCALShowerQualityMLP::InitTransform_1()
 }
 
 //_______________________________________________________________________
-inline void DFCALShowerQualityMLP::Transform_1( std::vector<double>& iv, int cls) const
+inline void DNeutralShower_FCALQualityMLP::Transform_1( std::vector<double>& iv, int cls) const
 {
    // Normalization transformation
    if (cls < 0 || cls > 2) {
@@ -550,13 +550,13 @@ inline void DFCALShowerQualityMLP::Transform_1( std::vector<double>& iv, int cls
 }
 
 //_______________________________________________________________________
-inline void DFCALShowerQualityMLP::InitTransform()
+inline void DNeutralShower_FCALQualityMLP::InitTransform()
 {
    InitTransform_1();
 }
 
 //_______________________________________________________________________
-inline void DFCALShowerQualityMLP::Transform( std::vector<double>& iv, int sigOrBgd ) const
+inline void DNeutralShower_FCALQualityMLP::Transform( std::vector<double>& iv, int sigOrBgd ) const
 {
    Transform_1( iv, sigOrBgd );
 }
