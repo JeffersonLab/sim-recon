@@ -647,6 +647,8 @@ def AddSQLite(env):
 	if(sqlite_home != None) :
 		SQLITE_CPPPATH = ["%s/include" % (sqlite_home)]
 		env.AppendUnique(CPPPATH = SQLITE_CPPPATH)
+		SQLITE_LIBPATH = ["%s/lib" % (sqlite_home)]
+		env.AppendUnique(LIBPATH = SQLITE_LIBPATH)
 		AddSQLite.SQLITE_LINKFLAGS = "-Wl,-rpath=%s/lib" % (sqlite_home)
 		AddLinkFlags(env, AddSQLite.SQLITE_LINKFLAGS)
 	env.AppendUnique(LIBS = 'sqlite3')
