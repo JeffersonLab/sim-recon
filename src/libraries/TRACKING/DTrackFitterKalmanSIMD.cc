@@ -286,7 +286,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    
    // Outer detector geometry parameters
    geom->GetFCALZ(dFCALz); 
-   geom->GetDIRCZ(dDIRCz);
+   if (geom->GetDIRCZ(dDIRCz)==false) dDIRCz=1000.;
    vector<double>tof_face;
    geom->Get("//section/composition/posXYZ[@volume='ForwardTOF']/@X_Y_Z",
 	      tof_face);
