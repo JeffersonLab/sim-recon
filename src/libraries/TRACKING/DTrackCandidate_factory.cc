@@ -289,15 +289,26 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     double theta=mom.Theta();
        
     // Propagate track to CDC endplate
-    if (theta<M_PI_4 && fdctrackcandidates.size()>0){
-      cdc_forward_ids.push_back(i);
-
-      //ProjectHelixToZ(cdc_endplate.z(),srccan->charge(),mom,pos); 
-      stepper->SetCharge(srccan->charge());
-      stepper->SwimToPlane(pos,mom,cdc_endplate,norm,NULL);
-      cdc_endplate_projections.push_back(pos);
+    bool isForward=false;
+    if (theta<M_PI_2 && fdctrackcandidates.size()>0){     
+      // First do a quick projection using a helical model to see if it is 
+      // worth adding this cdc candidate to the list of forward-going tracks
+      // that could pass into the FDC...
+      ProjectHelixToZ(cdc_endplate.z(),srccan->charge(),mom,pos);
+      if (pos.Perp()<48.5){
+	// do an actual swim to the cdc endplate
+	mom=srccan->momentum();
+	pos=srccan->position();
+	stepper->SetCharge(srccan->charge());
+	stepper->SwimToPlane(pos,mom,cdc_endplate,norm,NULL);
+	if (pos.Perp()<48.5){
+	  cdc_endplate_projections.push_back(pos);
+	  cdc_forward_ids.push_back(i);   
+	  isForward=true;
+	}
+      }
     }
-    else{
+    if (isForward==false){
       cdc_backward_ids.push_back(i);
     }
   }
