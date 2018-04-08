@@ -1432,14 +1432,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
        num_cdc++;
      }
 
-     if (num_match>=3 && double(num_match)/double(num_cdc)>0.33){
-       // Put the fdc candidate in the combined list
-       DTrackCandidate *can = new DTrackCandidate;
-       can->setPID((q > 0.0) ? PiPlus : PiMinus);
-       
-       // copy the list of cdc indices over from the cdc candidate
-       can->used_cdc_indexes=cdccan->used_cdc_indexes;
-              
+     if (num_match>=3 && double(num_match)/double(num_cdc)>0.33){              
        // Get the segment data
        vector<const DFDCSegment *>segments;
        fdccan->GetT(segments);
@@ -1459,6 +1452,13 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	 if (DEBUG_LEVEL>1) _DBG_ << "Skipping match of potential back-to-back tracks." <<endl;
 	 continue; 
        }
+
+       // Put the fdc candidate in the combined list
+       DTrackCandidate *can = new DTrackCandidate;
+       can->setPID((q > 0.0) ? PiPlus : PiMinus);
+       
+       // copy the list of cdc indices over from the cdc candidate
+       can->used_cdc_indexes=cdccan->used_cdc_indexes;
 
        // Add the fdc hits to track candidate as associated objects 
        unsigned int num_fdc_hits=0;
