@@ -238,7 +238,8 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
 // parametrization of time-to-distance for FDC
 double DTrackFitterKalmanSIMD::fdc_drift_distance(double time,double Bz){
   if (time<0.) return 0.;
-  double d=0.;
+  double d=0.; 
+  time/=1.+FDC_DRIFT_BSCALE_PAR1+FDC_DRIFT_BSCALE_PAR2*Bz*Bz;
   double tsq=time*time;
   double t_high=DRIFT_FUNC_PARMS[4];
   
@@ -3260,6 +3261,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
    // Input momentum 
    DVector3 pvec=input_params.momentum();
    double p_mag=pvec.Mag();
+   /*
    if (MASS>0.9){
      PT_MIN=0.1;
      Q_OVER_P_MAX=10.;
@@ -3280,6 +3282,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       pvec.SetMag(MAX_P);
       p_mag=MAX_P;
    }
+   */
    double pz=pvec.z();
    double q_over_p0=q_over_p_=q/p_mag;
    double q_over_pt0=q_over_pt_=q/pvec.Perp();
@@ -7802,18 +7805,14 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(vector<pull_t>&forward_pulls){
                   return VALUE_OUT_OF_RANGE;
                }
 
-               // Position and direction from state vector
-               double x=Ss(state_x);
-               double y=Ss(state_y);
-               double tx=Ss(state_tx);
-               double ty=Ss(state_ty);
-
-               // Small angle alignment correction
-               x = x + my_fdchits[id]->phiZ*y;
-               y = y - my_fdchits[id]->phiZ*x;
-               //tz = 1. + my_fdchits[id]->phiY*tx - my_fdchits[id]->phiX*ty;
-               tx = (tx + my_fdchits[id]->phiZ*ty - my_fdchits[id]->phiY);
-               ty = (ty - my_fdchits[id]->phiZ*tx + my_fdchits[id]->phiX);
+               // Position and direction from state vector with small angle
+	       // alignment correction
+               double x=Ss(state_x) + my_fdchits[id]->phiZ*Ss(state_y);
+               double y=Ss(state_y) - my_fdchits[id]->phiZ*Ss(state_x);
+               double tx=Ss(state_tx)+ my_fdchits[id]->phiZ*Ss(state_ty) 
+		 - my_fdchits[id]->phiY;
+               double ty=Ss(state_ty) - my_fdchits[id]->phiZ*Ss(state_tx) 
+		 + my_fdchits[id]->phiX;
 
                double cosa=my_fdchits[id]->cosa;
                double sina=my_fdchits[id]->sina;
