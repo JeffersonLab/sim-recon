@@ -79,7 +79,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	vector<const DTPOLHit*> TPOLHits;
 	vector<const DRFTime*> RFtimes;
 
-	locEventLoop->Get(CDCHits);
+    locEventLoop->Get(CDCHits);
+    locEventLoop->Get(FDCHits);
 	locEventLoop->Get(TOFHits);
 	locEventLoop->Get(FCALHits);
 	locEventLoop->Get(BCALDigiHits);
@@ -87,14 +88,8 @@ bool DEventWriterHDDM::Write_HDDMEvent(JEventLoop* locEventLoop, string locOutpu
 	locEventLoop->Get(SCHits);
 	locEventLoop->Get(PSHits);
 	locEventLoop->Get(PSCHits);
-<<<<<<< HEAD
-	locEventLoop->Get(FDCHits);
-	locEventLoop->Get(TAGHHits);
-	locEventLoop->Get(TAGMHits);
-=======
 	locEventLoop->Get(TAGHHits, TAGH_TAG.c_str());
 	locEventLoop->Get(TAGMHits, TAGM_TAG.c_str());
->>>>>>> 51e35f3... * following Sean's lead, introduce special tags for the tagger hits in
 	locEventLoop->Get(TPOLHits);
 	locEventLoop->Get(RFtimes);
 
