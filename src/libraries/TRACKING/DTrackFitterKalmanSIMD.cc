@@ -3205,7 +3205,7 @@ double DTrackFitterKalmanSIMD::GetEnergyVariance(double ds,
    double gamma2=betagamma2*one_over_beta2;
    double two_Me_betagamma_sq=two_m_e*betagamma2;
    double Tmax=two_Me_betagamma_sq/(1.+2.*sqrt(gamma2)*m_ratio+m_ratio_sq);
-   double var=K_rho_Z_over_A*one_over_beta2*ds*Tmax*(1.-0.5/one_over_beta2);
+   double var=K_rho_Z_over_A*one_over_beta2*fabs(ds)*Tmax*(1.-0.5/one_over_beta2);
    return var;
 }
 
@@ -6416,7 +6416,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
          double q_over_p_sq=q_over_p*q_over_p;
          double one_over_beta2=1.+mass2*q_over_p*q_over_p;
          double varE=GetEnergyVariance(ds,one_over_beta2,K_rho_Z_over_A);
-         Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
+	 Q(state_q_over_pt,state_q_over_pt)
+	   +=varE*Sc(state_q_over_pt)*Sc(state_q_over_pt)*one_over_beta2
+	   *q_over_p_sq;
       }
 
       // Propagate the state and covariance through the field
@@ -6425,7 +6427,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
       StepStateAndCovariance(xy,ds,dedx,Sc,Jc,Cc);
 
       // Add contribution due to multiple scattering
-      Cc=Q.AddSym(Cc);
+      Cc=(sign*Q).AddSym(Cc);
 
       beam_pos=beam_center+(Sc(state_z)-beam_z0)*beam_dir;
       r2=(xy-beam_pos).Mod2();
