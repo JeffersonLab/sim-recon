@@ -41,6 +41,7 @@ class mcsmear_config_t
 	bool IGNORE_SEEDS;
 	double TRIGGER_LOOKBACK_TIME;
 	bool APPLY_EFFICIENCY_CORRECTIONS;
+	bool APPLY_HITS_TRUNCATION;
 
     bool FCAL_ADD_LIGHTGUIDE_HITS;
 	
@@ -58,6 +59,7 @@ class mcsmear_config_t
 	bool ParseRCDBConfigFile(int runNumber);
 #endif  // HAVE_RCDB
 
+    std::map<std::string, std::map<std::string, double> > readout;
 };
 
 

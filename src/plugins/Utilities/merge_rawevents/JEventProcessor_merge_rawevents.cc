@@ -27,13 +27,14 @@ extern "C"{
   }
 } // "C"
 
+static bool WRITE_RAW_EVENTS = false;
 
 //------------------
 // JEventProcessor_merge_rawevents (Constructor)
 //------------------
 JEventProcessor_merge_rawevents::JEventProcessor_merge_rawevents() : dEventWriterEVIO(NULL)
 {
-
+    gPARMS->SetDefaultParameter( "MERGERAWEVENTS:WRITE_RAW_EVENTS", WRITE_RAW_EVENTS );
 }
 
 //------------------
@@ -70,17 +71,22 @@ jerror_t JEventProcessor_merge_rawevents::brun(JEventLoop *loop, int32_t runnumb
 //------------------
 jerror_t JEventProcessor_merge_rawevents::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
-    // get EVIO information associated with the event
-    JEvent& the_event = loop->GetJEvent();
-    void* the_event_ref = the_event.GetRef();
-    uint32_t* output_buffer = JEventSource_EVIO::GetEVIOBufferFromRef(the_event_ref);
-    uint32_t  output_buffer_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(the_event_ref);
 
-    cout << "Writing out event " << eventnumber << " buffer size = " << (output_buffer_size/4) << " words"  << endl;
-
-    // write the buffer out
-    // WARNING: this will work for non-entangled events, but hasn't been tested for entagled EVIO events
-    dEventWriterEVIO->Write_EVIOBuffer( loop, output_buffer, output_buffer_size, "merged" );
+    if(WRITE_RAW_EVENTS) {
+        // get EVIO information associated with the event
+        JEvent& the_event = loop->GetJEvent();
+        void* the_event_ref = the_event.GetRef();
+        uint32_t* output_buffer = JEventSource_EVIO::GetEVIOBufferFromRef(the_event_ref);
+        uint32_t  output_buffer_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(the_event_ref);
+        
+        cout << "Writing out event " << eventnumber << " buffer size = " << (output_buffer_size/4) << " words"  << endl;
+    
+        // write the buffer out
+        // WARNING: this will work for non-entangled events, but hasn't been tested for entagled EVIO events
+        dEventWriterEVIO->Write_EVIOBuffer( loop, output_buffer, output_buffer_size, "merged" );
+    } else {
+        dEventWriterEVIO->Write_EVIOEvent( loop, "merged" );
+    }
     
     return NOERROR;
 }

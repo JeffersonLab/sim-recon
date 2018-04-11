@@ -27,11 +27,17 @@ using namespace jana;
 
 static bool COSMIC_DATA = false;
 
+int TOF_DEBUG = 0;
+
 //------------------
 // init
 //------------------
 jerror_t DTOFHit_factory::init(void)
 {
+
+  gPARMS->SetDefaultParameter("TOF:DEBUG_TOF_HITS", TOF_DEBUG,
+			      "Generate DEBUG output");
+
   USE_NEWAMP_4WALKCORR = 1;
   gPARMS->SetDefaultParameter("TOF:USE_NEWAMP_4WALKCORR", USE_NEWAMP_4WALKCORR,
 			      "Use Signal Amplitude for NEW walk correction with two fit functions");
@@ -42,7 +48,7 @@ jerror_t DTOFHit_factory::init(void)
   USE_NEW_4WALKCORR = 0;
   gPARMS->SetDefaultParameter("TOF:USE_NEW_4WALKCORR", USE_NEW_4WALKCORR,
 			      "Use NEW walk correction function with 4 parameters");
-  
+
   DELTA_T_ADC_TDC_MAX = 20.0; // ns
   //	DELTA_T_ADC_TDC_MAX = 30.0; // ns, value based on the studies from cosmic events
   gPARMS->SetDefaultParameter("TOF:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, 
@@ -118,7 +124,7 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
       double hili = time_cut_values[1];
       TimeCenterCut = hili - (hili-loli)/2.;
       TimeWidthCut = (hili-loli)/2.;
-      cout<<"TOF Timing Cuts for PRUNING: "<<TimeCenterCut<<" +/- "<<TimeWidthCut<<endl;
+      //jout<<"TOF Timing Cuts for PRUNING: "<<TimeCenterCut<<" +/- "<<TimeWidthCut<<endl;
     }
 
     // load scale factors
@@ -263,13 +269,27 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       //if (digihit->pulse_time == 0) continue; // Should already be caught
     }
     
-    if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
-      continue;
-    
+    if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF)){ 
+
+      if (TOF_DEBUG){
+	vector <const Df250PulseData *> pulses;
+	digihit->Get(pulses);
+	const Df250PulseData *p = pulses[0];
+	
+	cout<<"1: "<<eventnumber<<" P/B/E  "<<digihit->plane<<"/"<<digihit->bar<<"/"<<digihit->end
+	    <<" :::>  I/Ped/P/T   "<<digihit->pulse_integral<<"/"<<digihit->pedestal<<"/"<<digihit->pulse_peak<<"/"<<digihit->pulse_time
+	    <<" QF: 0x"<<hex<<digihit->QF<<dec
+	    <<"       roc/slot/chan "<<p->rocid<<"/"<<p->slot<<"/"<<p->channel
+	    << endl;
+      }
+
+      //continue;
+
+    }
     // Initialize pedestal to one found in CCDB, but override it
     // with one found in event if is available (?)
     // For now, only keep events with a correct pedestal
-    double pedestal = GetConstant(adc_pedestals, digihit);
+    double pedestal = GetConstant(adc_pedestals, digihit); // get mean pedestal from DB in case we need it
     double nsamples_integral = digihit->nsamples_integral;
     double nsamples_pedestal = digihit->nsamples_pedestal;
     
@@ -279,13 +299,35 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       continue;
     }
     
+    double pedestal4Amp = pedestal;
+    int AlreadyDone = 0;
     if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
-      pedestal = digihit->pedestal * (double)(nsamples_integral)/(double)(nsamples_pedestal);
+      pedestal = digihit->pedestal * (double)(nsamples_integral)/(double)(nsamples_pedestal); // overwrite pedestal
     } else {
-      continue;
+
+      if (TOF_DEBUG){
+	vector <const Df250PulseData *> pulses;
+	digihit->Get(pulses);
+	const Df250PulseData *p = pulses[0];
+	
+	cout<<"2: "<<eventnumber<<" P/B/E  "<<digihit->plane<<"/"<<digihit->bar<<"/"<<digihit->end
+	    <<" :::>   I/Ped/P/T    "<<digihit->pulse_integral<<"/"<<digihit->pedestal<<"/"<<digihit->pulse_peak<<"/"<<digihit->pulse_time
+	    <<" QF: 0x"<<hex<<digihit->QF<<dec
+	    <<"       roc/slot/chan  "<<p->rocid<<"/"<<p->slot<<"/"<<p->channel
+ 	    << endl;
+	
+      }
+      
+      pedestal *= (double)(nsamples_integral); 
+      pedestal4Amp *= (double)nsamples_pedestal;
+      AlreadyDone = 1;
+      //continue;
     }
-    
-    //double single_sample_ped = pedestal/nsamples_pedestal;
+
+    if ((digihit->pulse_peak == 0) && (!AlreadyDone)){
+      pedestal = pedestal4Amp * (double)(nsamples_integral);
+      pedestal4Amp *=  (double)nsamples_pedestal;
+    }
     
     // Apply calibration constants here
     double A = (double)digihit->pulse_integral;
@@ -293,8 +335,23 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     T =  t_scale * T - GetConstant(adc_time_offsets, digihit) + t_base;
     double dA = A - pedestal;
     
-    if (dA<0) continue; 
+    if (dA<0) {
+      
+      if (TOF_DEBUG){
+	
+	vector <const Df250PulseData *> pulses;
+	digihit->Get(pulses);
+	const Df250PulseData *p = pulses[0];
+	
+	cout<<"3: "<<eventnumber<<"  "<<dA<<"   "<<digihit->plane<<"   "<<digihit->bar<<"   "<<digihit->end
+	    <<" :::>  "<<digihit->pulse_integral<<"  "<<digihit->pedestal<<"  "<<digihit->pulse_peak<<"   "<<digihit->pulse_time
+	    <<"       roc/slot/chan "<<p->rocid<<"/"<<p->slot<<"/"<<p->channel
+	    << endl;
 
+      }
+      // ok if Integral is below zero this is a good hint that we can not use this hit!
+      continue; 
+    }
     // apply Time cut to prune out of time hits
     if (TMath::Abs(T-TimeCenterCut)> TimeWidthCut ) continue;
     
@@ -303,7 +360,11 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     hit->bar   = digihit->bar;
     hit->end   = digihit->end;
     hit->dE=dA;  // this will be scaled to energy units later
-    hit->Amp = (float)digihit->pulse_peak - (float)digihit->pedestal/(float)nsamples_pedestal;
+    hit->Amp = (float)digihit->pulse_peak - pedestal4Amp/(float)nsamples_pedestal;
+
+    if (hit->Amp<0){ // this happens if pulse_peak is reported as zero, resort to use scaled Integral value
+      hit->Amp = dA*0.163;
+    }
     
     if(COSMIC_DATA)
       hit->dE = (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file

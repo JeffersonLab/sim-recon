@@ -61,7 +61,8 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	extrapolations.emplace(SYS_FCAL,myvector);
 	extrapolations.emplace(SYS_FDC,myvector);
 	extrapolations.emplace(SYS_CDC,myvector);
-	extrapolations.emplace(SYS_START,myvector);	
+	extrapolations.emplace(SYS_START,myvector);
+	extrapolations.emplace(SYS_DIRC,myvector);	
 
 	extrapolations[SYS_TOF].reserve(1);
 	extrapolations[SYS_BCAL].reserve(300);
@@ -69,6 +70,7 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	extrapolations[SYS_FDC].reserve(24);
 	extrapolations[SYS_CDC].reserve(200);
 	extrapolations[SYS_START].reserve(1);
+	extrapolations[SYS_DIRC].reserve(1);
 	
 	pulls.reserve(30);
 
