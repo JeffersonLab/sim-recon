@@ -51,7 +51,7 @@
 
       hh->GetXaxis()->SetRangeUser(290,1780);
       hh->GetYaxis()->SetRangeUser(0,4096);
-      hh->GetYaxis()->SetNdivisions(210,kFALSE);
+      //hh->GetYaxis()->SetNdivisions(210,kFALSE);
       hh->GetYaxis()->SetTickLength(0.001);
 
       hh->GetYaxis()->SetLabelSize(0.05);
