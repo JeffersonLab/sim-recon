@@ -393,14 +393,6 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    RECOVER_BROKEN_TRACKS=true;
    gPARMS->SetDefaultParameter("KALMAN:RECOVER_BROKEN_TRACKS",RECOVER_BROKEN_TRACKS);
 
-   MIN_FIT_P = 0.050; // GeV
-   gPARMS->SetDefaultParameter("TRKFIT:MIN_FIT_P", MIN_FIT_P, "Minimum fit momentum in GeV/c for fit to be considered successful");
-
-   MIN_PROTON_P = 0.0;
-   gPARMS->SetDefaultParameter("TRKFIT:MIN_PROTON_P", MIN_PROTON_P, "Minimum proton momentum for track seeds.");
-   MIN_PION_P = 0.0;
-   gPARMS->SetDefaultParameter("TRKFIT:MIN_PION_P", MIN_PION_P, "Minimum pion momentum for track seeds.");
-
    NUM_CDC_SIGMA_CUT=3.5;
    NUM_FDC_SIGMA_CUT=3.5;
    gPARMS->SetDefaultParameter("KALMAN:NUM_CDC_SIGMA_CUT",NUM_CDC_SIGMA_CUT,
@@ -426,7 +418,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    FORWARD_PARMS_COV=false;
    gPARMS->SetDefaultParameter("KALMAN:FORWARD_PARMS_COV",FORWARD_PARMS_COV); 
 
-   CDC_VAR_SCALE_FACTOR=1.;
+   CDC_VAR_SCALE_FACTOR=9.;
    gPARMS->SetDefaultParameter("KALMAN:CDC_VAR_SCALE_FACTOR",CDC_VAR_SCALE_FACTOR); 
    CDC_T_DRIFT_MIN=-8.; // One f125 clock
    gPARMS->SetDefaultParameter("KALMAN:CDC_T_DRIFT_MIN",CDC_T_DRIFT_MIN);
@@ -962,10 +954,6 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
    this->chisq = GetChiSq();
    this->Ndof = GetNDF();
    fit_status = kFitSuccess;
-
-   // Check that the momentum is above some minimal amount. If
-   // not, return that the fit failed.
-   if(fit_params.momentum().Mag() < MIN_FIT_P)fit_status = kFitFailed;
 
    //_DBG_  << "========= done!" << endl;
 
@@ -3261,28 +3249,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
    // Input momentum 
    DVector3 pvec=input_params.momentum();
    double p_mag=pvec.Mag();
-   /*
-   if (MASS>0.9){
-     PT_MIN=0.1;
-     Q_OVER_P_MAX=10.;
-   }
-   else if (MASS>0.4){
-     PT_MIN=0.05;
-     Q_OVER_P_MAX=20.;
-   }
-   if (MASS>0.9 && p_mag<MIN_PROTON_P){
-      pvec.SetMag(MIN_PROTON_P);
-      p_mag=MIN_PROTON_P;
-   }
-   else if (MASS<0.9 && p_mag<MIN_PION_P){
-      pvec.SetMag(MIN_PION_P);
-      p_mag=MIN_PION_P;
-   }
-   if (p_mag>MAX_P){
-      pvec.SetMag(MAX_P);
-      p_mag=MAX_P;
-   }
-   */
    double pz=pvec.z();
    double q_over_p0=q_over_p_=q/p_mag;
    double q_over_pt0=q_over_pt_=q/pvec.Perp();
@@ -3340,14 +3306,16 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
       kalman_error_t error=ForwardFit(S0,C0); 
       if (error!=FIT_FAILED){
-         if (my_cdchits.size()<6){
-            if (ndf_==0) return UNRECOVERABLE_ERROR;
-            return NOERROR;
-         }
-         fdc_prob=TMath::Prob(chisq_,ndf_);
-         if (fdc_prob>0.001 && error==FIT_SUCCEEDED) return NOERROR;
-         fdc_ndf=ndf_;
-         fdc_chisq=chisq_;
+	if (fit_type==kWireBased) return NOERROR;
+
+	if (my_cdchits.size()<6){
+	  if (ndf_==0) return UNRECOVERABLE_ERROR;
+	  return NOERROR;
+	}
+	fdc_prob=TMath::Prob(chisq_,ndf_);
+	if (fdc_prob>0.001 && error==FIT_SUCCEEDED) return NOERROR;
+	fdc_ndf=ndf_;
+	fdc_chisq=chisq_;
       }
       if (my_cdchits.size()<6) return UNRECOVERABLE_ERROR;
    }
@@ -5054,8 +5022,10 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                      dDdt0=(d_shifted-dm)/dt;
                   }
 
-                  Vc*=CDC_VAR_SCALE_FACTOR;  //de-weight CDC hits 
-
+		  if (max_num_fdc_used_in_fit>4)
+		    {
+		    Vc*=CDC_VAR_SCALE_FACTOR;  //de-weight CDC hits 
+		  }
                   //_DBG_ << "t " << tdrift << " d " << d << " delta " << delta << " dphi " << atan2(dy,dx)-mywire->origin.Phi() << endl;
 
                   //_DBG_ << tcorr << " " << dphi << " " << dm << endl;
