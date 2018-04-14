@@ -142,7 +142,7 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
   sort(cdchits_in_sorted.begin(),cdchits_in_sorted.end(),DTrackHitSelector_cdchit_in_cmp);
   
   // The variance on the residual due to measurement error.
-  double var=0.6084*ONE_OVER_12;
+  double var=2.4336*ONE_OVER_12;
    
   // To estimate the impact of errors in the track momentum on the variance 
   // of the residual, use a helical approximation.
@@ -162,7 +162,8 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
 
   // variances
   double var_lambda_res=0.;
-  double var_x0=0.01,var_y0=0.01;
+  double var_phi_radial=0.;
+  double var_x0=0.25,var_y0=0.25;
   double var_pt_over_pt_sq=0.;
 
   // Loop over all the CDC hits looking for matches with the track
@@ -207,6 +208,8 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
 	  }
 	  // Variance in dip angle due to multiple scattering
 	  double var_lambda = extrapolations[i].theta2ms_sum;
+	  // variance in phi due to multiple scattering
+	  double var_phi=var_lambda*(1.+tanl2);
 	
 	  if (outermost_hit){
 	    // Fractional variance in the curvature k due to resolution
@@ -214,7 +217,7 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
 	    double var_k_over_k_sq_res=var*p_over_a*p_over_a*0.0720/double(N+4)/(s_sq*s_sq*sinl2)/cosl2;
 	    double sum_s_theta_ms=extrapolations[i].s_theta_ms_sum;
 	    double var_k_over_k_sq_ms
-	      =pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
+	      =(4./3.)*pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
 	    
 	    // Fractional variance in pt
 	    var_pt_over_pt_sq=var_k_over_k_sq_res+var_k_over_k_sq_ms; 
@@ -222,22 +225,25 @@ void DTrackHitSelectorALT2::GetCDCHits(double Bz,double q,
 	    // Variance in dip angle due to measurement error
 	    var_lambda_res=12.0*var*double(N-1)/double(N*(N+1))*cosl2*cosl2/s_sq;
 
+	    // Variance in phi, crude approximation
+	    double tan_s_2R=tan(s*cosl/(2.*pt_over_a));
+	    var_phi_radial=tan_s_2R*tan_s_2R*var_pt_over_pt_sq;
+
 	    outermost_hit=false;
 	  } 
 	  // Include error in lambda due to measurements
 	  var_lambda+=var_lambda_res;
-	  double var_phi=var_lambda*(1.+tanl2);
 
 	  // Include uncertainty in phi due to uncertainty in the center of 
 	  // the circle
-	  var_phi+=0.09/(pt_over_a*pt_over_a);
+	  var_phi+=var_phi_radial;
 
 	  // Variance in position due to multiple scattering
-	  double var_pos_ms=extrapolations[i].theta2ms_sum/48.;
+	  double var_pos_ms=extrapolations[i].s_theta_ms_sum/3.;
 
 	  // Hit doca and residual
 	  double doca=sqrt(d2);
-	  double dist=0.39;
+	  double dist=0.;
 	  double resi=dist-doca;
 
 	  // Variances in x and y due to uncertainty in track parameters
@@ -360,7 +366,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
   //  double one_over_beta =sqrt(1.0+my_mass*my_mass/rt->swim_steps[0].mom.Mag2());
   
   // The variance on the residual due to measurement error.
-  double var=0.6084*ONE_OVER_12;
+  double var=2.4336*ONE_OVER_12;
    
   // To estimate the impact of errors in the track momentum on the variance of the residual,
   // use a helical approximation.
@@ -383,7 +389,8 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
   double sinphi=sin(phi);
   
   double var_lambda_res=0.;
-  double var_x0=0.01,var_y0=0.01;
+  double var_phi_radial=0.;
+  double var_x0=0.25,var_y0=0.25;
   double mass=rt->GetMass();
   double one_over_beta=sqrt(1.+mass*mass/(p*p));
   double var_pt_factor=0.016*one_over_beta/(cosl*a);
@@ -431,11 +438,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     // Variances in angles due to multiple scattering
     double var_lambda = last_step->itheta02;
     double var_phi=var_lambda*(1.+tanl2);
-
-    // Include uncertainty in phi due to uncertainty in the center of 
-    // the circle
-    var_phi+=0.09/(pt_over_a*pt_over_a);
-
+    
     if (outermost_hit){   
       // Fractional variance in the curvature k due to resolution and multiple scattering
       double s_sq=s*s;
@@ -447,20 +450,27 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
       // Variance in dip angle due to measurement error
       var_lambda_res=12.0*var*double(N-1)/double(N*(N+1))*cosl2*cosl2/s_sq;
 
+      // Variance in phi, crude approximation
+      double tan_s_2R=tan(s*cosl/(2.*pt_over_a));
+      var_phi_radial=tan_s_2R*tan_s_2R*var_pt_over_pt_sq;
+
       outermost_hit=false;
     }
     // Include error in lambda due to measurements
     var_lambda+=var_lambda_res;
+    
+    // Include uncertainty in phi due to uncertainty in the radius of 
+    // the circle
+    var_phi+=var_phi_radial;
 
     // Get "measured" distance to wire. 
-    // For matching purposes this is assumed to be half a cell size
-    double dist=0.39;
+    double dist=0.;
     
     // Residual
     double resi = dist - doca;
 
     // Variance in position due to multiple scattering
-    double var_pos_ms=last_step->itheta02s2/48.;
+    double var_pos_ms=last_step->itheta02s2/3.;
 	    
     // Variances in x and y due to uncertainty in track parameters
     double as_over_p=s*a_over_p;
@@ -581,7 +591,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
   sort(fdchits_in_sorted.begin(),fdchits_in_sorted.end(),DTrackHitSelector_fdchit_in_cmp);
 
   // The variance on the residual due to measurement error.
-  double var_anode = 0.25*ONE_OVER_12; // scale factor reflects field-sense wire separation
+  double var_anode = ONE_OVER_12;
   const double VAR_CATHODE_STRIPS=0.000225;
   double var_cathode = VAR_CATHODE_STRIPS; 
 
@@ -607,6 +617,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
   double cosphi=cos(phi);
   double sinphi=sin(phi);
   double var_lambda=0.,var_phi=0.,var_lambda_res=0.;
+  double var_phi_radial=0.;
   double mass=rt->GetMass();
 
   double var_x0=0.01,var_y0=0.01; 
@@ -643,8 +654,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
     double resic = u - u_cathodes;
 
     // Get "measured" distance to wire.
-    // For matching purposes this is assumed to be half a cell size
-    double dist=0.25;
+    double dist=0.;
     
     // Take into account non-normal incidence to FDC plane
     double pz=last_step->mom.z();
@@ -678,7 +688,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
     else{   
       // Cathode variance due to Lorentz deflection
       double max_deflection=0.1458*Bz*(1.-0.048*last_step->B.Perp())*0.5;
-      var_cathode=VAR_CATHODE_STRIPS+max_deflection*max_deflection/3.;
+      var_cathode=VAR_CATHODE_STRIPS+max_deflection*max_deflection/12.;
     }
     double var_tot=var_anode+var_cathode;
 
@@ -702,15 +712,23 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
        // Variance in dip angle due to measurement error
        var_lambda_res=12.0*var_tot*double(N-1)/double(N*(N+1))
 	 *sinl2*sinl2/s_sq;
+
+       // Variance in phi, crude approximation
+       double tan_s_2R=tan(s*cosl/(2.*pt_over_a));
+       var_phi_radial=tan_s_2R*tan_s_2R*var_pt_over_pt_sq;
        
        most_downstream_hit=false;
     }
     
     // Include error in lambda due to measurements
     var_lambda+=var_lambda_res;
+
+    // Include uncertainty in phi due to uncertainty in the center of 
+    // the circle
+    var_phi+=var_phi_radial;
     
     // Variance in position due to multiple scattering
-    double var_pos_ms=last_step->itheta02s2/48.;
+    double var_pos_ms=last_step->itheta02s2/3.;
 
     // Variances in x and y due to uncertainty in track parameters
     double as_over_p=s*a_over_p;
@@ -837,11 +855,8 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
   sort(fdchits_in_sorted.begin(),fdchits_in_sorted.end(),DTrackHitSelector_fdchit_in_cmp);
 
   // The variance on the residual due to measurement error.
-  double var_anode = 0.25*ONE_OVER_12; // scale factor reflects field-sense wire separation
-  const double VAR_CATHODE_STRIPS=0.000225;  
-  // Cathode variance due to Lorentz deflection
-  double max_deflection=0.1458*Bz*0.5;
-  double var_cathode=VAR_CATHODE_STRIPS+max_deflection*max_deflection/3.;
+  double var_anode = 0.0001;
+  double var_cathode=0.0001;
   double var_tot=var_anode+var_cathode;
 
   // To estimate the impact of errors in the track momentum on the variance of the residual,
@@ -862,7 +877,8 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
   double z0=extrapolations[0].position.z();
   // variances
   double var_lambda=0.,var_phi=0.,var_lambda_res=0.;
-  double var_x0=0.01,var_y0=0.01; 
+  double var_phi_radial=0.;
+  double var_x0=0.25,var_y0=0.25; 
   double var_pt_over_pt_sq=0.;
 
   // Loop over hits
@@ -879,6 +895,8 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
       if (fabs(pos.z()-hit->wire->origin.z())<0.5){
 	// Variance in dip angle due to multiple scattering
 	var_lambda = extrapolations[k].theta2ms_sum;
+	// Variance in phi due to multiple scattering
+	var_phi=var_lambda*(1.+tanl2); 
 
 	// azimuthal angle
 	double phi=extrapolations[k].momentum.Phi();
@@ -892,7 +910,7 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
 	    *0.0720/double(N+4)/(s_sq*s_sq)/cosl2;
 	  double sum_s_theta_ms=extrapolations[k].s_theta_ms_sum;
 	  double var_k_over_k_sq_ms
-	    =pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
+	    =(4./3.)*pt_over_a*pt_over_a*sum_s_theta_ms*sum_s_theta_ms/(s_sq*s_sq);
 
 	  // Fractional variance in pt
 	  var_pt_over_pt_sq=var_k_over_k_sq_ms+var_k_over_k_sq_res;
@@ -900,15 +918,22 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
 	  // Variance in dip angle due to measurement error
 	  var_lambda_res=12.0*var_tot*double(N-1)/double(N*(N+1))
 	    *sinl2*sinl2/s_sq;
+
+	  // Variance in phi, crude approximation
+	  double tan_s_2R=tan(s*cosl/(2.*pt_over_a));
+	  var_phi_radial=tan_s_2R*tan_s_2R*var_pt_over_pt_sq;
 	  
 	  most_downstream_hit=false;
 	}
 	// Include error in lambda due to measurements
 	var_lambda+=var_lambda_res;	
-	var_phi=var_lambda*(1.+tanl2); 
+
+	// Include uncertainty in phi due to uncertainty in the center of 
+	// the circle
+	var_phi+=var_phi_radial;
 
 	// Variance in position due to multiple scattering
-	double var_pos_ms=extrapolations[k].theta2ms_sum/48.;
+	double var_pos_ms=extrapolations[k].s_theta_ms_sum/3.;
 	
 	// doca to wire
 	double x=pos.x();
@@ -927,8 +952,7 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
 	double resic = u - u_cathodes;
 
 	// Get "measured" distance to wire.
-	// For matching purposes this is assumed to be half a cell size
-	double dist=0.25;
+	double dist=0.;
 	
 	// Take into account non-normal incidence to FDC plane
 	double pz=extrapolations[k].momentum.z();
@@ -980,6 +1004,10 @@ void DTrackHitSelectorALT2::GetFDCHits(double Bz,double q,
 	double var_d=(cos2a*var_x+sin2a*var_y)/(cosalpha*cosalpha);
 	double var_u=cos2a*var_y+sin2a*var_x;    
 
+	// Factors take into account improved resolution after wire-based fit
+	//var_d*=0.1;
+	//var_u*=0.1;
+	
 	// Calculate chisq
 	chisq = resi*resi/(var_d+var_anode)+resic*resic/(var_u+var_cathode);
     

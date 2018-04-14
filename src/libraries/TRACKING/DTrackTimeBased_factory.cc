@@ -64,7 +64,6 @@ static unsigned int count_common_members(vector<T> &a, vector<T> &b)
 jerror_t DTrackTimeBased_factory::init(void)
 {
 	fitter = NULL;
-	MAX_DReferenceTrajectoryPoolSize = 50;
 
 	DEBUG_HISTS = false;
 	//DEBUG_HISTS = true;
@@ -252,15 +251,6 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   // Save event number to help with debugging
   myevt=eventnumber;
   if(!fitter)return NOERROR;
-
-	if(rtv.size() > MAX_DReferenceTrajectoryPoolSize){
-	  //printf("rtv Deleting\n");
-		for(size_t loc_i = MAX_DReferenceTrajectoryPoolSize; loc_i < rtv.size(); ++loc_i)
-			delete rtv[loc_i];
-		rtv.resize(MAX_DReferenceTrajectoryPoolSize);
-	}
-
-
 
   // Get candidates and hits
   vector<const DTrackWireBased*> tracks;
@@ -466,9 +456,6 @@ jerror_t DTrackTimeBased_factory::erun(void)
 //------------------
 jerror_t DTrackTimeBased_factory::fini(void)
 {
-	for(unsigned int i=0; i<rtv.size(); i++)delete rtv[i];
-	rtv.clear();
-
 	return NOERROR;
 }
 
@@ -866,6 +853,15 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 			      track->charge(),mass,mStartTime,mStartDetector);
     }
 
+  }
+
+  // if the fit returns chisq=-1, something went terribly wrong.  We may still 
+  // have a usable track if there are enough hits in the FDC in the previous 
+  // pass.  In this case set kFitNoImprovement so we can save the wire-based 
+  // results.
+  if (fitter->GetChisq()<0){
+    if (myfdchits.size()>3) status=DTrackFitter::kFitNoImprovement;
+    else status=DTrackFitter::kFitFailed;
   }
   
   // In the transition region between the CDC and the FDC where the track 

@@ -190,7 +190,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t KalmanLoop(void);
   virtual kalman_error_t KalmanForward(double fdc_anneal,double cdc_anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 				 double &chisq,unsigned int &numdof);
-  virtual jerror_t SmoothForward(void);   
+  virtual jerror_t SmoothForward(vector<pull_t>&mypulls);   
   virtual jerror_t ExtrapolateForwardToOtherDetectors(void);  
   jerror_t ExtrapolateCentralToOtherDetectors(void);
 
@@ -306,12 +306,13 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t GetProcessNoiseCentral(double ds,double chi2c_factor,
 				  double chi2a_factor,double chi2a_corr,
 				  const DMatrix5x1 &S,DMatrix5x5 &Q);  
-  jerror_t SmoothForwardCDC(void);   
-  jerror_t SmoothCentral(void);  
+  jerror_t SmoothForwardCDC(vector<pull_t>&mypulls);   
+  jerror_t SmoothCentral(vector<pull_t>&cdc_pulls);  
   jerror_t FillPullsVectorEntry(const DMatrix5x1 &Ss,const DMatrix5x5 &Cs,
 			    const DKalmanForwardTrajectory_t &traj,
 			    const DKalmanSIMDCDCHit_t *hit,
-			    const DKalmanUpdate_t &update);
+				const DKalmanUpdate_t &update,
+				vector<pull_t>&mypulls);
   jerror_t SwimToPlane(DMatrix5x1 &S);
   jerror_t FindCentralResiduals(vector<DKalmanUpdate_t>updates);
   jerror_t SwimCentral(DVector3 &pos,DMatrix5x1 &Sc);
@@ -438,7 +439,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // upstream cdc start position
   vector<double>cdc_origin;
   // outer detectors
-  double dTOFz,dFCALz;
+  double dTOFz,dFCALz,dDIRCz;
 
   // Mass hypothesis
   double MASS,mass2;
