@@ -732,15 +732,23 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	     
 	     // redo the circle fit
 	     if (fit.FitCircleRiemann(candidate->rc)==NOERROR){
+	  
+	       // Determine the polar angle
+	       double theta=mom.Theta();
+	       fit.tanl=tan(M_PI_2-theta);
+	       
+	       double p=0.003*fit.r0*Bz/cos(atan(fit.tanl));
+	       if (p>3.){	
+		 // momentum is suspiciously high for a track going through both
+		 // the FDC and the CDC... try alternate circle fit...
+		 fit.FitCircle();
+	       }
+
 	       // circle parameters
 	       candidate->rc=fit.r0;
 	       candidate->xc=fit.x0;
 	       candidate->yc=fit.y0;
 
-	       // Determine the polar angle
-	       double theta=mom.Theta();
-	       fit.tanl=tan(M_PI_2-theta);
-	       
 	       DVector3 origin=mycdchits[inner_index]->wire->origin;      
 	       if (GetPositionAndMomentum(fit,Bz,origin,pos,mom)==NOERROR){
 		 // FDC hit
@@ -1243,7 +1251,17 @@ jerror_t DTrackCandidate_factory::DoRefit(DHelicalFit &fit,
   Bz=fabs(Bz)/double(num_hits);
   
   // Fit the points to a circle
-  return (fit.FitCircleRiemann(segments[0]->rc));
+  if (fit.FitCircleRiemann(segments[0]->rc)==NOERROR){
+    double p=0.003*Bz*fit.r0/cos(atan(fit.tanl));
+  
+    if (p>3.){ // momentum is suspiciously high for a track going through both
+      // the FDC and the CDC... try alternate circle fit...  
+      fit.FitCircle();
+    }
+    return NOERROR;
+  }
+  
+  return RESOURCE_UNAVAILABLE;   
 }
 
 // Method to match FDC and CDC candidates that projects the CDC candidate to the
