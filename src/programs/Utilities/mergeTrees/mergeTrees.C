@@ -61,9 +61,9 @@ bool searchMap( map<string, Int_t> p_map, string substring )
 {
    // This method searches a map to determine if it contains a final state particle matching the substring
    bool isMatch = false;
-   for ( p_iter = p_map.begin(); p_iter != p_map.end(); ++p_iter )
+   for ( auto const &p_iter : p_map )
    {
-      if ( p_iter->first.find(substring) != string::npos )
+      if ( p_iter.first.find(substring) != string::npos )
          isMatch = true;
    }
    
@@ -82,21 +82,21 @@ bool compareMaps( map<string, Int_t> p_map, map<string, Int_t> s_map, string sub
    map<string, Int_t>::iterator s_iter;
 
    // loop over the primary TTree's map of (branch name, track ID)
-   for ( p_iter = p_map.begin(); p_iter != p_map.end(); ++p_iter )
+   for ( auto const &p_iter : p_map )
    {
       // check if primary branch name contains the substring
-      if ( p_iter->first.find(substring) != string::npos )
+      if ( p_iter.first.find(substring) != string::npos )
       {
          totalParticles++;
 
          // loop over the secondary TTree's map of (branch name, track ID)
-         for ( s_iter = s_map.begin(); s_iter != s_map.end(); ++s_iter )
+         for ( auto const &s_iter : s_map )
          {
             // check if secondary branch name contains the substring
-            if ( s_iter->first.find(substring) != string::npos )
+            if ( s_iter.first.find(substring) != string::npos )
             {
                // compare the trackIDs
-               if ( p_iter->second == s_iter->second )
+               if ( p_iter.second == s_iter.second )
                   matchedParticles++;
             }
          }
@@ -160,21 +160,17 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    map< const char*, TTreeReaderArray<Int_t> > secondary_ReaderArray__Int;
 
    // Create TTreeReaderArrays for the Int_t branches 
-   vector<const char*>::iterator it_primary = branches_primary.begin();
-   vector<const char*>::iterator it_secondary = branches_secondary.begin();
-   while (it_primary != branches_primary.end() )
+   for ( auto const& p_iter : branches_primary )
    {
-      TTreeReaderArray<Int_t> a(primaryReader, *it_primary);
-      auto P = make_pair( *it_primary, a );
+      TTreeReaderArray<Int_t> a(primaryReader, p_iter);
+      auto P = make_pair( p_iter, a );
       primary_ReaderArray__Int.insert(P);
-      ++it_primary;
    }
-   while (it_secondary != branches_secondary.end() )
+   for ( auto const& s_iter : branches_secondary )
    {
-      TTreeReaderArray<Int_t> a(secondaryReader, *it_secondary);
-      auto P = make_pair( *it_secondary, a );
+      TTreeReaderArray<Int_t> a(secondaryReader, s_iter);
+      auto P = make_pair( s_iter, a );
       secondary_ReaderArray__Int.insert(P);
-      ++it_secondary;
    }
    cout << "Added to maps" << endl;
  
@@ -185,20 +181,16 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    const char* keys_primary[ size_primary ];
    const char* keys_secondary[ size_secondary ];
    // Get keys and fill arrays
-   map< const char*, TTreeReaderArray<Int_t> >::iterator it_primary_int = primary_ReaderArray__Int.begin();
-   map< const char*, TTreeReaderArray<Int_t> >::iterator it_secondary_int = secondary_ReaderArray__Int.begin();
    int count = 0;
-   while (it_primary_int != primary_ReaderArray__Int.end() )
+   for ( auto const& p_iter : primary_ReaderArray__Int )
    {
-      keys_primary[count] = it_primary_int->first;
-      ++it_primary_int;
+      keys_primary[count] = p_iter.first;
       ++count;
    }
    count = 0;
-   while (it_secondary_int != secondary_ReaderArray__Int.end() )
+   for ( auto const& s_iter : secondary_ReaderArray__Int )
    {
-      keys_secondary[count] = it_secondary_int->first;
-      ++it_secondary_int;
+      keys_secondary[count] = s_iter.first;
       ++count;
    }
 
