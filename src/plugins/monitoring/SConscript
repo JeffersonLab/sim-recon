@@ -39,6 +39,7 @@ subdirs = [
 'BCAL_inv_mass',
 'CDC_drift',
 'CDC_PerStrawReco',
+'CDC_roc_hits',
 'EPICS_dump',
 'CDC_Efficiency',
 'L1_online',
