@@ -312,7 +312,7 @@ jerror_t JEventProcessor_CDC_roc_hits::fini(void) {
   int totalhits;   // total hits for roc
   int usedchans;   // number of channels used in roc
   int unusedchans; // number of unused channels in roc
-  int meanhits;    // mean number of hits per channel-in-use
+  int meanhits = 1;    // mean number of hits per channel-in-use
   int chanhits;    // number of hits for current channel
   int nfound;      // number found in current search
 
