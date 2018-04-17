@@ -96,6 +96,5 @@
     }
   }
 
-  c1->SaveAs("test.png");
 
 }
