@@ -503,9 +503,8 @@ class FitWrapper{
 
 	//------------------------- Macro starts here ------------------------
 
-	vector<bool> trig(6, false); // triggers to include 
-	trig[1-1] = true; // FCAL + BCAL
-	trig[3-1] = true; // BCAL only
+	vector<bool> trig(34, false); // triggers to include (33 is any physics bit was set)
+	trig[33-1] = true; // Any physics trigger (either bit 1 or bit 3)
 
 	TDirectory *locTopDirectory = gDirectory;
 
@@ -560,7 +559,8 @@ class FitWrapper{
 	double Ntrig_phys = 0.0;
 	double Ntrig_ps   = 0.0;
 	if(L1bits_gtp){
-		for(int itrig=1; itrig<=6; itrig++){
+		for(int itrig=1; itrig<=trig.size(); itrig++){
+			if(itrig > L1bits_gtp->GetNbinsX()) break;
 			if(trig[itrig-1]) Ntrig_tot += (double)L1bits_gtp->GetBinContent(itrig);
 		}
 		Ntrig_phys = (double)(L1bits_gtp->GetBinContent(1) + L1bits_gtp->GetBinContent(2));
