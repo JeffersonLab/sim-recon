@@ -1508,17 +1508,16 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
        
        // Redo circle fit with additional hits
        DHelicalFit fit;
+       //...first add the tangent to the dip angle to the fit class...
+       double theta=fdccan->momentum().Theta();
+       double theta_cdc=cdccan->momentum().Theta();
+       if (segments.size()==1&& theta_cdc<M_PI_4){
+	 double numcdc=double(cdchits.size());
+	 double numfdc=segments[0]->hits.size();
+	 theta=(theta*numfdc+theta_cdc*numcdc)/(numfdc+numcdc);
+       }
+       fit.tanl=tan(M_PI_2-theta);
        if (DoRefit(fit,segments,cdchits,Bz_avg)==NOERROR){
-	 // Determine the polar angle
-	 double theta=fdccan->momentum().Theta();
-	 double theta_cdc=cdccan->momentum().Theta();
-	 if (segments.size()==1&& theta_cdc<M_PI_4){
-	   double numcdc=double(cdchits.size());
-	   double numfdc=segments[0]->hits.size();
-	   theta=(theta*numfdc+theta_cdc*numcdc)/(numfdc+numcdc);
-	 }
-	 fit.tanl=tan(M_PI_2-theta);
-	 
 	 if (GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,
 				    pos,mom)==NOERROR){
 	   // FDC hit
@@ -1530,7 +1529,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	   double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
 	   
 	   pos.SetZ(fdchit->wire->origin.z()-sperp*fit.tanl);
-       Particle_t locPID = ((FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus);
+	   Particle_t locPID = ((FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus);
 	   can->setPID(locPID);
 	 }
 	 else{
@@ -1865,7 +1864,14 @@ bool DTrackCandidate_factory::MatchMethod4(const DTrackCandidate *srccan,
 	    
 	    // Redo line fit
 	    fit.FitLineRiemann();
-	    
+
+	    double p=0.003*fit.r0*Bz_avg/cos(atan(fit.tanl));
+	    if (p>10.){ // Check for extremely stiff tracks, some of which 
+	      // will have unphysical momenta... try alternate circle fit 
+	      _DBG_ << p << endl;
+	      fit.FitCircle();
+	      _DBG_ << 0.003*fit.r0*Bz_avg/cos(atan(fit.tanl)) << endl;
+	    }
 	    // Guess charge from fit
 	    fit.h=GetSenseOfRotation(fit,firsthit,srccan->position());
 	    Particle_t locPID = ((FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus);
@@ -2133,7 +2139,7 @@ void DTrackCandidate_factory::MatchMethod6(DTrackCandidate *can,
 bool DTrackCandidate_factory::MatchMethod7(DTrackCandidate *srccan, 
 					   vector<int> &forward_matches,
 					   int &num_fdc_cands_remaining){ 
-  if (DEBUG_LEVEL>0) _DBG_ << "Attempting matching method #7..." <<endl; 
+  if (DEBUG_LEVEL>0)  _DBG_ << "Attempting matching method #7..." <<endl; 
 
   // Get the hits associated with this candidate
   vector<const DFDCPseudo *>fdchits;
@@ -2246,6 +2252,15 @@ bool DTrackCandidate_factory::MatchMethod7(DTrackCandidate *srccan,
 	    // Determine the polar angle
 	    double theta=srccan->momentum().Theta();
 	    fit.tanl=tan(M_PI_2-theta);
+
+	    double p=0.003*fit.r0*Bz/cos(atan(fit.tanl));
+	    if ((cdchits.size())>0?(p>3.):(p>10.)){
+	      _DBG_ << p << endl;
+	      // Suspiciously high momentum:  try alternate circle fit...
+	      fit.FitCircle();
+	      _DBG_ << 0.003*fit.r0*Bz/cos(atan(fit.tanl)) << endl;
+	    }	   
+
       
 	    if (cdchits.size()>0){
 	      if (GetPositionAndMomentum(fit,Bz,cdchits[0]->wire->origin,
@@ -2443,6 +2458,16 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
 	      fit.tanl=tan(M_PI_2-theta);
 	      
 	      Bz=0.5*(Bz+fabs(Bz_fdc)/num_hits_fdc);
+
+	      double p=0.003*fit.r0*Bz/cos(atan(fit.tanl));
+	      if (p>10.){
+		// momentum is suspiciously high for a track going through both
+		// the FDC and the CDC... try alternate circle fit
+		_DBG_ << p << endl;
+		fit.FitCircle();
+		_DBG_ << 0.003*fit.r0*Bz/cos(atan(fit.tanl)) << endl;
+	      }
+
 	      
 	      if (GetPositionAndMomentum(fit,Bz,cdchits[0]->wire->origin,
 					 my_pos,my_mom)==NOERROR){
@@ -2620,6 +2645,14 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 	    // Redo line fit
 	    fit1.FitLineRiemann();
 	    
+	    double p=0.003*fit1.r0*Bz/cos(atan(fit1.tanl));
+	    if (p>10.){
+	      _DBG_ << p << endl;
+	      // Try an alternate circle fit
+	      fit1.FitCircle();
+	      _DBG_ << 0.003*fit1.r0*Bz/cos(atan(fit1.tanl)) << endl;
+	    }
+
 	    // Guess charge from fit
 	    fit1.h=GetSenseOfRotation(fit1,segments2[0]->hits[0],
 				      srccan->position());
