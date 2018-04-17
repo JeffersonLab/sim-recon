@@ -12,34 +12,126 @@
 namespace hddm_s_merger {
    double get_t_shift_ns();
    void set_t_shift_ns(double dt_ns);
-   double get_cdc_min_delta_t_ns();
-   void set_cdc_min_delta_t_ns(double dt_ns);
-   double get_fdc_min_delta_t_ns();
-   void set_fdc_min_delta_t_ns(double dt_ns);
+
+   // hits merging / truncation parameters for the CDC
+   int get_cdc_max_hits();
+   void set_cdc_max_hits(int maxhits);
+   double get_cdc_integration_window_ns();
+   void set_cdc_integration_window_ns(double dt_ns);
+
+   // hits merging / truncation parameters for the FDC
+   int get_fdc_wires_max_hits();
+   void set_fdc_wires_max_hits(int maxhits);
+   double get_fdc_wires_min_delta_t_ns();
+   void set_fdc_wires_min_delta_t_ns(double dt_ns);
+   int get_fdc_strips_max_hits();
+   void set_fdc_strips_max_hits(int maxhits);
+   double get_fdc_strips_integraton_window_ns();
+   void set_fdc_strips_integration_window_ns(double dt_ns);
+
+   // hits merging / truncation parameters for the STC
+   int get_stc_adc_max_hits();
+   void set_stc_adc_max_hits(int maxhits);
+   int get_stc_tdc_max_hits();
+   void set_stc_tdc_max_hits(int maxhits);
    double get_stc_min_delta_t_ns();
    void set_stc_min_delta_t_ns(double dt_ns);
+   double get_stc_integration_window_ns();
+   void set_stc_integration_window_ns(double dt_ns);
+
+   // hits merging / truncation parameters for the BCAL
+   int get_bcal_adc_max_hits();
+   void set_bcal_adc_max_hits(int maxhits);
+   int get_bcal_tdc_max_hits();
+   void set_bcal_tdc_max_hits(int maxhits);
    double get_bcal_min_delta_t_ns();
    void set_bcal_min_delta_t_ns(double dt_ns);
+   double get_bcal_integration_window_ns();
+   void set_bcal_integration_window_ns(double dt_ns);
+   double get_bcal_fadc_counts_per_ns();
+   void set_bcal_fadc_counts_per_ns(double slope);
+   double get_bcal_tdc_counts_per_ns();
+   void set_bcal_tdc_counts_per_ns(double slope);
+
+   // hits merging / truncation parameters for the TOF
+   int get_ftof_adc_max_hits();
+   void set_ftof_adc_max_hits(int maxhits);
+   int get_ftof_tdc_max_hits();
+   void set_ftof_tdc_max_hits(int maxhits);
    double get_ftof_min_delta_t_ns();
    void set_ftof_min_delta_t_ns(double dt_ns);
+   double get_ftof_integration_window_ns();
+   void set_ftof_integration_window_ns(double dt_ns);
+
+   // hits merging / truncation parameters for the FCAL
+   int get_fcal_max_hits();
+   void set_fcal_max_hits(int maxhits);
    double get_fcal_min_delta_t_ns();
    void set_fcal_min_delta_t_ns(double dt_ns);
+   double get_fcal_integration_window_ns();
+   void set_fcal_integration_window_ns(double dt_ns);
+
+   // hits merging / truncation parameters for the CCAL
+   int get_ccal_max_hits();
+   void set_ccal_max_hits(int maxhits);
    double get_ccal_min_delta_t_ns();
    void set_ccal_min_delta_t_ns(double dt_ns);
-   double get_ps_min_delta_t_ns();
-   void set_ps_min_delta_t_ns(double dt_ns);
+   double get_ccal_integration_window_ns();
+   void set_ccal_integration_window_ns(double dt_ns);
+
+   // hits merging / truncation parameters for the PS
+   int get_ps_max_hits();
+   void set_ps_max_hits(int maxhits);
+   double get_ps_integration_window_ns();
+   void set_ps_integration_window_ns(double dt_ns);
+   int get_psc_adc_max_hits();
+   void set_psc_adc_max_hits(int maxhits);
+   int get_psc_tdc_max_hits();
+   void set_psc_tdc_max_hits(int maxhits);
    double get_psc_min_delta_t_ns();
    void set_psc_min_delta_t_ns(double dt_ns);
-   double get_ttag_min_delta_t_ns();
-   void set_ttag_min_delta_t_ns(double dt_ns);
-   double get_tpol_min_delta_t_ns();
-   void set_tpol_min_delta_t_ns(double dt_ns);
+   double get_psc_integration_window_ns();
+   void set_psc_integration_window_ns(double dt_ns);
+
+   // hits merging / truncation parameters for the TAGM/TAGH
+   int get_tag_adc_max_hits();
+   void set_tag_adc_max_hits(int maxhits);
+   int get_tag_tdc_max_hits();
+   void set_tag_tdc_max_hits(int maxhits);
+   double get_tag_min_delta_t_ns();
+   void set_tag_min_delta_t_ns(double dt_ns);
+   double get_tag_integration_window_ns();
+   void set_tag_integration_window_ns(double dt_ns);
+
+   // hits merging / truncation parameters for the TPOL
+   int get_tpol_max_hits();
+   void set_tpol_max_hits(int maxhits);
+   double get_tpol_integration_window_ns();
+   void set_tpol_integration_window_ns(double dt_ns);
+ 
+   // hits merging / truncation parameters for the FWMPC
+   int get_fmwpc_max_hits();
+   void set_fmwpc_max_hits(int maxhits);
    double get_fmwpc_min_delta_t_ns();
    void set_fmwpc_min_delta_t_ns(double dt_ns);
-   double get_fadc_counts_per_ns();
-   void set_fadc_counts_per_ns(double slope);
-   double get_tdc_counts_per_ns();
-   void set_tdc_counts_per_ns(double slope);
+
+   void truncate_hits(hddm_s::HDDM &record);
+   void truncate_cdc_hits(hddm_s::CdcStrawHitList &hits);
+   void truncate_fdc_wire_hits(hddm_s::FdcAnodeHitList &hits);
+   void truncate_fdc_strip_hits(hddm_s::FdcCathodeHitList &hits);
+   void truncate_stc_hits(hddm_s::StcHitList &hits);
+   void truncate_bcal_adc_hits(hddm_s::BcalfADCHitList &hits);
+   void truncate_bcal_tdc_hits(hddm_s::BcalTDCHitList &hits);
+   void truncate_bcal_adc_digihits(hddm_s::BcalfADCDigiHitList &hits);
+   void truncate_bcal_tdc_digihits(hddm_s::BcalTDCDigiHitList &hits);
+   void truncate_ftof_hits(hddm_s::FtofHitList &hits);
+   void truncate_fcal_hits(hddm_s::FcalHitList &hits);
+   void truncate_ccal_hits(hddm_s::CcalHitList &hits);
+   void truncate_tag_hits(hddm_s::TaggerHitList &hits);
+   void truncate_ps_hits(hddm_s::PsHitList &hits);
+   void truncate_psc_hits(hddm_s::PscHitList &hits);
+   void truncate_tpol_hits(hddm_s::TpolHitList &hits);
+   void truncate_fmwpc_hits(hddm_s::FmwpcHitList &hits);
 }
 
 hddm_s::HDDM &operator+=(hddm_s::HDDM &dst, hddm_s::HDDM &src);

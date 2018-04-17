@@ -439,7 +439,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // upstream cdc start position
   vector<double>cdc_origin;
   // outer detectors
-  double dTOFz,dFCALz;
+  double dTOFz,dFCALz,dDIRCz;
 
   // Mass hypothesis
   double MASS,mass2;
@@ -511,15 +511,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double ANNEAL_POW_CONST,ANNEAL_SCALE;
   double FORWARD_ANNEAL_POW_CONST,FORWARD_ANNEAL_SCALE;
 
-  // Min. momentum needed for fit before returning fitSuccess
-  double MIN_FIT_P;
-  // Maximum seed momentum
-  double MAX_SEED_P;
-  
-  // Minimum proton momentum
-  double MIN_PROTON_P;
-  // Minimum pion momentum
-  double MIN_PION_P;
   // minimum pt or p
   double PT_MIN;
   double Q_OVER_P_MAX;
