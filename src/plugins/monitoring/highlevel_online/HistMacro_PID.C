@@ -503,7 +503,9 @@ class FitWrapper{
 
 	//------------------------- Macro starts here ------------------------
 
-	vector<bool> trig(6, true); // triggers to include 
+	vector<bool> trig(6, false); // triggers to include 
+	trig[1-1] = true; // FCAL + BCAL
+	trig[3-1] = true; // BCAL only
 
 	TDirectory *locTopDirectory = gDirectory;
 
@@ -655,7 +657,7 @@ class FitWrapper{
 		double Ntrig = Ntrig_tot - Ntrig_tot_pi0;
 		double rate_per_1ktrig = I/Ntrig*1000.0;
 		if(Ntrig>0.0){
-			sprintf(str, "%3.1f per 1k triggers", rate_per_1ktrig);
+			sprintf(str, "%3.1f per 1k triggers (bits 1,3)", rate_per_1ktrig);
 			latex.SetTextSize(0.06);
 			latex.DrawLatex(0.3, max*0.65, str);
 		}
@@ -755,7 +757,7 @@ class FitWrapper{
 			double Ntrig = Ntrig_tot - Ntrig_tot_phi;
 			double rate_per_1ktrig = I/Ntrig*1000.0;
 			if(Ntrig_tot>0.0){
-				sprintf(str, "%3.3f per 1k triggers", rate_per_1ktrig);
+				sprintf(str, "%3.3f per 1k triggers (bits 1,3)", rate_per_1ktrig);
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.4, max*0.65, str);
 			}
@@ -771,7 +773,7 @@ class FitWrapper{
 
 			// Only try adding to time series if we have more than 20 particles in peak
 			cout << "====== phi: I="<<I<<"  mean: " << pars_out[1] << " +/- " << errs_out[1] << "   sigma: "<< pars_out[2] << " +/- " << errs_out[2] << endl;
-			if( (I>40.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
+			if( (I>100.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
 
 				// Add to time series
 				InsertSeriesMassFit("phi", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
@@ -832,7 +834,7 @@ class FitWrapper{
 			double Ntrig = Ntrig_tot - Ntrig_tot_rho;
 			double rate_per_1ktrig = I/Ntrig*1000.0;
 			if(Ntrig_tot>0.0){
-				sprintf(str, "%3.3f per 1k triggers", rate_per_1ktrig);
+				sprintf(str, "%3.3f per 1k triggers (bits 1,3)", rate_per_1ktrig);
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.010, max*0.65, str);
 			}
@@ -908,7 +910,7 @@ class FitWrapper{
 			double Ntrig = Ntrig_tot - Ntrig_tot_omega;
 			double rate_per_1ktrig = I/Ntrig*1000.0;
 			if(Ntrig_tot>0.0){
-				sprintf(str, "%3.3f per 1k triggers", rate_per_1ktrig);
+				sprintf(str, "%3.3f per 1k triggers (bits 1,3)", rate_per_1ktrig);
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.010, max*0.65, str);
 			}
@@ -924,7 +926,7 @@ class FitWrapper{
 
 			// Only try adding to time series if we have more than 20 particles in peak
 			cout << "====== omega: I="<<I<<"  mean: " << pars_out[1] << " +/- " << errs_out[1] << "   sigma: "<< pars_out[2] << " +/- " << errs_out[2] << endl;
-			if( (I>50.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
+			if( (I>100.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
 				// Add to time series
 				InsertSeriesMassFit("omega", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
 					
