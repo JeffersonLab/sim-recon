@@ -655,11 +655,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
   }
 
-  // Sometimes we will end up with single segment tracks in the first FDC 
-  // package with too few hits to do a true track fit.  It also happens that 
-  // there are frequently several hits in the CDC that are not associated with
-  // any track segment.  In this case, try to attach these stray hits to the
-  // FDC segment -- otherwise these potential tracks will be lost...
+  //There are frequently several hits in the CDC that are not associated with
+  // any track segment.  In this case, try to attach these stray hits to a
+  // track in the FDC that has hits in the first package.
   if (num_unmatched_cdcs>0){
     for (unsigned int i=0;i<trackcandidates.size();i++){
        DTrackCandidate *candidate=trackcandidates[i];
@@ -668,9 +666,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
        candidate->GetT(usedfdchits);
        vector<const DCDCTrackHit *>usedcdchits;
        candidate->GetT(usedcdchits);
-       // Only try this for tracks containing a single segment, in the first 
-       // package
-       if (usedcdchits.size()==0 && usedfdchits.size()<6
+       if (usedcdchits.size()==0
 	   && (usedfdchits[0]->wire->layer-1)/6==0
 	   ){
 	 // Sort the hits 
@@ -1868,9 +1864,7 @@ bool DTrackCandidate_factory::MatchMethod4(const DTrackCandidate *srccan,
 	    double p=0.003*fit.r0*Bz_avg/cos(atan(fit.tanl));
 	    if (p>10.){ // Check for extremely stiff tracks, some of which 
 	      // will have unphysical momenta... try alternate circle fit 
-	      _DBG_ << p << endl;
 	      fit.FitCircle();
-	      _DBG_ << 0.003*fit.r0*Bz_avg/cos(atan(fit.tanl)) << endl;
 	    }
 	    // Guess charge from fit
 	    fit.h=GetSenseOfRotation(fit,firsthit,srccan->position());
@@ -2255,12 +2249,9 @@ bool DTrackCandidate_factory::MatchMethod7(DTrackCandidate *srccan,
 
 	    double p=0.003*fit.r0*Bz/cos(atan(fit.tanl));
 	    if ((cdchits.size())>0?(p>3.):(p>10.)){
-	      _DBG_ << p << endl;
 	      // Suspiciously high momentum:  try alternate circle fit...
 	      fit.FitCircle();
-	      _DBG_ << 0.003*fit.r0*Bz/cos(atan(fit.tanl)) << endl;
 	    }	   
-
       
 	    if (cdchits.size()>0){
 	      if (GetPositionAndMomentum(fit,Bz,cdchits[0]->wire->origin,
@@ -2463,11 +2454,8 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
 	      if (p>10.){
 		// momentum is suspiciously high for a track going through both
 		// the FDC and the CDC... try alternate circle fit
-		_DBG_ << p << endl;
 		fit.FitCircle();
-		_DBG_ << 0.003*fit.r0*Bz/cos(atan(fit.tanl)) << endl;
 	      }
-
 	      
 	      if (GetPositionAndMomentum(fit,Bz,cdchits[0]->wire->origin,
 					 my_pos,my_mom)==NOERROR){
@@ -2647,10 +2635,8 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 	    
 	    double p=0.003*fit1.r0*Bz/cos(atan(fit1.tanl));
 	    if (p>10.){
-	      _DBG_ << p << endl;
 	      // Try an alternate circle fit
 	      fit1.FitCircle();
-	      _DBG_ << 0.003*fit1.r0*Bz/cos(atan(fit1.tanl)) << endl;
 	    }
 
 	    // Guess charge from fit
@@ -2684,7 +2670,7 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 }
 
 // Method to try to match unmatched FDC segments by assuming that the tracks
-// are sufficiently stiff we are better served by somethign closer to a
+// are sufficiently stiff we are better served by something closer to a
 // "straight-line" approximation
 bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
 					   const DTrackCandidate *srccan,
@@ -2694,7 +2680,7 @@ bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
   double q=srccan->charge();
   int pack1=segment->package;
 
-  // Get hits from segment and redo fit forcing the circle to go through (0,0)
+  // Get hits from segment and redo fit
   DHelicalFit fit1;
   for (unsigned int n=0;n<segment->hits.size();n++){
     const DFDCPseudo *hit=segment->hits[n];
@@ -2796,6 +2782,12 @@ bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
 	      
 	    // Redo line fit
 	    fit1.FitLineRiemann();
+	      
+	    double p=0.003*fit1.r0*Bz/cos(atan(fit1.tanl));
+	    if (p>10.){
+	      // unphysical momentum, try alternate circle fit...
+	      fit1.FitCircle();
+	    }
 	    
 	    // Guess charge from fit
 	    fit1.h=GetSenseOfRotation(fit1,segments2[0]->hits[0],
