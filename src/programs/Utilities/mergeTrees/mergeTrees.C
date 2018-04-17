@@ -198,8 +198,12 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    }
 
    // Create branches for secondary chisq and NDF
-   TBranch *new_b_chisq = t_primary->Branch("ChiSq_KinFit_secondary", new_chisq, "ChiSq_KinFit_secondary[NumCombos]/i");
-   TBranch *new_b_ndf = t_primary->Branch("NDF_KinFit_secondary", new_ndf, "NDF_KinFit_secondary[NumCombos]/i");
+   string branchName("ChiSq_KinFit_");
+   branchName += secondaryReactionName;
+   TBranch *new_b_chisq = t_primary->Branch(branchName.c_str(), new_chisq, (branchName + "[NumCombos]/i").c_str() );
+   branchName = "NDF_KinFit_";
+   branchName += secondaryReactionName;
+   TBranch *new_b_ndf = t_primary->Branch(branchName.c_str(), new_ndf, (branchName + "[NumCombos]/i").c_str() );
 
    // Make std::map< EventNumber, entry > for secondary TTree
    map< ULong64_t, Long64_t > map_event_secondary;
