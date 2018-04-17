@@ -117,8 +117,11 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    TFile f_secondary(secondaryFile);
    TTree *t_secondary = (TTree*)f_secondary.Get(secondaryTree);
 
-   TFile f_primary(primaryFile, "update");
-   TTree *t_primary = (TTree*)f_primary.Get(primaryTree);
+   TFile f_orig(primaryFile);
+   TTree *t_orig = (TTree*)f_orig.Get(primaryTree);
+
+   TFile f_primary("newtree.root", "recreate");
+   TTree *t_primary = (TTree*)t_orig->CloneTree();
 
    // Get branch information for each TTree
    vector<const char*> branches_primary = getBranches(t_primary);
