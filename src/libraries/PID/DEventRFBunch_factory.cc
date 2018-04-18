@@ -95,7 +95,7 @@ void DEventRFBunch_factory::Select_GoodTracks(JEventLoop* locEventLoop, vector<c
 jerror_t DEventRFBunch_factory::Select_RFBunch(JEventLoop* locEventLoop, vector<const DTrackTimeBased*>& locTrackTimeBasedVector, const DRFTime* locRFTime)
 {
 	//If RF Time present:
-		//Use tracks with matching TOF hits (unless track is very slow (track projection out to TOF is bad)). For those without, use SC hits instead.  If any.
+		//Use tracks with matching SC hits. For those without, use TOF hits instead, if any.
 		//If none, use tracks with matching hits in any detector, if any
 		//If none: Let neutral showers vote (assume PID = photon) on RF bunch
 		//If None: set DEventRFBunch::dTime to NaN
@@ -170,28 +170,33 @@ bool DEventRFBunch_factory::Find_TrackTimes_SCTOF(const DDetectorMatches* locDet
 	locTimes.clear();
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
-		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_i];
-		double locP = locTrackTimeBased->momentum().Mag();
+	  const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_i];
+	  //		double locP = locTrackTimeBased->momentum().Mag();
+
+		shared_ptr<const DSCHitMatchParams> locSCHitMatchParams;
+		if(dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams)){
+
+		  double locPropagatedTime = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+		  locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));	
+		  
+		  continue;
+		}
+
 
 		//TOF resolution = 80ps, 3sigma = 240ps
 			//max PID delta-t = 762ps (assuming 499 MHz and no buffer)
 			//for pion-proton: delta-t is ~750ps at ~170 MeV/c or lower: cannot have proton this slow anyway
 			//for pion-kaon delta-t is ~750ps at ~80 MeV/c or lower: won't reconstruct these anyway, and not likely to be forward-going anyway
 		shared_ptr<const DTOFHitMatchParams> locTOFHitMatchParams;
-		if((locP > 0.5) && dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
-		{
-			double locPropagatedTime = locTOFHitMatchParams->dHitTime - locTOFHitMatchParams->dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
-			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
-			continue;
-		}
+		if (dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
+		  {
+		    double locPropagatedTime = locTOFHitMatchParams->dHitTime - locTOFHitMatchParams->dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+		    locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
+		    continue;
+		  }
 
 		//Prefer TOF over SC in nose region because hard to tell which SC counter should have been hit
-		shared_ptr<const DSCHitMatchParams> locSCHitMatchParams;
-		if(!dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
-			continue;
-
-		double locPropagatedTime = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
-		locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
+	
 	}
 
 	return (!locTimes.empty());
