@@ -59,6 +59,11 @@ jerror_t DSCHit_factory::init(void)
     gPARMS->SetDefaultParameter("SC:USE_TIMEWALK_CORRECTION", USE_TIMEWALK_CORRECTION,
                                 "Flag to decide if timewalk corrections should be applied.");
 
+    REQUIRE_ADC_TDC_MATCH=true;
+    gPARMS->SetDefaultParameter("SC:REQUIRE_ADC_TDC_MATCH", 
+				REQUIRE_ADC_TDC_MATCH,
+                                "Flag to decide if a match between adc and tdc hits is required.");
+
     /// set the base conversion scales
     a_scale    = 0.0001; 
     t_scale    = 0.0625;   // 62.5 ps/count
@@ -76,7 +81,7 @@ jerror_t DSCHit_factory::init(void)
 //------------------
 jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
-    // Only print messages for one thread whenever run number change
+  // Only print messages for one thread whenever run number change
     static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
     static set<int> runs_announced;
     pthread_mutex_lock(&print_mutex);
@@ -148,173 +153,189 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 //------------------
 jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
-    /// Generate DSCHit object for each DSCDigiHit object.
-    /// This is where the first set of calibration constants
-    /// is applied to convert from digitzed units into natural
-    /// units.
-    ///
-    /// Note that this code does NOT get called for simulated
-    /// data in HDDM format. The HDDM event source will copy
-    /// the precalibrated values directly into the _data vector.
+  /// Generate DSCHit object for each DSCDigiHit object.
+  /// This is where the first set of calibration constants
+  /// is applied to convert from digitzed units into natural
+  /// units.
+  ///
+  /// Note that this code does NOT get called for simulated
+  /// data in HDDM format. The HDDM event source will copy
+  /// the precalibrated values directly into the _data vector.
+  
+  // First, make hits out of all fADC250 hits
+  vector<const DSCDigiHit*> digihits;
+  loop->Get(digihits);
+  sort(digihits.begin(),digihits.end(),DSCHit_fadc_cmp);
 
-    // First, make hits out of all fADC250 hits
-    vector<const DSCDigiHit*> digihits;
-    loop->Get(digihits);
-    sort(digihits.begin(),digihits.end(),DSCHit_fadc_cmp);
+  const DTTabUtilities* locTTabUtilities = nullptr;
+  loop->GetSingle(locTTabUtilities);
 
-	const DTTabUtilities* locTTabUtilities = nullptr;
-	loop->GetSingle(locTTabUtilities);
-
-    char str[256];
-
-    for (unsigned int i = 0; i < digihits.size(); i++)  {
-        const DSCDigiHit *digihit = digihits[i];
-
-        // Make sure sector is in valid range
-        if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS))  {
-            sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
-                    digihit->sector, MAX_SECTORS);
-            throw JException(str);
-        }
-
-        // Throw away hits with firmware errors (post-summer 2016 firmware)
-        if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
-            continue;
-
-        // Initialize pedestal to one found in CCDB, but override it
-        // with one found in event if is available (?)
-        // For now, only keep events with a correct pedestal
-        double pedestal = a_pedestals[digihit->sector-1];
-        double nsamples_integral = digihit->nsamples_integral;
-        double nsamples_pedestal = digihit->nsamples_pedestal;
-
-        // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
-        if(nsamples_pedestal == 0) {
-            jerr << "DSCDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
-            continue;
-        }
-
-        // digihit->pedestal is the sum of "nsamples_pedestal" samples
-        // Calculate the average pedestal per sample
-        if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
-            pedestal = (double)digihit->pedestal/nsamples_pedestal;
-        }
-
-        // Subtract pedestal from pulse peak
-        if (digihit->pulse_time == 0 || digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
-        double pulse_peak = digihit->pulse_peak - pedestal;
-
-        // Subtract pedestal from pulse integral
-        double A = (double)digihit->pulse_integral;
-        A -= pedestal*nsamples_integral;
-
-        //if ( ((double)digihit->pulse_integral) < ADC_THRESHOLD) continue; // Will comment out until this is set to something useful by default
-
-        double T = (double)digihit->pulse_time;
-
-        DSCHit *hit = new DSCHit;
-        // Sectors are numbered from 1-30
-        hit->sector = digihit->sector;
-
-        hit->dE = a_scale * a_gains[digihit->sector-1] * A;
-        hit->t_fADC = t_scale * T - adc_time_offsets[hit->sector-1] + t_base;
-        hit->t_TDC = numeric_limits<double>::quiet_NaN();
-
-        hit->has_TDC = false;
-        hit->has_fADC = true;
-
-        hit->t = hit->t_fADC; // set time from fADC in case no TDC hit
-        hit->pulse_height = pulse_peak;
-
-        hit->AddAssociatedObject(digihit);
-
-        _data.push_back(hit);
+  char str[256];
+  vector<DSCHit *>temp_schits;
+  
+  for (unsigned int i = 0; i < digihits.size(); i++)  {
+    const DSCDigiHit *digihit = digihits[i];
+    
+    // Make sure sector is in valid range
+    if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS))  {
+      sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
+	      digihit->sector, MAX_SECTORS);
+      throw JException(str);
     }
     
+    // Throw away hits with firmware errors (post-summer 2016 firmware)
+    if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
+      continue;
+    if (digihit->pulse_time == 0 || digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
+    
+    double T = (double)digihit->pulse_time;
+    double t_fadc= t_scale * T - adc_time_offsets[digihit->sector-1] + t_base;
+    if (fabs(t_fadc) < HIT_TIME_WINDOW){
+      
+      // Initialize pedestal to one found in CCDB, but override it
+      // with one found in event if is available (?)
+      // For now, only keep events with a correct pedestal
+      double pedestal = a_pedestals[digihit->sector-1];
+      double nsamples_integral = digihit->nsamples_integral;
+      double nsamples_pedestal = digihit->nsamples_pedestal;
+      
+      // nsamples_pedestal should always be positive for valid data - err on the side of caution for now
+      if(nsamples_pedestal == 0) {
+	jerr << "DSCDigiHit with nsamples_pedestal == 0 !   Event = " << eventnumber << endl;
+	continue;
+      }
+      
+      // digihit->pedestal is the sum of "nsamples_pedestal" samples
+      // Calculate the average pedestal per sample
+      if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
+	pedestal = (double)digihit->pedestal/nsamples_pedestal;
+      }
+      
+      // Subtract pedestal from pulse peak	
+      double pulse_peak = digihit->pulse_peak - pedestal;
+	  
+      // Subtract pedestal from pulse integral
+      double A = (double)digihit->pulse_integral;
+      A -= pedestal*nsamples_integral;
+      
+      if ( ((double)digihit->pulse_integral) < ADC_THRESHOLD) continue;
+	  	  
+      DSCHit *hit = new DSCHit;
+      // Sectors are numbered from 1-30
+      hit->sector = digihit->sector;
+      
+      hit->dE = a_scale * a_gains[digihit->sector-1] * A;
+      hit->t_fADC = t_fadc;
+      hit->t_TDC = numeric_limits<double>::quiet_NaN();
+      
+      hit->has_TDC = false;
+      hit->has_fADC = true;
+      
+      hit->t = hit->t_fADC; // set time from fADC in case no TDC hit
+      hit->pulse_height = pulse_peak;
+      
+      hit->AddAssociatedObject(digihit);
+      
+      temp_schits.push_back(hit);
+    }
+  }
+  
 
-	// Next, loop over TDC hits, matching them to the
-	// existing fADC hits where possible and updating
-	// their time information. If no match is found, then
-	// create a new hit with just the TDC info.
-	vector<const DSCTDCDigiHit*> tdcdigihits;
-	loop->Get(tdcdigihits);
-	sort(tdcdigihits.begin(),tdcdigihits.end(),DSCHit_tdc_cmp);
+  // Next, loop over TDC hits, matching them to the
+  // existing fADC hits where possible and updating
+  // their time information. If no match is found, then
+  // create a new hit with just the TDC info.
+  vector<const DSCTDCDigiHit*> tdcdigihits;
+  loop->Get(tdcdigihits);
+  sort(tdcdigihits.begin(),tdcdigihits.end(),DSCHit_tdc_cmp);
+  
+  for (unsigned int i = 0; i < tdcdigihits.size(); i++) {
+    const DSCTDCDigiHit *digihit = tdcdigihits[i];
+    
+    // Make sure sector is in valid range
+    if((digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) {
+      sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)",
+	      digihit->sector, MAX_SECTORS);
+      throw JException(str);
+    }
+    
+    unsigned int id = digihit->sector - 1;
+    double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[id] + t_tdc_base;
+    
+    // Look for existing hits to see if there is a match
+    //   or create new one if there is no match
+    // Require that the trigger corrected TDC time fall within
+    //   a reasonable time window so that when a hit is associated with
+    //   a hit in the TDC and not the ADC it is a "decent" TDC hit
+    if (fabs(T) < HIT_TIME_WINDOW) {
+      DSCHit *hit = FindMatch(temp_schits,digihit->sector, T);
+      
+      if (hit == nullptr) {
+	hit = new DSCHit;
+	hit->sector = digihit->sector;
+	hit->dE = 0.0;
+	hit->t_fADC= numeric_limits<double>::quiet_NaN();
+	hit->has_fADC=false;
+	temp_schits.push_back(hit);
+      }
+	    
+      hit->has_TDC=true;
+      hit->t_TDC=T;
+      
+      if (USE_TIMEWALK_CORRECTION && (hit->dE > 0.0) ) {
+	// Correct for time walk
+	// The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
+	// double A  = hit->dE;
+	// double C1 = timewalk_parameters[id][1];
+	// double C2 = timewalk_parameters[id][2];
+	// double A0 = timewalk_parameters[id][3];
+	// T -= C1*(pow(A,C2) - pow(A0,C2));
+	
+	// Correct for timewalk using pulse peak instead of pulse integral
+	double A        = hit->pulse_height;
+	// double C0       = timewalk_parameters[id][0];
+	double C1       = timewalk_parameters[id][1];
+	double C2       = timewalk_parameters[id][2];
+	double A_THRESH = timewalk_parameters[id][3];
+	double A0       = timewalk_parameters[id][4];
+	// do correction
+	T -= C1*(pow(A/A_THRESH, C2) - pow(A0/A_THRESH, C2));
+      }
 
-	for (unsigned int i = 0; i < tdcdigihits.size(); i++) {
-	    const DSCTDCDigiHit *digihit = tdcdigihits[i];
-
-	    // Make sure sector is in valid range
-	    if((digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) {
-            sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)",
-                    digihit->sector, MAX_SECTORS);
-            throw JException(str);
-        }
-        
-	    unsigned int id = digihit->sector - 1;
-	    double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[id] + t_tdc_base;
-
-	    // Look for existing hits to see if there is a match
-	    //   or create new one if there is no match
-	    // Require that the trigger corrected TDC time fall within
-	    //   a reasonable time window so that when a hit is associated with
-	    //   a hit in the TDC and not the ADC it is a "decent" TDC hit
-        if (fabs(T) < HIT_TIME_WINDOW) {
-            DSCHit *hit = FindMatch(digihit->sector, T);
-            if (hit == nullptr) {
-                hit = new DSCHit;
-                hit->sector = digihit->sector;
-                hit->dE = 0.0;
-                hit->t_fADC= numeric_limits<double>::quiet_NaN();
-                hit->has_fADC=false;
-                _data.push_back(hit);
-            }
-
-            hit->has_TDC=true;
-            hit->t_TDC=T;
-
-            if (USE_TIMEWALK_CORRECTION && (hit->dE > 0.0) ) {
-                // Correct for time walk
-                // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
-                // double A  = hit->dE;
-                // double C1 = timewalk_parameters[id][1];
-                // double C2 = timewalk_parameters[id][2];
-                // double A0 = timewalk_parameters[id][3];
-                // T -= C1*(pow(A,C2) - pow(A0,C2));
-
-                // Correct for timewalk using pulse peak instead of pulse integral
-                double A        = hit->pulse_height;
-                // double C0       = timewalk_parameters[id][0];
-                double C1       = timewalk_parameters[id][1];
-                double C2       = timewalk_parameters[id][2];
-                double A_THRESH = timewalk_parameters[id][3];
-                double A0       = timewalk_parameters[id][4];
-                // do correction
-                T -= C1*(pow(A/A_THRESH, C2) - pow(A0/A_THRESH, C2));
-            }
-
-            hit->t=T;
-
-            hit->AddAssociatedObject(digihit);
-        } // Hit time window cut
-
-	}
+      hit->t=T;
+      
+      hit->AddAssociatedObject(digihit);
+    } // Hit time window cut
+    
+  }
+  
+  for (unsigned int i=0;i<temp_schits.size();i++){
+    if (REQUIRE_ADC_TDC_MATCH==false){
+      _data.push_back(temp_schits[i]);
+    }
+    else if (temp_schits[i]->has_fADC && temp_schits[i]->has_TDC){
+      _data.push_back(temp_schits[i]);
+    }
+    else delete temp_schits[i];
+  }
 
 
-    return NOERROR;
+
+  return NOERROR;
 }
 
 //------------------
 // FindMatch
 //------------------
-DSCHit* DSCHit_factory::FindMatch(int sector, double T)
+DSCHit* DSCHit_factory::FindMatch(vector<DSCHit*>&schits,int sector, double T)
 {
     DSCHit *best_match = nullptr;
 
     // Loop over existing hits (from fADC) and look for a match
     // in both the sector and the time.
-    for(unsigned int i = 0; i < _data.size(); i++)
+    for(unsigned int i = 0; i < schits.size(); i++)
     {
-        DSCHit *hit = _data[i];
+        DSCHit *hit = schits[i];
 
         if (! isfinite(hit->t_fADC))
 	  continue; // only match to fADC hits, not bachelor TDC hits
