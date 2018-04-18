@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 #include <CDC/DCDCHit.h>
 
 #include "DCDCHit_factory.h"
