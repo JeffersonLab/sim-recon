@@ -61,9 +61,9 @@ bool searchMap( map<string, Int_t> p_map, string substring )
 {
    // This method searches a map to determine if it contains a final state particle matching the substring
    bool isMatch = false;
-   for ( p_iter = p_map.begin(); p_iter != p_map.end(); ++p_iter )
+   for ( auto const &p_iter : p_map )
    {
-      if ( p_iter->first.find(substring) != string::npos )
+      if ( p_iter.first.find(substring) != string::npos )
          isMatch = true;
    }
    
@@ -78,25 +78,27 @@ bool compareMaps( map<string, Int_t> p_map, map<string, Int_t> s_map, string sub
    bool isMatch = false;
    int totalParticles = 0;
    int matchedParticles = 0;
-   map<string, Int_t>::iterator p_iter;
-   map<string, Int_t>::iterator s_iter;
+
+   // check that maps are the same size
+   if ( p_map.size() != s_map.size() )
+      return isMatch;
 
    // loop over the primary TTree's map of (branch name, track ID)
-   for ( p_iter = p_map.begin(); p_iter != p_map.end(); ++p_iter )
+   for ( auto const &p_iter : p_map )
    {
       // check if primary branch name contains the substring
-      if ( p_iter->first.find(substring) != string::npos )
+      if ( p_iter.first.find(substring) != string::npos )
       {
          totalParticles++;
 
          // loop over the secondary TTree's map of (branch name, track ID)
-         for ( s_iter = s_map.begin(); s_iter != s_map.end(); ++s_iter )
+         for ( auto const &s_iter : s_map )
          {
             // check if secondary branch name contains the substring
-            if ( s_iter->first.find(substring) != string::npos )
+            if ( s_iter.first.find(substring) != string::npos )
             {
                // compare the trackIDs
-               if ( p_iter->second == s_iter->second )
+               if ( p_iter.second == s_iter.second )
                   matchedParticles++;
             }
          }
@@ -117,8 +119,11 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    TFile f_secondary(secondaryFile);
    TTree *t_secondary = (TTree*)f_secondary.Get(secondaryTree);
 
-   TFile f_primary(primaryFile, "update");
-   TTree *t_primary = (TTree*)f_primary.Get(primaryTree);
+   TFile f_orig(primaryFile);
+   TTree *t_orig = (TTree*)f_orig.Get(primaryTree);
+
+   TFile f_primary("newtree.root", "recreate");
+   TTree *t_primary = (TTree*)t_orig->CloneTree();
 
    // Get branch information for each TTree
    vector<const char*> branches_primary = getBranches(t_primary);
@@ -143,6 +148,7 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    TTreeReaderValue<UInt_t> run(primaryReader, "RunNumber");
    TTreeReaderValue<ULong64_t> event(primaryReader, "EventNumber");
    TTreeReaderArray<Int_t> ChargedHypoID(primaryReader, "ChargedHypo__TrackID");
+   TTreeReaderArray<Int_t> NeutralHypoID(primaryReader, "NeutralHypo__NeutralID");
    TTreeReaderArray<Int_t> beam_ID(primaryReader, "ComboBeam__BeamIndex");
    // secondary tree
    TTreeReader secondaryReader(t_secondary);
@@ -152,6 +158,7 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    TTreeReaderValue<UInt_t> secondary_run(secondaryReader, "RunNumber");
    TTreeReaderValue<ULong64_t> secondary_event(secondaryReader, "EventNumber");
    TTreeReaderArray<Int_t> secondary_ChargedHypoID(secondaryReader, "ChargedHypo__TrackID");
+   TTreeReaderArray<Int_t> secondary_NeutralHypoID(primaryReader, "NeutralHypo__NeutralID");
    TTreeReaderArray<Int_t> secondary_beam_ID(secondaryReader, "ComboBeam__BeamIndex");
 
    // The only branches that will vary are the Int arrays
@@ -160,21 +167,17 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    map< const char*, TTreeReaderArray<Int_t> > secondary_ReaderArray__Int;
 
    // Create TTreeReaderArrays for the Int_t branches 
-   vector<const char*>::iterator it_primary = branches_primary.begin();
-   vector<const char*>::iterator it_secondary = branches_secondary.begin();
-   while (it_primary != branches_primary.end() )
+   for ( auto const& p_iter : branches_primary )
    {
-      TTreeReaderArray<Int_t> a(primaryReader, *it_primary);
-      auto P = make_pair( *it_primary, a );
+      TTreeReaderArray<Int_t> a(primaryReader, p_iter);
+      auto P = make_pair( p_iter, a );
       primary_ReaderArray__Int.insert(P);
-      ++it_primary;
    }
-   while (it_secondary != branches_secondary.end() )
+   for ( auto const& s_iter : branches_secondary )
    {
-      TTreeReaderArray<Int_t> a(secondaryReader, *it_secondary);
-      auto P = make_pair( *it_secondary, a );
+      TTreeReaderArray<Int_t> a(secondaryReader, s_iter);
+      auto P = make_pair( s_iter, a );
       secondary_ReaderArray__Int.insert(P);
-      ++it_secondary;
    }
    cout << "Added to maps" << endl;
  
@@ -185,26 +188,26 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    const char* keys_primary[ size_primary ];
    const char* keys_secondary[ size_secondary ];
    // Get keys and fill arrays
-   map< const char*, TTreeReaderArray<Int_t> >::iterator it_primary_int = primary_ReaderArray__Int.begin();
-   map< const char*, TTreeReaderArray<Int_t> >::iterator it_secondary_int = secondary_ReaderArray__Int.begin();
    int count = 0;
-   while (it_primary_int != primary_ReaderArray__Int.end() )
+   for ( auto const& p_iter : primary_ReaderArray__Int )
    {
-      keys_primary[count] = it_primary_int->first;
-      ++it_primary_int;
+      keys_primary[count] = p_iter.first;
       ++count;
    }
    count = 0;
-   while (it_secondary_int != secondary_ReaderArray__Int.end() )
+   for ( auto const& s_iter : secondary_ReaderArray__Int )
    {
-      keys_secondary[count] = it_secondary_int->first;
-      ++it_secondary_int;
+      keys_secondary[count] = s_iter.first;
       ++count;
    }
 
    // Create branches for secondary chisq and NDF
-   TBranch *new_b_chisq = t_primary->Branch("ChiSq_KinFit_secondary", new_chisq, "ChiSq_KinFit_secondary[NumCombos]/i");
-   TBranch *new_b_ndf = t_primary->Branch("NDF_KinFit_secondary", new_ndf, "NDF_KinFit_secondary[NumCombos]/i");
+   string branchName("ChiSq_KinFit_");
+   branchName += secondaryReactionName;
+   TBranch *new_b_chisq = t_primary->Branch(branchName.c_str(), &new_chisq, (branchName + "[NumCombos]/i").c_str() );
+   branchName = "NDF_KinFit_";
+   branchName += secondaryReactionName;
+   TBranch *new_b_ndf = t_primary->Branch(branchName.c_str(), &new_ndf, (branchName + "[NumCombos]/i").c_str() );
 
    // Make std::map< EventNumber, entry > for secondary TTree
    map< ULong64_t, Long64_t > map_event_secondary;
@@ -257,12 +260,26 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
 
          // Get primary trackIDs
          map<string, Int_t> primary_trackIDs;
+         map<string, Int_t> primary_neutralIDs;
          for ( int i_keys = 0; i_keys < size_primary; ++i_keys )
          {
-            Int_t track = ChargedHypoID[ primary_ReaderArray__Int.at( keys_primary[ i_keys ] )[i] ];
-            string s(keys_primary[i_keys]);
-            auto track_pair = make_pair( s, track );
-            primary_trackIDs.insert(track_pair);
+            Int_t track;
+            Int_t neutral;
+            const char* b_name = keys_primary[ i_keys ];
+            string s(b_name);
+            if ( strstr( b_name, "__ChargedIndex" ) != NULL )
+            {
+               track = ChargedHypoID[ primary_ReaderArray__Int.at( b_name )[i] ];
+               auto track_pair = make_pair( s, track );
+               primary_trackIDs.insert( track_pair );
+            }
+            else if ( strstr( b_name, "__NeutralIndex" ) != NULL )
+            {
+               neutral = NeutralHypoID[ primary_ReaderArray__Int.at( b_name )[i] ];
+               auto neutral_pair = make_pair( s, neutral );
+               primary_neutralIDs.insert( neutral_pair );
+            }
+            else continue;
          }
          Int_t beam = beam_ID[i];
 
@@ -270,12 +287,26 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
          for (UInt_t j = 0; j < s_numCombos; ++j)
          {
             map<string, Int_t> secondary_trackIDs;
+            map<string, Int_t> secondary_neutralIDs;
             for ( int j_keys = 0; j_keys < size_secondary; ++j_keys )
             {
-               Int_t track = secondary_ChargedHypoID[ secondary_ReaderArray__Int.at( keys_secondary[ j_keys ] )[j] ];
-               string s(keys_secondary[j_keys]);
-               auto track_pair = make_pair( s, track );
-               secondary_trackIDs.insert(track_pair);
+               Int_t track;
+               Int_t neutral;
+               const char* b_name = keys_secondary[ j_keys ];
+               string s(b_name);
+               if ( strstr( b_name, "__ChargedIndex" ) != NULL )
+               {
+                  track = secondary_ChargedHypoID[ secondary_ReaderArray__Int.at( b_name )[j] ];
+                  auto track_pair = make_pair( s, track );
+                  secondary_trackIDs.insert(track_pair);
+               }
+               else if ( strstr( b_name, "__NeutralIndex" ) != NULL )
+               {
+                  neutral = secondary_NeutralHypoID[ secondary_ReaderArray__Int.at( b_name )[j] ];
+                  auto neutral_pair = make_pair( s, neutral );
+                  secondary_neutralIDs.insert( neutral_pair );
+               }
+               else continue;
             }
             Int_t secondary_beam = secondary_beam_ID[j];
 
@@ -283,36 +314,26 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
             bool hasPlus = searchMap( primary_trackIDs, "Plus" );
             bool hasMinus = searchMap( primary_trackIDs, "Minus" );
             bool hasProton = searchMap( primary_trackIDs, "Proton" );
-            bool hasPhoton = searchMap( primary_trackIDs, "Photon" );
+            bool hasPhoton = searchMap( primary_neutralIDs, "Photon" );
 
             // if the reaction does not contain a certain type of final state particle, set the match to true
             // otherwise, find the correct match
             bool plusMatch = hasPlus ? compareMaps( primary_trackIDs, secondary_trackIDs, "Plus" ) : true;
             bool minusMatch = hasMinus ?  compareMaps( primary_trackIDs, secondary_trackIDs, "Minus" ) : true;
             bool protonMatch = hasProton ? compareMaps( primary_trackIDs, secondary_trackIDs, "Proton" ) : true;
-            bool photonMatch = hasPhoton ? compareMaps( primary_trackIDs, secondary_trackIDs, "Photon" ) : true;
+            bool photonMatch = hasPhoton ? compareMaps( primary_neutralIDs, secondary_neutralIDs, "Photon" ) : true;
 
             // match final state particle IDs
             if ( !(plusMatch && minusMatch && protonMatch && photonMatch) )
-            {
                continue;
-            }
             // match beam ID
             if (beam != secondary_beam)
-            {
                continue;
-            }
 
             // grab secondary chisq, ndf information
             new_chisq[i] = secondary_chisq[j];
             new_ndf[i] = secondary_ndf[j];
             isMatched = true;
-         }
-         if ( !isMatched )
-         {
-            // make sure default values are set
-            new_chisq[i] = -1.0;
-            new_ndf[i] = 1;
          }
       }
 

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <functional>
+#include <numeric>
 
 #include "particleType.h"
 
