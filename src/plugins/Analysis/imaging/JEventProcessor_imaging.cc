@@ -60,9 +60,6 @@ jerror_t JEventProcessor_imaging::init(void)
   TwoTrackPocaCut=new TH2F("TwoTrackPocaCut","2track POCA,doca cut",4000,0,400,650,0,65);
   TwoTrackPocaCut->SetXTitle("z (cm)");
   TwoTrackPocaCut->SetYTitle("r (cm)"); 
-  TwoTrackPocaCut1=new TH2F("TwoTrackPocaCut1","2track POCA,doca cut",4000,0,400,650,0,65);
-  TwoTrackPocaCut1->SetXTitle("z (cm)");
-  TwoTrackPocaCut1->SetYTitle("r (cm)");
 
   TwoTrackXY_at_65cm=new TH2F("TwoTrackXY_at_65cm","y vs x near 65 cm",400,-5,5,400,-5,5);
   TwoTrackXY_at_65cm->SetXTitle("x [cm]");
@@ -71,7 +68,7 @@ jerror_t JEventProcessor_imaging::init(void)
   //  TwoTrackRelCosTheta=new TH1F("TwoTrackRelCosTheta","relative direction",100,-1.,1.);
   TwoTrackChi2=new TH1F("TwoTrackChi2","vertex #chi^2",1000,0,1000);
   DocaPull=new TH1F("DocaPull","#deltad/#sigma(#deltad)",100,0.,5);
-  //TwoTrackProb=new TH1F("TwoTrackProb","vertex probability",100,0,1.);
+  TwoTrackProb=new TH1F("TwoTrackProb","vertex probability",100,0,1.);
 
   gDirectory->cd("../");
 
@@ -168,16 +165,18 @@ jerror_t JEventProcessor_imaging::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  num_used_rts++;
 
 	  DVector3 pos;
-	  double doca,var_doca,vertex_chi2;
+	  double doca,var_doca,vertex_chi2,vertex_prob=1.;
 	  DKinematicData kd1=*track1,kd2=*track2;
 	  rt1->IntersectTracks(rt2,&kd1,&kd2,pos,doca,var_doca,vertex_chi2,FIT_VERTEX);
 	  // rt1->IntersectTracks(rt2,NULL,NULL,pos,doca,var_doca,vertex_chi2);
-	  TwoTrackChi2->Fill(vertex_chi2);
-	  //double vertex_prob=TMath::Prob(vertex_chi2,1);
-	  //TwoTrackProb->Fill(vertex_prob);
+	  if (FIT_VERTEX){
+	    TwoTrackChi2->Fill(vertex_chi2);
+	    vertex_prob=TMath::Prob(vertex_chi2,1);
+	    TwoTrackProb->Fill(vertex_prob);
+	  }
 	  DocaPull->Fill(doca/sqrt(var_doca));
 
-	  if (vertex_chi2<100.)
+	  if (vertex_prob>0.05)
 	    {  
 	      
 	    TwoTrackDoca->Fill(doca);
@@ -186,18 +185,13 @@ jerror_t JEventProcessor_imaging::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    //DVector3 dir2=kd2.momentum();
 	    //dir2.SetMag(1.);
 	    //TwoTrackRelCosTheta->Fill(dir1.Dot(dir2));
-	    if (doca<1.)
+	    if (FIT_VERTEX?doca<0.02:doca<1.)
 	      {
 	      double phi=pos.Phi();
 	      if (phi<-M_PI) phi+=2.*M_PI;
 	      if (phi>M_PI) phi-=2.*M_PI;
 	   
-	      if (phi<0){
-		TwoTrackPocaCut->Fill(pos.z(),pos.Perp());
-	      }
-	      else{
-		TwoTrackPocaCut1->Fill(pos.z(),pos.Perp());
-	      }
+	      TwoTrackPocaCut->Fill(pos.z(),pos.Perp());
 	      TwoTrackXYZ->Fill(pos.x(),pos.y(),pos.z());
 	      if (pos.z()>64.5 && pos.z()<65.5){
 		TwoTrackXY_at_65cm->Fill(pos.x(),pos.y());

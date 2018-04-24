@@ -33,7 +33,6 @@ class JEventProcessor_imaging:public jana::JEventProcessor{
 		TH3I *TwoTrackXYZ;
 		TH1F *TwoTrackDoca,*TwoTrackZ,*TwoTrackRelCosTheta;
 		TH2F *TwoTrackPocaCut;
-		TH2F *TwoTrackPocaCut1;
 		TH2F *TwoTrackXY_at_65cm;
 		TH1F *TwoTrackChi2,*TwoTrackProb;
 		TH1F *DocaPull;
