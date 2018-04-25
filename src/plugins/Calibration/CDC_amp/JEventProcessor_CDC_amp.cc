@@ -43,6 +43,14 @@ jerror_t JEventProcessor_CDC_amp::init(void)
 {
 	// This is called once at program startup. 
 
+    MAKETREE=0;
+
+                                  
+    if(gPARMS){
+        gPARMS->SetDefaultParameter("CDC_AMP:MAKETREE", MAKETREE, "If 1, create a root tree");
+    }  
+
+
   TDirectory *main = gDirectory;
   gDirectory->mkdir("CDC_amp")->cd();
 
@@ -58,7 +66,22 @@ jerror_t JEventProcessor_CDC_amp::init(void)
   attsum = new TH1I("attsum","CDC amplitude (tracks, theta 85-95 deg, z 50-80cm);amplitude - pedestal",4096,0,4096);
   attn = new TH2I("attn","CDC amplitude vs n (tracks, theta 85-95 deg, z 50-80cm); n; amplitude - pedestal",3522,0,3522,4096,0,4096);
 
+
+  attsum_100 = new TH1I("attsum_100","CDC amplitude, hits with drift time < 100ns (tracks, theta 85-95 deg, z 50-80cm);amplitude - pedestal",4096,0,4096);
+  attn_100 = new TH2I("attn_100","CDC amplitude vs n, hits with drift time < 100ns (tracks, theta 85-95 deg, z 50-80cm); n; amplitude - pedestal",3522,0,3522,4096,0,4096);
+
+
+
   atheta = new TH2D("atheta","CDC amplitude vs theta (hits on tracks); theta; amplitude - pedestal",180,0,180,4096,0,4096);
+
+  atime = new TH2D("atime","CDC amplitude vs time (all hits); raw time; amplitude - pedestal",200,0,2000,4096,0,4096);
+  attime = new TH2D("attime","CDC amplitude vs time (hits on tracks); raw time; amplitude - pedestal",200,0,2000,4096,0,4096);
+  atttime = new TH2D("atttime","CDC amplitude vs time (tracks, theta 85-95 deg, z 50-80cm); raw time; amplitude - pedestal",200,0,2000,4096,0,4096);
+
+
+  htime = new TH1I("htime","CDC time (all hits); raw time",200,0,2000);
+  ttime = new TH1I("ttime","CDC time (hits on tracks); raw time",200,0,2000);
+  tttime = new TH1I("tttime","CDC time (tracks, theta 85-95 deg, z 50-80cm); raw time",200,0,2000);
 
 
   qsum = new TH1D("qsum","charge (all hits);charge",1000,0,4e4);
@@ -71,6 +94,60 @@ jerror_t JEventProcessor_CDC_amp::init(void)
   qttn = new TH2D("qttn","charge vs n (tracks, theta 85-95 deg, z 50-80 cm); n; charge",3522,0,3522,400,0,4e4);
 
   qtheta = new TH2D("qtheta","charge vs theta (hits on tracks); theta; charge",180,0,180,1000,0,4e4);
+
+  qtime = new TH2D("qtime","charge vs time (all hits); raw time; amplitude - pedestal",200,0,2000,1000,0,4e4);
+  qttime = new TH2D("qttime","charge vs time (hits on tracks); raw time; amplitude - pedestal",200,0,2000,1000,0,4e4);
+  qtttime = new TH2D("qtttime","charge vs time (tracks, theta 85-95 deg, z 50-80cm); raw time; amplitude - pedestal",200,0,2000,1000,0,4e4);
+
+
+
+  if (MAKETREE) {
+
+    all = new TTree("all","all hits");
+
+    ULong64_t eventnumber;
+    all->Branch("eventnumber",&eventnumber,"eventnumber/l");   //that's a lower case L
+
+    int n;
+    all->Branch("n",&n,"n/I");
+
+    int ring;
+    all->Branch("ring",&ring,"ring/I");
+
+    int straw;
+    all->Branch("straw",&straw,"straw/I");
+
+    int amp;
+    all->Branch("amp",&amp,"net_amp/I");
+
+    int t;
+    all->Branch("t",&t,"t/I");
+
+
+    tracked = new TTree("tracked","all hits on tracks");
+
+    tracked->Branch("eventnumber",&eventnumber,"eventnumber/l");   //that's a lower case L
+
+    tracked->Branch("n",&n,"n/I");
+
+    tracked->Branch("ring",&ring,"ring/I");
+
+    tracked->Branch("straw",&straw,"straw/I");
+
+    tracked->Branch("amp",&amp,"net_amp/I");
+
+    tracked->Branch("t",&t,"t/I");
+
+    double theta;
+    tracked->Branch("theta",&theta,"theta/D");
+
+    double z;
+    tracked->Branch("z",&z,"z/D");
+
+
+  } 
+
+
 
 
 
@@ -87,6 +164,8 @@ jerror_t JEventProcessor_CDC_amp::brun(JEventLoop *eventLoop, int32_t runnumber)
 	// This is called whenever the run number changes
 
         if (runnumber<40000) ASCALE = 8;    // default for ASCALE before run 40,000 to be used if Df125config is not present
+
+        if (runnumber>41497) ASCALE = 8;    // default for ASCALE before run 40,000 to be used if Df125config is not present
 
 	return NOERROR;
 }
@@ -112,7 +191,9 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
 
   int ring, straw, n;   // ring number, straw number within ring, straw number overall (1 to 3522)
 
-  uint32_t amp,ped;     // dcdcdigihits raw quantities: time, pedestal, amplitude, quality factor, overflow count
+  uint32_t amp,ped,t;     // dcdcdigihits raw quantities: time, pedestal, amplitude, quality factor, overflow count
+
+  int time;
 
   //scaling factors will be overridden by Df125Config if presqnt
   //  uint16_t ASCALE = 8;   //amplitude
@@ -150,6 +231,9 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
 
   int used[3522] = {0};
 
+  ULong64_t eventnum;
+
+  eventnum = (ULong64_t)eventnumber;
 
   for (uint32_t i=0; i<hits.size(); i++) {
 
@@ -181,6 +265,7 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       amp = cp->first_max_amp;
       ped = cp->pedestal;
+      t = cp->le_time;
 
       scaledped = ped*(float)PSCALE/(float)ASCALE;
 
@@ -200,11 +285,28 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
     if (netamp>0) {
       asum->Fill(netamp);
       an->Fill(n,netamp);
+      atime->Fill((int)t,netamp);
+      htime->Fill((int)t);
     }
 
     if (charge>0) {
       qsum->Fill(charge);
       qn->Fill(n,charge);
+      qtime->Fill((int)t,charge);
+    }
+
+    time = (int)t;
+
+    if (MAKETREE) {
+
+
+      all->SetBranchAddress("eventnumber",&eventnum);
+      all->SetBranchAddress("n",&n);
+      all->SetBranchAddress("ring",&ring);
+      all->SetBranchAddress("straw",&straw);
+      all->SetBranchAddress("amp",&netamp);
+      all->SetBranchAddress("t",&time);
+      all->Fill();
     }
 
     japp->RootFillUnLock(this); //ACQUIRE ROOT LOCK!!
@@ -226,6 +328,7 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
     DVector3 mom = tracks[i]->momentum();
     double theta = mom.Theta();
     theta = 180.0*theta/3.14159;
+    double z;
 
     vector<DTrackFitter::pull_t> pulls = tracks[i]->pulls;
 
@@ -237,6 +340,7 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
       pulls[j].cdc_hit->GetSingle(hit);
 
       netamp = 0;  
+
 
       if (!SIMULATION) {
 
@@ -253,6 +357,7 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         amp = cp->first_max_amp;
         ped = cp->pedestal;
+        t = cp->le_time;
 
         scaledped = ped*(float)PSCALE/(float)ASCALE;
 
@@ -277,30 +382,52 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
           atsum->Fill(netamp);
           atn->Fill(n,netamp);
           atheta->Fill(theta,netamp);
+          attime->Fill((int)t,netamp);
+          ttime->Fill((int)t);
         }
 
         if (charge > 0) {
           qtsum->Fill(charge);
           qtn->Fill(n,charge);
           qtheta->Fill(theta,charge);
+          qttime->Fill((int)t,charge);
         }
 
-        double z = pulls[j].z;
+        z = pulls[j].z;
 
         if ((z>50) && (z<80) && (theta>85) && (theta<95)) {
 
           if (netamp > 0) {
             attsum->Fill(netamp);
             attn->Fill(n,netamp);
+            atttime->Fill((int)t,netamp);
+            tttime->Fill((int)t);
+	    if (hit->t < 100.0) attsum_100->Fill(netamp);
+	    if (hit->t < 100.0) attn_100->Fill(n,netamp);
           }
 
           if (charge > 0) {
             qttsum->Fill(charge);
             qttn->Fill(n,charge);
+            qtttime->Fill((int)t,charge);
           }
         }
 
+        time = (int)t;
+
+        if (MAKETREE) {
+          tracked->SetBranchAddress("eventnumber",&eventnum);
+          tracked->SetBranchAddress("n",&n);
+          tracked->SetBranchAddress("ring",&ring);
+          tracked->SetBranchAddress("straw",&straw);
+          tracked->SetBranchAddress("amp",&netamp);
+          tracked->SetBranchAddress("t",&time);
+          tracked->SetBranchAddress("theta",&theta);
+          tracked->SetBranchAddress("z",&z);
+          tracked->Fill();
+        }
       }
+
 
       japp->RootFillUnLock(this); 
 
