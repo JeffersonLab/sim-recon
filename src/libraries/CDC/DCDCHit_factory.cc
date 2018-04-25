@@ -41,6 +41,15 @@ jerror_t DCDCHit_factory::init(void)
   CorrelatedHitPeak = 3.5;
   gPARMS->SetDefaultParameter("CDCHit:CorrelatedHitPeak", CorrelatedHitPeak,
                               "Location of peak time around which we cut correlated times in units of 8ns bins");
+
+  LowTCut = 0.;   // to be overridden in brun if gPARMS absent
+  gPARMS->SetDefaultParameter("CDCHit:LowTCut", LowTCut,
+                              "Minimum acceptable CDC hit time (ns)");
+
+  HighTCut = 0.;   // to be overridden in brun if gPARMS absent
+  gPARMS->SetDefaultParameter("CDCHit:HighTCut", HighTCut,
+                              "Minimum acceptable CDC hit time (ns)");
+
   
   // Setting this flag makes it so that JANA does not delete the objects in _data.
   // This factory will manage this memory.
@@ -58,15 +67,6 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
   /// Read in calibration constants
   
   vector<double> cdc_timing_cuts;
-  if (eventLoop->GetCalib("/CDC/timing_cut", cdc_timing_cuts)){
-    LowTCut = -60.;
-    HighTCut = 900.;
-    jout << "Error loading /CDC/timing_cut ! set defaul values -60. and 900." << endl;
-  } else {
-    LowTCut = cdc_timing_cuts[0];
-    HighTCut = cdc_timing_cuts[1];
-    //jout<<"CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
-  }
 
   if (Disable_CDC_TimingCuts) {
     
@@ -74,8 +74,21 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     HighTCut = 10000.;
     jout << "Disable CDC Hit Timing Cuts!" << endl;
     
+  } else if ((LowTCut == 0.) && (HighTCut == 0.)) {   // gPARMS not used
+
+    if (eventLoop->GetCalib("/CDC/timing_cut", cdc_timing_cuts)){
+      LowTCut = -60.;
+      HighTCut = 900.;
+      jout << "Error loading /CDC/timing_cut ! set default values -60. and 900." << endl;
+    } else {
+      LowTCut = cdc_timing_cuts[0];
+      HighTCut = cdc_timing_cuts[1];
+    //jout<<"CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
+    }
+  } else {  //gPARMS used
+    jout<<"Override CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
   }
-  
+
 
   eventLoop->Get(ttab);
   
