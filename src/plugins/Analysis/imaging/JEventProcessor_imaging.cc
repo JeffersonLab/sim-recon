@@ -93,7 +93,7 @@ jerror_t JEventProcessor_imaging::brun(JEventLoop *eventLoop, int32_t runnumber)
 
   
 
-  FIT_VERTEX=false;
+  FIT_VERTEX=true;
   gPARMS->SetDefaultParameter("IMAGING:FIT_VERTEX",FIT_VERTEX, "Turn on/off vertex fitting");
   
   return NOERROR;
@@ -176,7 +176,7 @@ jerror_t JEventProcessor_imaging::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  }
 	  DocaPull->Fill(doca/sqrt(var_doca));
 
-	  if (vertex_prob>0.05)
+	  if (vertex_prob>0.1)
 	    {  
 	      
 	    TwoTrackDoca->Fill(doca);
@@ -185,7 +185,7 @@ jerror_t JEventProcessor_imaging::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    //DVector3 dir2=kd2.momentum();
 	    //dir2.SetMag(1.);
 	    //TwoTrackRelCosTheta->Fill(dir1.Dot(dir2));
-	    if (FIT_VERTEX?doca<0.02:doca<1.)
+	    if (FIT_VERTEX?doca<0.1:doca<1.)
 	      {
 	      double phi=pos.Phi();
 	      if (phi<-M_PI) phi+=2.*M_PI;
