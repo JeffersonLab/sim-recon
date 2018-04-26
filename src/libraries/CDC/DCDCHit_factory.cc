@@ -42,6 +42,15 @@ jerror_t DCDCHit_factory::init(void)
   CorrelatedHitPeak = 3.5;
   gPARMS->SetDefaultParameter("CDCHit:CorrelatedHitPeak", CorrelatedHitPeak,
                               "Location of peak time around which we cut correlated times in units of 8ns bins");
+
+  LowTCut_gparms = -20000.0;  // only used if above this value  
+  gPARMS->SetDefaultParameter("CDCHit:LowTCut", LowTCut_gparms,
+                              "Minimum acceptable CDC hit time (ns)");
+
+  HighTCut_gparms = 20000.0;  // only used if below this value  
+  gPARMS->SetDefaultParameter("CDCHit:HighTCut", HighTCut_gparms,
+                              "Maximum acceptable CDC hit time (ns)");
+
   
   // Setting this flag makes it so that JANA does not delete the objects in _data.
   // This factory will manage this memory.
@@ -59,15 +68,17 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
   /// Read in calibration constants
   
   vector<double> cdc_timing_cuts;
+
   if (eventLoop->GetCalib("/CDC/timing_cut", cdc_timing_cuts)){
     LowTCut = -60.;
     HighTCut = 900.;
-    jout << "Error loading /CDC/timing_cut ! set defaul values -60. and 900." << endl;
+    jout << "Error loading /CDC/timing_cut ! set default values -60. and 900." << endl;
   } else {
     LowTCut = cdc_timing_cuts[0];
     HighTCut = cdc_timing_cuts[1];
     //jout<<"CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
   }
+
 
   if (Disable_CDC_TimingCuts) {
     
@@ -75,8 +86,24 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     HighTCut = 10000.;
     jout << "Disable CDC Hit Timing Cuts!" << endl;
     
+  } 
+
+  int overridecut = 0;
+
+  if (LowTCut_gparms > (double)-20000.0) {
+    LowTCut = LowTCut_gparms;
+    overridecut = 1;
   }
-  
+
+
+  if (HighTCut_gparms < (double)20000.0) {
+    HighTCut = HighTCut_gparms;
+    overridecut = 1;
+  }
+
+  if (overridecut) jout<<"Override CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
+
+
 
   eventLoop->Get(ttab);
   
