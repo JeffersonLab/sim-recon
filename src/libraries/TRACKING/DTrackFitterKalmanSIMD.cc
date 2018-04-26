@@ -331,7 +331,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    ADD_VERTEX_POINT=false; 
    gPARMS->SetDefaultParameter("KALMAN:ADD_VERTEX_POINT", ADD_VERTEX_POINT);
   
-   THETA_CUT=70.0; 
+   THETA_CUT=60.0; 
    gPARMS->SetDefaultParameter("KALMAN:THETA_CUT", THETA_CUT);
 
    RING_TO_SKIP=0;
@@ -418,7 +418,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    FORWARD_PARMS_COV=false;
    gPARMS->SetDefaultParameter("KALMAN:FORWARD_PARMS_COV",FORWARD_PARMS_COV); 
 
-   CDC_VAR_SCALE_FACTOR=4.;
+   CDC_VAR_SCALE_FACTOR=1.;
    gPARMS->SetDefaultParameter("KALMAN:CDC_VAR_SCALE_FACTOR",CDC_VAR_SCALE_FACTOR); 
    CDC_T_DRIFT_MIN=-8.; // One f125 clock
    gPARMS->SetDefaultParameter("KALMAN:CDC_T_DRIFT_MIN",CDC_T_DRIFT_MIN);
