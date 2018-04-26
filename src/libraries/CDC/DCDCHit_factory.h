@@ -42,9 +42,13 @@ class DCDCHit_factory: public jana::JFactory<DCDCHit>{
   double CorrelatedHitPeak;
   int Disable_CDC_TimingCuts;
 
-  // timing cut limits
+  // timing cut limits 
   double LowTCut;
   double HighTCut;
+
+  // timing cut limits overrides in cmd line
+  double LowTCut_gparms;
+  double HighTCut_gparms;
   
  private:
   jerror_t init(void);						///< Called once at program start.
