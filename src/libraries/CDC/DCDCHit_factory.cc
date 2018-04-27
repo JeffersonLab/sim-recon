@@ -70,8 +70,8 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     jout << "Error loading /CDC/timing_cut ! set defaul values -60. and 900." << endl;
   } else {
     LowTCut = cdc_timing_cuts[0];
-      HighTCut = cdc_timing_cuts[1];
-      jout<<"CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
+    HighTCut = cdc_timing_cuts[1];
+    //jout<<"CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
   }
   
   gPARMS->SetDefaultParameter("CDCHit:LowTCut", LowTCut,"Minimum acceptable CDC hit time (ns)");
