@@ -50,31 +50,34 @@ echo " maxev=" $maxev
 # rm -f tree_pippimmisspb208.root
 # hadd tree_pippimmisspb208.root ../root/tree_pippimmisspb208__B2_gen_2pi_primakoff_${base}*.root
 # mv tree_pippimmisspb208.root tree_hd_root_Z2pi_trees_${base}_signal_${maxev}.root
-root -b -q tree_hd_root_Z2pi_trees_${base}_signal_${maxev}.root 'call_DSelector2.C("DSelector_Z2pi_trees2.C+")' >! DSelector_Z2pi_trees_${base}_signal_${maxev}.list
-mv DSelector_Z2pi_trees.root DSelector_Z2pi_trees_${base}_signal_${maxev}.root
-mv treeFlat_DSelector_Z2pi_trees.root treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}.root
-root -l -q  plot_Z2pi_trees.C\(\"DSelector_Z2pi_trees_${base}_signal_${maxev}\"\)
+# root -b -q tree_hd_root_Z2pi_trees_${base}_signal_${maxev}.root 'call_DSelector2.C("DSelector_Z2pi_trees2.C+")' >! DSelector_Z2pi_trees_${base}_signal_${maxev}.list
+# mv DSelector_Z2pi_trees.root DSelector_Z2pi_trees_${base}_signal_${maxev}.root
+# mv treeFlat_DSelector_Z2pi_trees.root treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}.root
+# root -l -q  plot_Z2pi_trees.C\(\"DSelector_Z2pi_trees_${base}_signal_${maxev}\"\)
 # tree_to_amptools treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}.root pippimmisspb208_TreeFlat
-root -b -q treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}.root 'call_MakeAmpToolsFlat.C'
-mv AmpToolsInputTree.root treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}_amptools.root
+# root -b -q treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}.root 'call_MakeAmpToolsFlat.C'
+# mv AmpToolsInputTree.root treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}_amptools.root
 
 # Now repeat for flat distribution. Also need the generated flat distributions.
-set base = "sw1pw1000_TAG1000"
+set base = "sw1pw1000_TAG"
 
 # gen_2pi_primakoff -c gen_2pi_primakoff_flat.cfg -o tree_gen_2pi_primakoff_flat_${maxev}.root -hd gen_2pi_primakoff_flat.hddm -a 5.5 -b 6.0 -p 6.0 -m 11.6 -n ${maxev} -r ${run}
+# root -b -q tree_gen_2pi_primakoff_flat_${maxev}.root 'call_MakeAmpToolsFlat_gen.C'
+# mv AmpToolsInputTree.root treeFlat_gen_2pi_primakoff_flat_${maxev}.root
 
 # hd_root -PPLUGINS=monitoring_hists,ReactionFilter -PReaction1=1_111__m111_8_9 -PNTHREADS=4 -PEVENTS_TO_KEEP=${maxev} ../../gen_2pi_primakoff_flat/hddm/dana_rest_gen_2pi_primakoff_${run}_*.hddm -o hd_root_Z2pi_trees_${base}_flat_${maxev}.root
 #
 # Use this option if root trees have already been created using MC wrapper
-# rm tree_pippimmisspb208.root
-# hadd tree_pippimmisspb208.root ../../gen_2pi_primakoff_flat/root/tree_pippimmisspb208_gen_2pi_primakoff_${base}*.root
+# rm -f tree_pippimmisspb208.root
+# hadd tree_pippimmisspb208.root ../../gen_2pi_primakoff_flat/root/tree_pippimmisspb208__B2_gen_2pi_primakoff_${base}*.root
 # mv tree_pippimmisspb208.root tree_hd_root_Z2pi_trees_${base}_flat_${maxev}.root
 # root -b -q tree_hd_root_Z2pi_trees_${base}_flat_${maxev}.root 'call_DSelector2.C("DSelector_Z2pi_trees2.C+")' >! DSelector_Z2pi_trees_${base}_flat_${maxev}.list
 # mv DSelector_Z2pi_trees.root DSelector_Z2pi_trees_${base}_flat_${maxev}.root
-# mv tree_DSelector_Z2pi_trees.root tree_DSelector_Z2pi_trees_${base}_flat_${maxev}.root
+# mv treeFlat_DSelector_Z2pi_trees.root treeFlat_DSelector_Z2pi_trees_${base}_flat_${maxev}.root
 # root -l -q  plot_Z2pi_trees.C\(\"DSelector_Z2pi_trees_${base}_flat_${maxev}\"\)
 # tree_to_amptools tree_DSelector_Z2pi_trees_${base}_flat_${maxev}.root pippimmisspb208_Tree
-# mv AmpToolsInputTree.root tree_DSelector_Z2pi_trees_${base}_flat_${maxev}_amptools.root
+# root -b -q treeFlat_DSelector_Z2pi_trees_${base}_flat_${maxev}.root 'call_MakeAmpToolsFlat.C'
+# mv AmpToolsInputTree.root treeFlat_DSelector_Z2pi_trees_${base}_flat_${maxev}_amptools.root
 
 
 # fit -c fit_2pi_primakoff_${maxev}.cfg
