@@ -175,10 +175,28 @@ int main( int argc, char* argv[] ){
     // retrieve amplitudes for output
     // ************************
 
+  // get parameter list
+
   // parameters to check
   vector< string > pars;
-  pars.push_back("Primakoff::Aplus::g1Vm0_re");
-  pars.push_back("Primakoff::Aplus::g1Vm0_im");
+  /* pars.push_back("Primakoff::Aplus::g1V00_re");
+  pars.push_back("Primakoff::Aplus::g1V00_im");
+  pars.push_back("Primakoff::Aplus::g1V11_re");
+  pars.push_back("Primakoff::Aplus::g1V11_im");
+  pars.push_back("Primakoff::Aplus::g1V10_re");
+  pars.push_back("Primakoff::Aplus::g1V10_im");
+  pars.push_back("Primakoff::Aplus::g1V1-1_re");
+  pars.push_back("Primakoff::Aplus::g1V1-1_im");*/ 
+
+  vector <string> parlist;
+  parlist = results.ampList("Primakoff");
+  for(unsigned int j=0; j<parlist.size(); j++) {
+    cout << " j=" << j << " parlist[j]=" << parlist[j] << " " << results.realProdParName(parlist[j]) << " " << results.imagProdParName(parlist[j]) << endl;
+    if (parlist[j].find("Aplus") != string::npos) {
+      pars.push_back(results.realProdParName(parlist[j]));
+      pars.push_back(results.imagProdParName(parlist[j]));
+    }
+  }
 
   // file for writing parameters (later switch to putting in ROOT file)
   ofstream outfile;
@@ -188,8 +206,10 @@ int main( int argc, char* argv[] ){
   for(unsigned int i = 0; i<pars.size(); i++) {
     double parValue = results.parValue( pars[i] );
     double parError = results.parError( pars[i] );
-    outfile << parValue << "\t" << parError << "\t";
+    int ifindg = pars[i].find("g");
+    outfile << pars[i].substr(ifindg) << "\t" << parValue << "\t" << parError << "\t";
   }
+
 
 
   // Note: For twopi_primakoff_plotter: The following computations are nonsense for amplitudes
@@ -211,8 +231,8 @@ int main( int argc, char* argv[] ){
   double P_err = sqrt(2*2*covMatrix[0][0] + covMatrix[0][0] - 2*2*covMatrix[0][0]);
 
   Sigma = Sigma_err = P = P_err = 0;
-  outfile << Sigma << "\t" << Sigma_err << "\t";
-  outfile << P << "\t" << P_err << "\t";
+  outfile << "Sigma" << "\t" << Sigma << "\t" << Sigma_err << "\t";
+  outfile  << "P" << "\t" << P << "\t" << P_err << "\t";
 
   outfile << endl;
 

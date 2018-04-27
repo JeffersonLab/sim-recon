@@ -12,13 +12,13 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
   gStyle->SetPadBottomMargin(0.15);
 
   char string[256];
-    map<Int_t, TString> sdme;
-    sdme[0]="RE g1Vm0\t";
-    sdme[1]="IM g1Vm0\t";
+    vector <TString> sdme;
     
-    const Int_t nparms=1;
+    /*const Int_t nparms=8;
     Double_t parms[nparms];
-    Double_t parms_err[nparms];
+    Double_t parms_err[nparms];*/
+    vector <double> parms;
+    vector <double> parms_err;
     
     bool setscale(true);
     
@@ -27,7 +27,8 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     // TString filename = "twopi_primakoff_DSelect";
     // TString filename = "twopi_primakoff_DSelect_thrown_mod";
     // TString filename = "twopi_primakoff_DSelect_thrown_mod2";
-    Double_t scale_factor=400000/maxev;       // divide ymax/scale_factor
+    Double_t scale_factor=400000/(float)maxev;       // divide ymax/scale_factor
+    cout << "Use scale_factor=" << scale_factor << " maxev=" << maxev << endl;
     
     TString infile = filename+".fit2";   // file with parameters
     TFile *f = new TFile(filename+".root","read");
@@ -118,6 +119,7 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     ymax = 20000/scale_factor;
     
     TF1 *cos2phi = new TF1("cos2phi","[0]*(1+[1]*cos(2*x))",-3.14159,3.14159);
+    TF1 *cosphi = new TF1("cosphi","[0]+[1]*cos(x)",-3.14159,3.14159);
     
     psigen->SetTitle(filename);
     // psigen->GetXaxis()->SetRangeUser(xmin,xmax);
@@ -168,7 +170,7 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     phigen->GetYaxis()->SetTitleSize(0.05);
     phigen->GetXaxis()->SetTitle("#phi");
     phigen->SetMarkerColor(4);
-    phigen->Fit(cos2phi);
+    phigen->Fit(cosphi);
     phigen->Draw("p");
     // phiacc->Draw("samep");
     phidat->SetMarkerColor(2);
@@ -178,17 +180,16 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     phidat->Draw("samep");
     
     c0->cd(6);
-    gPad->SetLogy();
+    gPad->SetLogy(); // use  gPad->SetLogy();
     xmin = 0;
     xmax = 0.012;
     ymin = 100/scale_factor;
     ymax = 400000/scale_factor;
     
-    tgen->SetTitle(filename);
-    tgen->GetXaxis()->SetTitleSize(0.05);
-    tgen->GetYaxis()->SetTitleSize(0.05);
-    tgen->GetXaxis()->SetTitle("-t");
-    tgen->SetMarkerColor(4);
+    tdat->SetTitle(filename);
+    tdat->GetXaxis()->SetTitleSize(0.05);
+    tdat->GetYaxis()->SetTitleSize(0.05);
+    tdat->GetXaxis()->SetTitle("-t");
     // tacc->Draw("samep");
     tdat->GetXaxis()->SetRangeUser(xmin,xmax);
     tdat->GetYaxis()->SetRangeUser(ymin,ymax);
@@ -196,10 +197,10 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     tdat->SetLineColor(2);
     tdat->SetMarkerStyle(20);
     tdat->SetMarkerSize(0.1);
-    // tdat->Fit("expo","","",0.2,1.3);
-    tdat->Fit("expo");
+    tdat->Fit("expo","","",0.002,0.01);
     tdat->Draw("p");
-    tgen->Draw("samep");
+    tgen->SetMarkerColor(4);
+      tgen->Draw("samep");
     
     
     TCanvas *c2 = new TCanvas("c2", "c2",200,10,1000,700);
@@ -412,7 +413,7 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     phiacc->GetXaxis()->SetTitle("#phi");
     phiacc->SetMarkerColor(1);
     phiacc->SetLineColor(1);
-    phiacc->Fit(cos2phi);
+    phiacc->Fit(cosphi);
     phiacc->Draw("p");
     // phiacc->Draw("samep");
     phidat->SetMarkerColor(2);
@@ -422,18 +423,16 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     phidat->Draw("samep");
     
     c1->cd(6);
-    gPad->SetLogy();
+    gPad->SetLogy();  // use  gPad->SetLogy();
     xmin = 0;
     xmax = 0.012;
     ymin = 10/scale_factor;
     ymax = 400000/scale_factor;
     
-    tacc->SetTitle(filename);
-    tacc->GetXaxis()->SetTitleSize(0.05);
-    tacc->GetYaxis()->SetTitleSize(0.05);
-    tacc->GetXaxis()->SetTitle("-t");
-    tacc->SetMarkerColor(1);
-    tacc->SetLineColor(1);
+    tdat->SetTitle(filename);
+    tdat->GetXaxis()->SetTitleSize(0.05);
+    tdat->GetYaxis()->SetTitleSize(0.05);
+    tdat->GetXaxis()->SetTitle("-t");
     // tacc->Draw("samep");
     tdat->GetXaxis()->SetRangeUser(xmin,xmax);
     tdat->GetYaxis()->SetRangeUser(ymin,ymax);
@@ -442,11 +441,13 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     tdat->SetMarkerStyle(20);
     tdat->SetMarkerSize(0.1);
     tdat->Draw("p");
+    tacc->SetMarkerColor(1);
+    tacc->SetLineColor(1);
     tacc->Draw("samep");
     
-    TCanvas *c3 = new TCanvas("c3", "c3",200,10,700,700);
+    TCanvas *c3 = new TCanvas("c3", "c3",200,10,1000,700);
     
-    c3->Divide(2,2);
+    c3->Divide(3,2);
     c3->cd(1);
     // gPad->SetLogy();
     ymin = 100;
@@ -533,7 +534,30 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     psidat->SetMarkerSize(0.1);
     psidat->Draw("samep");
 
+    
+    c3->cd(5);
+    // gPad->SetLogy();
+    ymin = 0;
+    ymax = 4000/scale_factor;
+    
+    phiacc->SetTitle(filename);
+    // phiacc->GetXaxis()->SetRangeUser(xmin,xmax);
+    if (setscale) phiacc->GetYaxis()->SetRangeUser(ymin,ymax);
+    phiacc->GetXaxis()->SetTitleSize(0.05);
+    phiacc->GetYaxis()->SetTitleSize(0.05);
+    phiacc->GetXaxis()->SetTitle("#phi");
+    phiacc->SetMarkerColor(1);
+    phiacc->SetLineColor(1);
+    phiacc->Fit(cosphi);
+    phiacc->Draw("p");
+    // phiacc->Draw("samep");
+    phidat->SetMarkerColor(2);
+    phidat->SetLineColor(2);
+    phidat->SetMarkerStyle(20);
+    phidat->SetMarkerSize(0.1);
+    phidat->Draw("samep");
 
+    c3->cd(6);
     
     // now read and print fitted values
     
@@ -551,10 +575,11 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
         Int_t ntokens = tokens->GetEntries();
         
         cout << " ntokens=" << ntokens << " line=" << line.Data() << endl;
-        Int_t jmax = ntokens/2 > nparms? nparms: ntokens/2;
+	Int_t jmax=ntokens/3;
         for (Int_t j=0; j<jmax; j++){
-        	parms[j] = (((TObjString*)tokens->At(2*j))->GetString()).Atof();
-        	parms_err[j] = (((TObjString*)tokens->At(2*j+1))->GetString()).Atof();
+	  sdme.push_back( (((TObjString*)tokens->At(3*j))->GetString()) );
+          parms.push_back( (((TObjString*)tokens->At(3*j+1))->GetString()).Atof() );
+          parms_err.push_back( (((TObjString*)tokens->At(3*j+2))->GetString()).Atof());
         }
         
     }   // end loop over lines
@@ -566,12 +591,12 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
         t1->SetTextSize(0.04);
         t1->Draw();
         
-        for (Int_t j=0; j<nparms; j++) {
+        for (Int_t j=0; j<sdme.size()-2; j++) {     // -2 to eliminate Sigma and P
             cout << sdme[j] << "=" << parms[j] << " err=" << parms_err[j] << endl;
         
             TString sdmename;
             sdmename = sdme[j];
-            sprintf (string,"%s=\t%.3f #pm %.3f\n",sdmename.Data(),parms[j],parms_err[j]);
+            sprintf (string,"%s = \t%.3f #pm %.3f\n",sdmename.Data(),parms[j],parms_err[j]);
         	printf("string=%s",string);
         	TLatex *t1 = new TLatex(0.2,0.75 - 0.05*j,string);
         	t1->SetNDC();
