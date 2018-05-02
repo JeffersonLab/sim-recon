@@ -3437,6 +3437,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       //if (theta_deg>90.) C0*=1.+5.*tanl2;
       //else C0*=1.+5.*tanl2*tanl2;
 
+       mCDCInternalStepSize=0.25;
+
       // The position from the track candidate is reported just outside the 
       // start counter for tracks containing cdc hits. Propagate to the 
       // distance of closest approach to the beam line     
