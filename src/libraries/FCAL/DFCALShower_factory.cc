@@ -228,7 +228,6 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
       FillCovarianceMatrix( shower );
 
       if( VERBOSE > 2 ){
-
 	printf("FCAL shower:    E=%f   x=%f   y=%f   z=%f   t=%f\n",
 	       shower->getEnergy(),shower->getPosition().X(),shower->getPosition().Y(),shower->getPosition().Z(),shower->getTime());
 	printf("FCAL shower:   dE=%f  dx=%f  dy=%f  dz=%f  dt=%f\n",
