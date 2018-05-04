@@ -289,15 +289,26 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     double theta=mom.Theta();
        
     // Propagate track to CDC endplate
-    if (theta<M_PI_4 && fdctrackcandidates.size()>0){
-      cdc_forward_ids.push_back(i);
-
-      //ProjectHelixToZ(cdc_endplate.z(),srccan->charge(),mom,pos); 
-      stepper->SetCharge(srccan->charge());
-      stepper->SwimToPlane(pos,mom,cdc_endplate,norm,NULL);
-      cdc_endplate_projections.push_back(pos);
+    bool isForward=false;
+    if (theta<M_PI_2 && fdctrackcandidates.size()>0){     
+      // First do a quick projection using a helical model to see if it is 
+      // worth adding this cdc candidate to the list of forward-going tracks
+      // that could pass into the FDC...
+      ProjectHelixToZ(cdc_endplate.z(),srccan->charge(),mom,pos);
+      if (pos.Perp()<48.5){
+	// do an actual swim to the cdc endplate
+	mom=srccan->momentum();
+	pos=srccan->position();
+	stepper->SetCharge(srccan->charge());
+	stepper->SwimToPlane(pos,mom,cdc_endplate,norm,NULL);
+	if (pos.Perp()<48.5){
+	  cdc_endplate_projections.push_back(pos);
+	  cdc_forward_ids.push_back(i);   
+	  isForward=true;
+	}
+      }
     }
-    else{
+    if (isForward==false){
       cdc_backward_ids.push_back(i);
     }
   }
@@ -644,11 +655,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
   }
 
-  // Sometimes we will end up with single segment tracks in the first FDC 
-  // package with too few hits to do a true track fit.  It also happens that 
-  // there are frequently several hits in the CDC that are not associated with
-  // any track segment.  In this case, try to attach these stray hits to the
-  // FDC segment -- otherwise these potential tracks will be lost...
+  //There are frequently several hits in the CDC that are not associated with
+  // any track segment.  In this case, try to attach these stray hits to a
+  // track in the FDC that has hits in the first package.
   if (num_unmatched_cdcs>0){
     for (unsigned int i=0;i<trackcandidates.size();i++){
        DTrackCandidate *candidate=trackcandidates[i];
@@ -657,9 +666,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
        candidate->GetT(usedfdchits);
        vector<const DCDCTrackHit *>usedcdchits;
        candidate->GetT(usedcdchits);
-       // Only try this for tracks containing a single segment, in the first 
-       // package
-       if (usedcdchits.size()==0 && usedfdchits.size()<6
+       if (usedcdchits.size()==0
 	   && (usedfdchits[0]->wire->layer-1)/6==0
 	   ){
 	 // Sort the hits 
@@ -721,15 +728,23 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	     
 	     // redo the circle fit
 	     if (fit.FitCircleRiemann(candidate->rc)==NOERROR){
+	  
+	       // Determine the polar angle
+	       double theta=mom.Theta();
+	       fit.tanl=tan(M_PI_2-theta);
+	       
+	       double p=0.003*fit.r0*Bz/cos(atan(fit.tanl));
+	       if (p>3.){	
+		 // momentum is suspiciously high for a track going through both
+		 // the FDC and the CDC... try alternate circle fit...
+		 fit.FitCircle();
+	       }
+
 	       // circle parameters
 	       candidate->rc=fit.r0;
 	       candidate->xc=fit.x0;
 	       candidate->yc=fit.y0;
 
-	       // Determine the polar angle
-	       double theta=mom.Theta();
-	       fit.tanl=tan(M_PI_2-theta);
-	       
 	       DVector3 origin=mycdchits[inner_index]->wire->origin;      
 	       if (GetPositionAndMomentum(fit,Bz,origin,pos,mom)==NOERROR){
 		 // FDC hit
@@ -1232,7 +1247,17 @@ jerror_t DTrackCandidate_factory::DoRefit(DHelicalFit &fit,
   Bz=fabs(Bz)/double(num_hits);
   
   // Fit the points to a circle
-  return (fit.FitCircleRiemann(segments[0]->rc));
+  if (fit.FitCircleRiemann(segments[0]->rc)==NOERROR){
+    double p=0.003*Bz*fit.r0/cos(atan(fit.tanl));
+  
+    if (p>3.){ // momentum is suspiciously high for a track going through both
+      // the FDC and the CDC... try alternate circle fit...  
+      fit.FitCircle();
+    }
+    return NOERROR;
+  }
+  
+  return RESOURCE_UNAVAILABLE;   
 }
 
 // Method to match FDC and CDC candidates that projects the CDC candidate to the
@@ -1432,14 +1457,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
        num_cdc++;
      }
 
-     if (num_match>=3 && double(num_match)/double(num_cdc)>0.33){
-       // Put the fdc candidate in the combined list
-       DTrackCandidate *can = new DTrackCandidate;
-       can->setPID((q > 0.0) ? PiPlus : PiMinus);
-       
-       // copy the list of cdc indices over from the cdc candidate
-       can->used_cdc_indexes=cdccan->used_cdc_indexes;
-              
+     if (num_match>=3 && double(num_match)/double(num_cdc)>0.33){              
        // Get the segment data
        vector<const DFDCSegment *>segments;
        fdccan->GetT(segments);
@@ -1460,6 +1478,13 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	 continue; 
        }
 
+       // Put the fdc candidate in the combined list
+       DTrackCandidate *can = new DTrackCandidate;
+       can->setPID((q > 0.0) ? PiPlus : PiMinus);
+       
+       // copy the list of cdc indices over from the cdc candidate
+       can->used_cdc_indexes=cdccan->used_cdc_indexes;
+
        // Add the fdc hits to track candidate as associated objects 
        unsigned int num_fdc_hits=0;
        for (unsigned int m=0;m<segments.size();m++){
@@ -1479,17 +1504,16 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
        
        // Redo circle fit with additional hits
        DHelicalFit fit;
+       //...first add the tangent to the dip angle to the fit class...
+       double theta=fdccan->momentum().Theta();
+       double theta_cdc=cdccan->momentum().Theta();
+       if (segments.size()==1&& theta_cdc<M_PI_4){
+	 double numcdc=double(cdchits.size());
+	 double numfdc=segments[0]->hits.size();
+	 theta=(theta*numfdc+theta_cdc*numcdc)/(numfdc+numcdc);
+       }
+       fit.tanl=tan(M_PI_2-theta);
        if (DoRefit(fit,segments,cdchits,Bz_avg)==NOERROR){
-	 // Determine the polar angle
-	 double theta=fdccan->momentum().Theta();
-	 double theta_cdc=cdccan->momentum().Theta();
-	 if (segments.size()==1&& theta_cdc<M_PI_4){
-	   double numcdc=double(cdchits.size());
-	   double numfdc=segments[0]->hits.size();
-	   theta=(theta*numfdc+theta_cdc*numcdc)/(numfdc+numcdc);
-	 }
-	 fit.tanl=tan(M_PI_2-theta);
-	 
 	 if (GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,
 				    pos,mom)==NOERROR){
 	   // FDC hit
@@ -1501,7 +1525,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	   double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
 	   
 	   pos.SetZ(fdchit->wire->origin.z()-sperp*fit.tanl);
-       Particle_t locPID = ((FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus);
+	   Particle_t locPID = ((FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus);
 	   can->setPID(locPID);
 	 }
 	 else{
@@ -1836,7 +1860,12 @@ bool DTrackCandidate_factory::MatchMethod4(const DTrackCandidate *srccan,
 	    
 	    // Redo line fit
 	    fit.FitLineRiemann();
-	    
+
+	    double p=0.003*fit.r0*Bz_avg/cos(atan(fit.tanl));
+	    if (p>10.){ // Check for extremely stiff tracks, some of which 
+	      // will have unphysical momenta... try alternate circle fit 
+	      fit.FitCircle();
+	    }
 	    // Guess charge from fit
 	    fit.h=GetSenseOfRotation(fit,firsthit,srccan->position());
 	    Particle_t locPID = ((FactorForSenseOfRotation*fit.h > 0.0) ? PiPlus : PiMinus);
@@ -2104,7 +2133,7 @@ void DTrackCandidate_factory::MatchMethod6(DTrackCandidate *can,
 bool DTrackCandidate_factory::MatchMethod7(DTrackCandidate *srccan, 
 					   vector<int> &forward_matches,
 					   int &num_fdc_cands_remaining){ 
-  if (DEBUG_LEVEL>0) _DBG_ << "Attempting matching method #7..." <<endl; 
+  if (DEBUG_LEVEL>0)  _DBG_ << "Attempting matching method #7..." <<endl; 
 
   // Get the hits associated with this candidate
   vector<const DFDCPseudo *>fdchits;
@@ -2217,6 +2246,12 @@ bool DTrackCandidate_factory::MatchMethod7(DTrackCandidate *srccan,
 	    // Determine the polar angle
 	    double theta=srccan->momentum().Theta();
 	    fit.tanl=tan(M_PI_2-theta);
+
+	    double p=0.003*fit.r0*Bz/cos(atan(fit.tanl));
+	    if ((cdchits.size())>0?(p>3.):(p>10.)){
+	      // Suspiciously high momentum:  try alternate circle fit...
+	      fit.FitCircle();
+	    }	   
       
 	    if (cdchits.size()>0){
 	      if (GetPositionAndMomentum(fit,Bz,cdchits[0]->wire->origin,
@@ -2414,6 +2449,13 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
 	      fit.tanl=tan(M_PI_2-theta);
 	      
 	      Bz=0.5*(Bz+fabs(Bz_fdc)/num_hits_fdc);
+
+	      double p=0.003*fit.r0*Bz/cos(atan(fit.tanl));
+	      if (p>10.){
+		// momentum is suspiciously high for a track going through both
+		// the FDC and the CDC... try alternate circle fit
+		fit.FitCircle();
+	      }
 	      
 	      if (GetPositionAndMomentum(fit,Bz,cdchits[0]->wire->origin,
 					 my_pos,my_mom)==NOERROR){
@@ -2591,6 +2633,12 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 	    // Redo line fit
 	    fit1.FitLineRiemann();
 	    
+	    double p=0.003*fit1.r0*Bz/cos(atan(fit1.tanl));
+	    if (p>10.){
+	      // Try an alternate circle fit
+	      fit1.FitCircle();
+	    }
+
 	    // Guess charge from fit
 	    fit1.h=GetSenseOfRotation(fit1,segments2[0]->hits[0],
 				      srccan->position());
@@ -2622,7 +2670,7 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 }
 
 // Method to try to match unmatched FDC segments by assuming that the tracks
-// are sufficiently stiff we are better served by somethign closer to a
+// are sufficiently stiff we are better served by something closer to a
 // "straight-line" approximation
 bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
 					   const DTrackCandidate *srccan,
@@ -2632,7 +2680,7 @@ bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
   double q=srccan->charge();
   int pack1=segment->package;
 
-  // Get hits from segment and redo fit forcing the circle to go through (0,0)
+  // Get hits from segment and redo fit
   DHelicalFit fit1;
   for (unsigned int n=0;n<segment->hits.size();n++){
     const DFDCPseudo *hit=segment->hits[n];
@@ -2734,6 +2782,12 @@ bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
 	      
 	    // Redo line fit
 	    fit1.FitLineRiemann();
+	      
+	    double p=0.003*fit1.r0*Bz/cos(atan(fit1.tanl));
+	    if (p>10.){
+	      // unphysical momentum, try alternate circle fit...
+	      fit1.FitCircle();
+	    }
 	    
 	    // Guess charge from fit
 	    fit1.h=GetSenseOfRotation(fit1,segments2[0]->hits[0],

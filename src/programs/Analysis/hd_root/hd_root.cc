@@ -46,6 +46,7 @@ int main(int narg, char *argv[])
 	
 	delete myproc;
 	
+	if( app.GetExitCode() ) cerr << "Exit code: " << app.GetExitCode() << endl;
 	return app.GetExitCode();
 }
 

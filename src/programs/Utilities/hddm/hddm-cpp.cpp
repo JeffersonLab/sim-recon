@@ -401,8 +401,9 @@ int main(int argC, char* argV[])
    "      // protected access to the ID tls data member\n"
    "      if (ID == 0) {\n"
    "         if (ID >= max_threads) {\n"
-   "            throw std::runtime_error(\"hddm_r::threads::getID - \"\n"
-   "                            \"thread count exceeds max_threads\");\n"
+   "            throw std::runtime_error(\"hddm_" 
+                                       << classPrefix << "::threads::getID - \"\n"
+   "                                     \"thread count exceeds max_threads\");\n"
    "         }\n"
    "         ID = ++next_unique_ID;\n"
    "      }\n"
@@ -605,6 +606,12 @@ int main(int argC, char* argV[])
    "                                    hddm_type *atype=0) const {\n"
    "      return 0;\n"
    "   }\n"
+   "   virtual std::string toString(int indent=0) {\n"
+   "      return \"bad apple\";\n"
+   "   }\n"
+   "   virtual std::string toXML(int indent=0) {\n"
+   "      return \"<!--bad apple-->\";\n"
+   "   }\n"
    "   friend class HDDM_ElementList<HDDM_Element>;\n"
    " protected:\n"
    "   HDDM_Element() : m_parent(0), m_host(0) {}\n"
@@ -642,7 +649,7 @@ int main(int argC, char* argV[])
    "    : m_host_plist(src.m_host_plist),\n"
    "      m_first_iter(src.m_first_iter),\n"
    "      m_last_iter(src.m_last_iter),\n"
-   "      m_parent(src.m_parent),\n"
+   "      m_parent(0),\n"
    "      m_size(src.m_size)\n"
    "   {}\n"
    "\n"
@@ -823,7 +830,7 @@ int main(int argC, char* argV[])
    "      else {\n"
    "         iter_begin += start;\n"
    "         if (count >= 0) {\n"
-   "            iter_end = iter_begin + start;\n"
+   "            iter_end = iter_begin + count;\n"
    "         }\n"
    "      }\n"
    "      typename std::list<T*>::iterator iter;\n"
@@ -843,7 +850,7 @@ int main(int argC, char* argV[])
    "      else if (first < 0)\n"
    "         iter_begin = end() + first;\n"
    "      iterator iter_end(iter_begin + count);\n"
-   "      return HDDM_ElementList(m_host_plist, iter_begin, iter_end, m_parent);\n"
+   "      return HDDM_ElementList(m_host_plist, iter_begin, iter_end);\n"
    "   }\n"
    "\n"
    "   void streamer(istream &istr) {\n"
@@ -866,6 +873,24 @@ int main(int argC, char* argV[])
    "            iter->streamer(ostr);\n"
    "         }\n"
    "      }\n"
+   "   }\n"
+   "   std::string toString(int indent=0) {\n"
+   "      std::string result;\n"
+   "      if (m_size) {\n"
+   "         for (iterator iter = begin(); iter != end(); ++iter) {\n"
+   "            result += iter->toString(indent);\n"
+   "         }\n"
+   "      }\n"
+   "      return result;\n"
+   "   }\n"
+   "   std::string toXML(int indent=0) {\n"
+   "      std::string result;\n"
+   "      if (m_size) {\n"
+   "         for (iterator iter = begin(); iter != end(); ++iter) {\n"
+   "            result += iter->toXML(indent);\n"
+   "         }\n"
+   "      }\n"
+   "      return result;\n"
    "   }\n"
    "\n"
    " private:\n"
@@ -927,7 +952,7 @@ int main(int argC, char* argV[])
    "      else {\n"
    "         if (count > 0) {\n"
    "            iterator pos(m_last_iter);\n"
-   "            iterator pos2(pos += start);\n"
+   "            iterator pos2(pos += start+1);\n"
    "            m_host_plist->insert(++pos,count,(T*)0);\n"
    "            m_size += count;\n"
    "            return ++pos2;\n"
@@ -1183,12 +1208,14 @@ int main(int argC, char* argV[])
    "      if (((int)m_status_bits & k_bits_compression) != 0 &&\n"
    "          ((int)m_status_bits & k_can_reposition) == 0)\n"
    "      {\n"
-   "         throw std::runtime_error(\"hddm_r::istream::setPosition error - \"\n"
-   "               \"old-format hddm input file does not support repositioning.\");\n"
+   "         throw std::runtime_error(\"hddm_"
+                        << classPrefix << "::istream::setPosition error - \"\n"
+   "                                  \"old-format hddm input file does not support repositioning.\");\n"
    "      }\n"
    "      else if (MY(xcmp) == 0) {\n"
-   "         throw std::runtime_error(\"hddm_r::istream::setPosition error - \"\n"
-   "               \"compressed stream encountered but no decompressor configured.\");\n"
+   "         throw std::runtime_error(\"hddm_"
+                        << classPrefix << "::istream::setPosition error - \"\n"
+   "                                  \"compressed stream encountered but no decompressor configured.\");\n"
    "      }\n"
    "      if (MY(status_bits) & k_z_compression) {\n"
    "         ((xstream::z::istreambuf*)MY(xcmp))->\n"
@@ -1234,7 +1261,8 @@ int main(int argC, char* argV[])
    "         MY(istr)->rdbuf(MY(xcmp));\n"
    "      }\n"
    "      else if (newcmp != k_no_compression) {\n"
-   "         throw std::runtime_error(\"hddm_r::istream::configure_streambufs error - \"\n"
+   "         throw std::runtime_error(\"hddm_"
+                 << classPrefix << "::istream::configure_streambufs error - \"\n"
    "                                  \"unrecognized compression flag requested.\");\n"
    "      }\n"
    "   }\n"
@@ -1245,7 +1273,8 @@ int main(int argC, char* argV[])
    "   MY_SETUP\n"
    "   if (MY(mutex_lock) != 0) {\n"
    "      unlock_streambufs();\n"
-   "      throw std::runtime_error(\"hddm_r::istream::lock_streambufs error - \"\n"
+   "      throw std::runtime_error(\"hddm_"
+                   << classPrefix << "::istream::lock_streambufs error - \"\n"
    "                               \"mutex lock requested when lock already held.\");\n"
    "   }\n"
    "   if ((MY(status_bits) & k_bits_compression) == k_no_compression) {\n"
@@ -1268,7 +1297,8 @@ int main(int argC, char* argV[])
    "void istream::unlock_streambufs() {\n"
    "   MY_SETUP\n"
    "   if (MY(mutex_lock) == 0) {\n"
-   "      throw std::runtime_error(\"hddm_r::istream::unlock_streambufs error - \"\n"
+   "      throw std::runtime_error(\"hddm_"
+                << classPrefix << "::istream::unlock_streambufs error - \"\n"
    "                               \"mutex unlock requested when lock not held.\");\n"
    "   }\n"
    "   else if (MY(mutex_lock) == 1) {\n"
@@ -1346,7 +1376,8 @@ int main(int argC, char* argV[])
    "         MY(bytes_read) += MY(istr)->gcount();\n"
    "         if (!MY(istr)->good()) {\n"
    "            unlock_streambufs();\n"
-   "            throw std::runtime_error(\"hddm_r::istream::operator>> error -\"\n"
+   "            throw std::runtime_error(\"hddm_"
+                   << classPrefix << "::istream::operator>> error -\"\n"
    "                                     \" read error on token input!\");\n"
    "         }\n"
    "         int size;\n"
@@ -1355,14 +1386,16 @@ int main(int argC, char* argV[])
    "         MY(bytes_read) += MY(istr)->gcount();\n"
    "         if (!MY(istr)->good()) {\n"
    "            unlock_streambufs();\n"
-   "            throw std::runtime_error(\"hddm_r::istream::operator>> error -\"\n"
+   "            throw std::runtime_error(\"hddm_"
+                        << classPrefix << "::istream::operator>> error -\"\n"
    "                                     \" read error on token input!\");\n"
    "         }\n"
    "         int format, flags;\n"
    "         *MY(xstr) >> format >> flags;\n"
    "         if (format != 0) {\n"
    "            unlock_streambufs();\n"
-   "            throw std::runtime_error(\"hddm_r::istream::operator>> error - \"\n"
+   "            throw std::runtime_error(\"hddm_"
+                       << classPrefix << "::istream::operator>> error - \"\n"
    "                                     \"unsupported compression format!\");\n"
    "         }\n"
    "         m_status_bits.store(flags);\n"
@@ -1384,7 +1417,8 @@ int main(int argC, char* argV[])
    "   MY(records_read)++;\n"
    "   if (!MY(istr)->good()) {\n"
    "      unlock_streambufs();\n"
-   "      throw std::runtime_error(\"hddm_r::istream::operator>> error -\"\n"
+   "      throw std::runtime_error(\"hddm_"
+                 << classPrefix << "::istream::operator>> error -\"\n"
    "                               \" read error in mid-record!\");\n"
    "   }\n"
    "   if ((MY(status_bits) & k_crc32_integrity) != 0) {\n"
@@ -1402,7 +1436,7 @@ int main(int argC, char* argV[])
    "      if (crc.digest() != recorded_crc) {\n"
    "         char errmsg[] = \n"
    "              \"WARNING: crc data integrity check failed\"\n"
-   "              \" on hddm_r input stream!\"\n"
+   "              \" on hddm_" << classPrefix << " input stream!\"\n"
    "              \"\\nThis may be the result of a bug in the\"\n"
    "              \" xstream library if you are analyzing a data\"\n"
    "              \" file that was generated by code prior to svn\"\n"
@@ -1414,8 +1448,9 @@ int main(int argC, char* argV[])
    "            MY(status_bits) |= 0x02;\n"
    "         }\n"
    "         //unlock_streambufs();\n"
-   "         //throw std::runtime_error(\"hddm_r::istream::operator>> error -\"\n"
-   "         //                         \" crc check error on input stream!\");\n"
+   "         //throw std::runtime_error(\"hddm_"
+                     << classPrefix << "::istream::operator>> error -\"\n"
+   "         //                 \" crc check error on input stream!\");\n"
    "      }\n"
    "   }\n"
    "   unlock_streambufs();\n"
@@ -1438,7 +1473,7 @@ int main(int argC, char* argV[])
    "   if (!m_ostr.good()) {\n"
    "      throw std::runtime_error(\"hddm_" + classPrefix +
    "::ostream::ostream(ostream) \"\n"
-   "                          \"error - write error on header output!\");\n"
+   "                               \"error - write error on header output!\");\n"
    "   }\n"
    "   pthread_mutex_init(&m_streambuf_mutex,0);\n"
    "   for (int i=0; i<threads::max_threads; ++i) {\n"
@@ -1507,7 +1542,8 @@ int main(int argC, char* argV[])
    "      MY(ostr)->write(MY(sbuf)->getbuf(),MY(sbuf)->size());\n"
    "      if (!MY(ostr)->good()) {\n"
    "         unlock_streambufs();\n"
-   "         throw std::runtime_error(\"hddm_r::ostream::setCompression\"\n"
+   "         throw std::runtime_error(\"hddm_"
+                        << classPrefix << "::ostream::setCompression\"\n"
    "                                  \" error - write error on token output!\");\n"
    "      }\n"
    "      MY(ostr)->flush();\n"
@@ -1529,8 +1565,9 @@ int main(int argC, char* argV[])
    "      MY(ostr)->write(MY(sbuf)->getbuf(),MY(sbuf)->size());\n"
    "      if (!MY(ostr)->good()) {\n"
    "         unlock_streambufs();\n"
-   "         throw std::runtime_error(\"hddm_r::ostream::setIntegrityChecks\"\n"
-   "                                  \" error - write error on token output!\");\n"
+   "         throw std::runtime_error(\"hddm_"
+                       << classPrefix << "::ostream::setIntegrityChecks\"\n"
+   "                                 \" error - write error on token output!\");\n"
    "      }\n"
    "      MY(ostr)->flush();\n"
    "      update_streambufs();\n"
@@ -1575,7 +1612,8 @@ int main(int argC, char* argV[])
    "         MY(ostr)->rdbuf(MY(xcmp));\n"
    "      }\n"
    "      else if (newcmp != k_no_compression) {\n"
-   "         throw std::runtime_error(\"hddm_r::ostream::configure_streambufs error - \"\n"
+   "         throw std::runtime_error(\"hddm_"
+                      << classPrefix << "::ostream::configure_streambufs error - \"\n"
    "                                  \"unrecognized compression flag requested.\");\n"
    "      }\n"
    "   }\n"
@@ -1586,7 +1624,8 @@ int main(int argC, char* argV[])
    "   MY_SETUP\n"
    "   if (MY(mutex_lock) != 0) {\n"
    "      unlock_streambufs();\n"
-   "      throw std::runtime_error(\"hddm_r::ostream::lock_streambufs error - \"\n"
+   "      throw std::runtime_error(\"hddm_"
+                      << classPrefix << "::ostream::lock_streambufs error - \"\n"
    "                               \"mutex lock requested when lock already held.\");\n"
    "   }\n"
    "   if ((MY(status_bits) & k_bits_compression) == k_no_compression) {\n"
@@ -1609,7 +1648,8 @@ int main(int argC, char* argV[])
    "void ostream::unlock_streambufs() {\n"
    "   MY_SETUP\n"
    "   if (MY(mutex_lock) == 0) {\n"
-   "      throw std::runtime_error(\"hddm_r::ostream::unlock_streambufs error - \"\n"
+   "      throw std::runtime_error(\"hddm_"
+                << classPrefix << "::ostream::unlock_streambufs error - \"\n"
    "                               \"mutex unlock requested when lock not held.\");\n"
    "   }\n"
    "   else if (MY(mutex_lock) == 1) {\n"
@@ -2873,7 +2913,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
    }
    hFile << "}" << std::endl << std::endl;
 
-   hFile << "inline std::string " << tagS.simpleType()
+   cFile << "std::string " << tagS.simpleType()
          << "::toString(int indent) {\n"
          << "   std::stringstream ostr;\n"
          << "   for (int n=0; n < indent; ++n)\n"
@@ -2886,27 +2926,27 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       if (typeS == "int" || typeS == "long" || 
           typeS == "float" || typeS == "double")
       {
-	     hFile << "        << \" " << attrS << "=\" << "
+	     cFile << "        << \" " << attrS << "=\" << "
                << "m_" << attrS << std::endl;
       }
       else if (typeS == "boolean")
       {
-	     hFile << "        << \" " << attrS << "=\" << "
+	     cFile << "        << \" " << attrS << "=\" << "
                << "((m_" << attrS << " == 0)? \"true\" : \"false\")"
                << std::endl;
       }
       else if (typeS == "string" || typeS == "anyURI")
       {
-	     hFile << "        << \" " << attrS << "=\" << "
+	     cFile << "        << \" " << attrS << "=\" << "
                << "\"\\\"\" << m_" << attrS << " << \"\\\"\"" << std::endl;
       }
       else if (typeS == "Particle_t")
       {
-	     hFile << "        << \" " << attrS << "=\" << "
+	     cFile << "        << \" " << attrS << "=\" << "
                << "ParticleType((Particle_t)m_" << attrS << ")" << std::endl;
       }
    }
-   hFile << "             << std::endl;" << std::endl;
+   cFile << "             << std::endl;" << std::endl;
    for (citer = children[tagS].begin(); citer != children[tagS].end(); ++citer)
    {
       DOMElement *childEl = (DOMElement*)(*citer);
@@ -2915,26 +2955,33 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
       if (rep > 1)
       {
-         hFile << "   for (" << cnameS.listType() << "::iterator it = "
+         cFile << "   int " << cnameS.listType() << "Count=0;" << std::endl
+               << "   for (" << cnameS.listType() << "::iterator it = "
                << "m_" << cnameS << "_list.begin();" << std::endl
                << "        it != "
                << "m_" << cnameS << "_list.end(); ++it)" << std::endl
                << "   {" << std::endl
+               << "      if (++" << cnameS.listType() << "Count > "
+               << "m_" << cnameS << "_list.size()) {" << std::endl
+               << "         throw std::runtime_error(\"hddm_" 
+                            << classPrefix << "::toString error - "
+                           "list improperly terminated!\");" << std::endl
+               << "      }" << std::endl
                << "      ostr << it->toString(indent + 2);" << std::endl
                << "   }" << std::endl;
       }
       else
       {
-         hFile << "   if (! m_" << cnameS << "_link.empty()) {\n"
+         cFile << "   if (! m_" << cnameS << "_link.empty()) {\n"
                << "      ostr << m_" << cnameS << "_link.begin()"
                << "->toString(indent + 2);\n"
                << "   }" << std::endl;
       }
    }
-   hFile << "   return ostr.str();" << std::endl
+   cFile << "   return ostr.str();" << std::endl
          << "}" << std::endl << std::endl;
 
-   hFile << "inline std::string " << tagS.simpleType()
+   cFile << "std::string " << tagS.simpleType()
          << "::toXML(int indent) {\n"
          << "   std::stringstream ostr;\n"
          << "   for (int n=0; n < indent; ++n)\n"
@@ -2950,30 +2997,30 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       }
       if (typeS == "boolean")
       {
-	     hFile << "        << \" " << attrS << "=\" << "
+	     cFile << "        << \" " << attrS << "=\" << "
                << "((m_" << attrS << " == 0)? \"\\\"true\\\"\" : \"\\\"false\\\"\")"
                << std::endl;
       }
       else if (typeS == "Particle_t")
       {
-	     hFile << "        << \" " << attrS << "=\\\"\" << "
+	     cFile << "        << \" " << attrS << "=\\\"\" << "
                << "ParticleType((Particle_t)m_" << attrS << ") << \"\\\"\""
                << std::endl;
       }
       else
       {
-	     hFile << "        << \" " << attrS << "=\" << "
+	     cFile << "        << \" " << attrS << "=\" << "
                << "\"\\\"\" << get" << attrS.simpleType() 
                << "() << \"\\\"\"" << std::endl;
       }
    }
    if (children[tagS].size() > 0)
    {
-       hFile << "        << \">\" << std::endl;" << std::endl;
+       cFile << "        << \">\" << std::endl;" << std::endl;
    }
    else
    {
-       hFile << "        << \" />\" << std::endl;" << std::endl;
+       cFile << "        << \" />\" << std::endl;" << std::endl;
    }
    for (citer = children[tagS].begin(); citer != children[tagS].end(); ++citer)
    {
@@ -2983,17 +3030,24 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
       if (rep > 1)
       {
-         hFile << "   for (" << cnameS.listType() << "::iterator it = "
+         cFile << "   int " << cnameS.listType() << "Count=0;" << std::endl
+               << "   for (" << cnameS.listType() << "::iterator it = "
                << "m_" << cnameS << "_list.begin();" << std::endl
                << "        it != "
                << "m_" << cnameS << "_list.end(); ++it)" << std::endl
                << "   {" << std::endl
+               << "      if (++" << cnameS.listType() << "Count > "
+               << "m_" << cnameS << "_list.size()) {" << std::endl
+               << "         throw std::runtime_error(\"hddm_" 
+                            << classPrefix << "::toXML error - "
+                            "list improperly terminated!\");" << std::endl
+               << "      }" << std::endl
                << "      ostr << it->toXML(indent + 2);" << std::endl
                << "   }" << std::endl;
       }
       else
       {
-         hFile << "   if (! m_" << cnameS << "_link.empty()) {\n"
+         cFile << "   if (! m_" << cnameS << "_link.empty()) {\n"
                << "      ostr << m_" << cnameS << "_link.begin()"
                << "->toXML(indent + 2);" << std::endl
                << "   }" << std::endl;
@@ -3001,12 +3055,12 @@ void CodeBuilder::writeClassimp(DOMElement* el)
    }
    if (children[tagS].size() > 0)
    {
-      hFile << "   for (int n=0; n < indent; ++n)\n"
+      cFile << "   for (int n=0; n < indent; ++n)\n"
             << "      ostr << \" \";\n"
             << "   ostr << \"</" << tagS << ">\"\n"
             << "        << std::endl;" << std::endl;
    }
-   hFile << "   return ostr.str();" << std::endl
+   cFile << "   return ostr.str();" << std::endl
          << "}" << std::endl << std::endl;
 
    for (citer = children[tagS].begin(); citer != children[tagS].end(); ++citer)
@@ -3344,7 +3398,8 @@ void CodeBuilder::constructIOstreams(DOMElement* el)
    "   MY(ostr)->write(MY(sbuf)->getbuf(),MY(sbuf)->size());\n"
    "   if (!MY(ostr)->good()) {\n"
    "      unlock_streambufs();\n"
-   "      throw std::runtime_error(\"hddm_r::ostream::operator<< error - \"\n"
+   "      throw std::runtime_error(\"hddm_"
+                  << classPrefix << "::ostream::operator<< error - \"\n"
    "                               \"write error on event output!\");\n" 
    "   }\n" 
    "   if (MY(status_bits) & k_bz2_compression) {\n"

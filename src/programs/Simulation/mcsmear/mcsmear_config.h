@@ -9,11 +9,6 @@
 #include <JANA/JEventLoop.h>
 #include "DRandom2.h"
 
-#ifdef HAVE_RCDB
-#define RCDB_MYSQL 1
-#include <RCDB/Connection.h>
-#endif // HAVE_RCDB
-
 using namespace jana;
 
 
@@ -46,6 +41,7 @@ class mcsmear_config_t
 	bool IGNORE_SEEDS;
 	double TRIGGER_LOOKBACK_TIME;
 	bool APPLY_EFFICIENCY_CORRECTIONS;
+	bool APPLY_HITS_TRUNCATION;
 
     bool FCAL_ADD_LIGHTGUIDE_HITS;
 	
@@ -59,14 +55,11 @@ class mcsmear_config_t
 	
 	
 #ifdef HAVE_RCDB
-	// RCDB information
-	string RCDB_CONNECTION;
-	rcdb::Connection *rcdb_connection;
-
     void LoadRCDBConnection();
 	bool ParseRCDBConfigFile(int runNumber);
 #endif  // HAVE_RCDB
 
+    std::map<std::string, std::map<std::string, double> > readout;
 };
 
 
