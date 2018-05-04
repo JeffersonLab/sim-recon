@@ -3266,6 +3266,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       }
       C0(state_q_over_p,state_q_over_p)=dp_over_p_sq*q_over_p_*q_over_p_;
 
+      if (my_cdchits.size()>0){
+	mCDCInternalStepSize=0.25;
+      }
+
       // The position from the track candidate is reported just outside the 
       // start counter for tracks containing cdc hits. Propagate to the distance
       // of closest approach to the beam line
@@ -3436,8 +3440,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
       //if (theta_deg>90.) C0*=1.+5.*tanl2;
       //else C0*=1.+5.*tanl2*tanl2;
-
-       mCDCInternalStepSize=0.25;
+      
+      mCentralStepSize=0.4;
+      mCDCInternalStepSize=0.2;
 
       // The position from the track candidate is reported just outside the 
       // start counter for tracks containing cdc hits. Propagate to the 
@@ -3446,7 +3451,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       if (fit_type==kWireBased){  
          ExtrapolateToVertex(xy,S0);
       }
-
+    
       cdc_error=CentralFit(xy,S0,C0);
       if (cdc_error==FIT_SUCCEEDED){
          // if the result of the fit using the forward parameterization succeeded
