@@ -713,7 +713,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
 
         if (pionHypothesis == NULL) continue;
 
-			auto locTrackTimeBased = pionHypothesis->Get_TrackTimeBased();
+	auto locTrackTimeBased = pionHypothesis->Get_TrackTimeBased();
         double trackingFOM = TMath::Prob(locTrackTimeBased->chisq, locTrackTimeBased->Ndof);
         // Some quality cuts for the tracks we will use
         // Keep this minimal for now and investigate later
@@ -746,17 +746,44 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
         sprintf(name, "Sector %.2i", locSCHitMatchParams->dSCHit->sector);
         sprintf(title, "SC Sector %i t_{Target} - t_{RF}; t_{Target} - t_{RF} [ns]; Entries", locSCHitMatchParams->dSCHit->sector);
         double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFBunch->dTime, flightTimeCorrectedSCTime);
-        Fill1DHistogram("HLDetectorTiming", "SC_Target_RF_Compare", name,
-                flightTimeCorrectedSCTime - locShiftedTime,
-                title,
-                NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
-           Fill1DHistogram("HLDetectorTiming", "TRACKING", "SC - RF Time",
-                 flightTimeCorrectedSCTime - thisRFBunch->dTime,
-                 "t_{SC} - t_{RF} at Target; t_{SC} - t_{RF} at Target [ns]; Entries",
-                 NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
+	double locSCDeltaT = flightTimeCorrectedSCTime - thisRFBunch->dTime;
+        Fill1DHistogram("HLDetectorTiming", "SC_Target_RF_Compare_all", name,
+			flightTimeCorrectedSCTime - locShiftedTime,
+			title,
+			NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
+	Fill1DHistogram("HLDetectorTiming", "TRACKING", "SC - RF Time (all)",
+			flightTimeCorrectedSCTime - thisRFBunch->dTime,
+			"t_{SC} - t_{RF} at Target; t_{SC} - t_{RF} at Target [ns]; Entries",
+			NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
+
+	// Stay away from the nose section, since the propagation time corrections are not stable there.
+	// cut corresponds to ~50 cm path length through the SC - not too far into the nose section
+	// but enough to get some statistics
+	
+	// need to get the projected hit position at the SC in order to cut on it
+	DVector3 IntersectionPoint, IntersectionMomentum;	
+	vector<DTrackFitter::Extrapolation_t> extrapolations = locTrackTimeBased->extrapolations.at(SYS_START);
+	shared_ptr<DSCHitMatchParams> locSCHitMatchParams2;
+	bool sc_match_pid = dParticleID->Cut_MatchDistance(extrapolations, locSCHitMatchParams->dSCHit, locSCHitMatchParams->dSCHit->t, locSCHitMatchParams2, 
+							   true, &IntersectionPoint, &IntersectionMomentum);
+	double locSCzIntersection = IntersectionPoint.z();
+	if( locSCzIntersection < 83. ) {
+		Fill1DHistogram("HLDetectorTiming", "SC_Target_RF_Compare", name,
+				flightTimeCorrectedSCTime - locShiftedTime,
+				title,
+				NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
+		Fill1DHistogram("HLDetectorTiming", "TRACKING", "SC - RF Time",
+				flightTimeCorrectedSCTime - thisRFBunch->dTime,
+				"t_{SC} - t_{RF} at Target; t_{SC} - t_{RF} at Target [ns]; Entries",
+				NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
+		Fill2DHistogram("HLDetectorTiming", "TRACKING", "SC - RF Time vs. Sector",
+				locSCHitMatchParams->dSCHit->sector, locSCDeltaT,
+				"t_{SC} - t_{RF} at Target; Sector; t_{SC} - t_{RF} at Target [ns];",
+				30, 0.5, 30.5, 800, -20., 20.);
+	}
 
         // Get the pulls vector from the track
-			auto thisTimeBasedTrack = pionHypothesis->Get_TrackTimeBased();
+	auto thisTimeBasedTrack = pionHypothesis->Get_TrackTimeBased();
 
         vector<DTrackFitter::pull_t> pulls = thisTimeBasedTrack->pulls;
         double earliestCDCTime = 10000.;
