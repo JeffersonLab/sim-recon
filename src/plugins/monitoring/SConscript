@@ -57,5 +57,5 @@ subdirs = [
 #'EVNT_online',
 
 
-sbms.OptionallyBuild(env, ['TAGH_doubles'])
+sbms.OptionallyBuild(env, ['TAGH_doubles','ST_ZEff'])
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
