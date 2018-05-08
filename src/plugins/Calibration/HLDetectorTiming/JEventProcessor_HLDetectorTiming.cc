@@ -895,6 +895,35 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
 
     } // End of loop over time based tracks
 
+    // now loop over neutral showers to align calorimeters
+    vector<const DNeutralShower *> neutralShowerVector;
+    loop->Get(neutralShowerVector);
+    
+    DVector3 locTargetCenter(0.,0.,Z_TARGET);
+
+    for (i = 0; i <  neutralShowerVector.size(); i++){
+	    double locPathLength = (neutralShowerVector[i]->dSpacetimeVertex.Vect() - locTargetCenter).Mag();
+	    double locDeltaT = neutralShowerVector[i]->dSpacetimeVertex.T() - locPathLength/29.9792458 - thisRFBunch->dTime;
+	    
+	    // to eliminate low-energy tails and other reconstruction problems, require minimum energies
+	    //   E(FCAL) > 200 MeV,  E(BCAL) > 100 MeV
+	    if(neutralShowerVector[i]->dDetectorSystem == SYS_FCAL) {
+		    if(neutralShowerVector[i]->dEnergy > 0.2) {
+			    Fill1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - RF Time (Neutral)",  locDeltaT,
+					    "t_{FCAL} - t_{RF} at Target (Neutral); t_{FCAL} - t_{RF} [ns]; Entries",
+					    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
+		    }
+	    } else {
+		    if(neutralShowerVector[i]->dEnergy > 0.1) {
+			    Fill1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - RF Time (Neutral)",  locDeltaT,
+					    "t_{BCAL} - t_{RF} at Target (Neutral); t_{BCAL} - t_{RF} [ns]; Entries",
+					    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
+		    }
+	    }
+	    
+    } // End of loop over neutral showers
+
+
     if (DO_REACTION){
        // Trigger the analysis
        vector<const DAnalysisResults*> locAnalysisResultsVector;
