@@ -151,7 +151,8 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
                                      // this helps in certain analysis without tracks
    double start_counter_t0 = 0.;     // time we should move the start counter time peak to 
    bool DONT_SHIFT_SC_RF = true;
-   bool USE_NEUTRALS_FOR_CALO_RF_ALIGN = true;
+   bool USE_NEUTRALS_FOR_BCAL_RF_ALIGN = false;
+   bool USE_NEUTRALS_FOR_FCAL_RF_ALIGN = true;
 
    // set "prefix" in case you want to ship the txt files elsewhere...
    cout << "Performing adjustment timing fits for File: " << fileName.Data() << " Run: " << runNumber << " Variation: " << variation.Data() << endl;
@@ -710,7 +711,7 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
       outFile.close();
    }
 
-   if(USE_NEUTRALS_FOR_CALO_RF_ALIGN)
+   if(USE_NEUTRALS_FOR_BCAL_RF_ALIGN)
 	   this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - RF Time (Neutral)");
    else
 	   this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - RF Time");
@@ -728,7 +729,7 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
       outFile.close();
    }
 
-   if(USE_NEUTRALS_FOR_CALO_RF_ALIGN)
+   if(USE_NEUTRALS_FOR_FCAL_RF_ALIGN)
 	   this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - RF Time (Neutral)");
    else
 	   this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - RF Time");
