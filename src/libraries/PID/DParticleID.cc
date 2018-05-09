@@ -205,7 +205,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 
 	// Start counter calibration constants
 	// vector<map<string,double> > tvals;
-	vector<map<string,double> > pt_vals;
+	vector< vector<double> > pt_vals;
 	vector<map<string,double> > attn_vals;
 
 	// if(loop->GetCalib("/START_COUNTER/propagation_speed",tvals))
@@ -227,7 +227,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 	    for(unsigned int i = 0; i < pt_vals.size(); i++)
 	      {
 		// Functional form is: A + B*x
-		map<string, double> &row = pt_vals[i];
+              //map<string, double> &row = pt_vals[i];
 		sc_pt_yint[SC_STRAIGHT].push_back(pt_vals[i][0]);
 		sc_pt_yint[SC_BEND].push_back(pt_vals[i][2]);
 		sc_pt_yint[SC_NOSE].push_back(pt_vals[i][4]);
