@@ -128,7 +128,7 @@ int main( int argc, char* argv[] ){
     }
 
 
-    // loop over data, accMC, and genMC
+    // loop over data, accMC, and genMC and kBkgnd
     for (unsigned int iplot = 0; iplot < PlotGenerator::kNumTypes; iplot++){
       if (isum < sums.size() && iplot == PlotGenerator::kData) continue; // only plot data once
 
@@ -148,6 +148,7 @@ int main( int argc, char* argv[] ){
         if (iplot == PlotGenerator::kData) histname += "dat";
         if (iplot == PlotGenerator::kAccMC) histname += "acc";
         if (iplot == PlotGenerator::kGenMC) histname += "gen";
+        if (iplot == PlotGenerator::kBkgnd) histname += "bkgnd";
 
         if (isum < sums.size()){
           //ostringstream sdig;  sdig << (isum + 1);
