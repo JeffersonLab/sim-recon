@@ -11,7 +11,12 @@
 #include <JANA/JEventProcessor.h>
 
 #include <DAQ/Df250WindowRawData.h>
-#include <TTree.h>
+//#include <TTree.h>
+
+#include "PAIR_SPECTROMETER/DPSGeometry.h"
+#include "ANALYSIS/DTreeInterface.h"
+#include "DAQ/DBeamCurrent.h"
+#include "DAQ/DBeamCurrent_factory.h"
 
 class JEventProcessor_TPOL_tree:public jana::JEventProcessor{
 public:
@@ -19,33 +24,9 @@ public:
     ~JEventProcessor_TPOL_tree();
     const char* className(void){return "JEventProcessor_TPOL_tree";}
 
-    TTree *TPOL;
-    static const UInt_t nmax = 32;
-    UInt_t nadc;
-    UInt_t eventnum;                 ///< Event number
-    UInt_t rocid[nmax];              ///< (from DDAQAddress) Crate number
-    UInt_t slot[nmax];               ///< (from DDAQAddress) Slot number in crate
-    UInt_t channel[nmax];            ///< (from DDAQAddress) Channel number in slot
-    UInt_t itrigger[nmax];           ///< (from DDAQAddress) Trigger number for cases when this hit was read in a multi-event block (from DDAQAddress)
-    UInt_t nsamples;                 ///< Number of samples in the waveform
-    UInt_t waveform[nmax][150];      ///< array of samples in the waveform for the event
-    UInt_t w_integral[nmax];         ///< Sum of all samples in the waveform
-    UInt_t w_min[nmax];              ///< Minimum sample in the waveform
-    UInt_t w_max[nmax];              ///< Maximum sample in the waveform
-    UInt_t w_samp1[nmax];            ///< First sample in the waveform
-    Double_t w_time[nmax];               ///< Half-pulse-height time in ns
-    UInt_t sector[nmax];
-    Double_t phi[nmax];
-    Double_t E_lhit,E_rhit,t_lhit,t_rhit;
-    UInt_t ntag;
-    static const UInt_t ntag_max = 12;
-    Double_t E_tag[ntag_max],t_tag[ntag_max];
-    Bool_t is_tagm[ntag_max];
-
     int GetSector(int slot,int channel);
     double GetPhi(int sector);
     double GetPulseTime(const vector<uint16_t> waveform,double w_min,double w_max,double minpeakheight);
-    double readout_threshold;
 
 private:
     jerror_t init(void); ///< Called once at program start.
@@ -53,6 +34,15 @@ private:
     jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber); ///< Called every event.
     jerror_t erun(void); ///< Called everytime run number changes, provided brun has been called.
     jerror_t fini(void); ///< Called after last event of last event source has been processed.
+
+    DBeamCurrent_factory *dBeamCurrentFactory;
+    double dBeamBunchPeriod;
+
+    DTreeInterface* dTreeInterface;
+    static thread_local DTreeFillData dTreeFillData;
+
+    int geomModuleColumn[8][2] = {{110, 145}, {90, 115}, {73, 93}, {56, 76}, {40, 60}, {24, 45}, {8, 28}, {0, 12}};
+
 };
 
 #endif // _JEventProcessor_TPOL_tree_

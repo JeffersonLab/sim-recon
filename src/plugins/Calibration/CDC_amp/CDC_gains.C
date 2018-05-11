@@ -64,10 +64,16 @@ void CDC_gains(int EXIT_EARLY=0) {
   if (!fmain) return;
   fmain->cd();
 
-  TH1I *asum_all = (TH1I*)fmain->Get("asum");
-  TH1I *atsum_all = (TH1I*)fmain->Get("atsum");
-  TH1I *attsum_all = (TH1I*)fmain->Get("attsum");
+
   TH1I *attsum = (TH1I*)fmain->Get("attsum_100");
+  if (!attsum) printf("Cannot find histogram attsum_100\n");
+  if (!attsum) return;
+
+  // get untracked amplitude histo to find readout range
+
+  TH1I *asum_all= (TH1I*)fmain->Get("asum");
+  if (!asum_all) printf("Cannot find histogram asum\n");
+  if (!asum_all) return;
 
   // find amplitude range 
   int SCALE_UP = 1;
@@ -76,11 +82,11 @@ void CDC_gains(int EXIT_EARLY=0) {
 
   if (SCALE_UP==1) cout << "Amp range 0 to 511" << endl;
   if (SCALE_UP==8) cout << "Amp range 0 to 4095" << endl;
-  
+
   // fit range constants
 
-  int AL1, AL2;
-  int ALT, ALTT;
+  int AL;
+  int ANL;
   int AH;
 
   int INCREMENT_FITSTART;
@@ -88,7 +94,9 @@ void CDC_gains(int EXIT_EARLY=0) {
 
   if (SCALE_UP==1) { 
 
-    ALTT=14; // lower limit attsum indiv straw fits
+    AL = 20; // lower limit attsum 
+
+    ANL=14; // lower limit attsum indiv straw fits
 
     AH=400; //amp fit upper limit landau
 
@@ -96,8 +104,9 @@ void CDC_gains(int EXIT_EARLY=0) {
 
   } else {
 
+    AL = 130; // lower limit attsum 
 
-    ALTT=110; // lower limit attsum indiv straw fits
+    ANL=110; // lower limit attsum indiv straw fits
 
     AH=3000; //amp fit upper limit landau
 
@@ -123,7 +132,7 @@ void CDC_gains(int EXIT_EARLY=0) {
 
   new TCanvas;
   printf("\nattsum fit, tracked hits at 0-100ns, restricted z and theta:\n");
-  f->SetRange(AL2,AH);
+  f->SetRange(AL,AH);
   a_fitstat = attsum->Fit(f,"RW");
 
   if (!a_fitstat) {
@@ -145,9 +154,6 @@ void CDC_gains(int EXIT_EARLY=0) {
   TFile *hfile = new TFile("cdc_amphistos.root","RECREATE");
 
   hfile->cd();
-  asum_all->Write();
-  atsum_all->Write();
-  attsum_all->Write();  
   attsum->Write();
 
   if (EXIT_EARLY==1) hfile->Write();
@@ -211,7 +217,7 @@ void CDC_gains(int EXIT_EARLY=0) {
 
     fmain->cd();
 
-    anhisto = (TH2I*)fmain->Get("attn");
+    anhisto = (TH2I*)fmain->Get("attn_100");
 
 
     badfit = 0;
@@ -221,7 +227,7 @@ void CDC_gains(int EXIT_EARLY=0) {
     for (i=1; i<3523; i++) {   
       //      for (i=1; i<10; i++) {   
  
-      fitlowerlimit = ALTT;
+      fitlowerlimit = ANL;
     
       f->SetRange(fitlowerlimit,AH);
 
