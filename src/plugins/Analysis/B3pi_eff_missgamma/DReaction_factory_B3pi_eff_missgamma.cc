@@ -40,7 +40,8 @@ jerror_t DReaction_factory_B3pi_eff_missgamma::evnt(JEventLoop* locEventLoop, ui
         double pull_hist_confidence_level = 0.05;
 
         //DKinFitType locKinFitType = d_P4Fit;
-        DKinFitType locKinFitType = d_VertexFit;
+        //DKinFitType locKinFitType = d_VertexFit;
+        DKinFitType locKinFitType = d_P4AndVertexFit;
         //Required: DReactionSteps to specify the channel and decay chain you want to study
                 //Particles are of type Particle_t, an enum defined in sim-recon/src/libraries/include/particleType.h
 
@@ -71,6 +72,7 @@ jerror_t DReaction_factory_B3pi_eff_missgamma::evnt(JEventLoop* locEventLoop, ui
         // pi0 -> g, g                                                                        
         locReactionStep = new DReactionStep();
         locReactionStep->Set_InitialParticleID(Pi0);
+        locReactionStep->Set_KinFitConstrainInitMassFlag(true);
         locReactionStep->Add_FinalParticleID(Gamma,true);
         locReactionStep->Add_FinalParticleID(Gamma);
         //locReactionStep->Set_KinFitConstrainInitMassFlag(false);                            
