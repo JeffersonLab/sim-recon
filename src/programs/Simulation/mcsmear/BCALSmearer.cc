@@ -675,12 +675,14 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       // so we can offset the times now to ensure they are positive before the conversion, then
       // fix the offset layer in the hit factories.  Also, any hit that still has a negative time
       // will be ignored.
+      float INTEGRAL_TO_PEAK=13.2;
       for (unsigned int i = 0; i < hitlist.uphits.size(); i++) {
       	int integer_time = round((hitlist.uphits[i].t-bcal_config->BCAL_BASE_TIME_OFFSET)/bcal_config->BCAL_NS_PER_ADC_COUNT);
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kUp);
 	    double integral = round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
+	    double pulse_peak = integral/INTEGRAL_TO_PEAK;    //  approximate value for now. Should retrieve from ccdb.  ES 5/11/2018
 	    
 	    // fADC saturation based on waveforms from data
 	    if(!bcal_config->NO_FADC_SATURATION) { 
@@ -691,9 +693,12 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
 			    double c = bcal_config->fADC_MinIntegral_Saturation[0][hitlist.sumlayer-1];
 			    // "invert" saturation correction for MC
 			    integral = (1 - a*y + 2.*b*c*y - sqrt(1. - 2.*a*y + 4.*b*c*y + (a*a - 4.*b)*y*y))/(2.*b*y);
+			    pulse_peak = 4095;
 		    }
 	    }
             fadcs().setPulse_integral(integral);
+            hddm_s::BcalfADCPeakList peaks = fadcs().addBcalfADCPeaks();
+	    peaks().setPeakAmp(pulse_peak);
             fadcs().setPulse_time(integer_time);
         }
       }
@@ -703,6 +708,7 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kDown);
 	    double integral = round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
+	    double pulse_peak = integral/INTEGRAL_TO_PEAK;    //  approximate value for now. Should retrieve from ccdb.  ES 5/11/2018
 	    
 	    // fADC saturation based on waveforms from data
 	    if(!bcal_config->NO_FADC_SATURATION) { 
@@ -713,10 +719,13 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
 			    double c = bcal_config->fADC_MinIntegral_Saturation[1][hitlist.sumlayer-1];
 			    // "invert" saturation correction for MC
 			    integral = (1 - a*y + 2.*b*c*y - sqrt(1. - 2.*a*y + 4.*b*c*y + (a*a - 4.*b)*y*y))/(2.*b*y);
+			    pulse_peak = 4095;
                     }
 
 	    }
             fadcs().setPulse_integral(integral);
+            hddm_s::BcalfADCPeakList peaks = fadcs().addBcalfADCPeaks();
+	    peaks().setPeakAmp(pulse_peak);
             fadcs().setPulse_time(integer_time);
         } 
       }

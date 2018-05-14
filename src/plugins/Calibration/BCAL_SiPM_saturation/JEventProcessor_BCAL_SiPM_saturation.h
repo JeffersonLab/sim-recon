@@ -25,6 +25,9 @@ class JEventProcessor_BCAL_SiPM_saturation:public jana::JEventProcessor{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		uint32_t VERBOSE;
+
+
+		vector< vector<double> > attenuation_parameters;    // store attenuation length
 };
 
 #endif // _JEventProcessor_BCAL_SiPM_saturation_
