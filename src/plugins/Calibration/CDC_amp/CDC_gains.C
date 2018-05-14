@@ -217,7 +217,7 @@ void CDC_gains(int EXIT_EARLY=0) {
 
     fmain->cd();
 
-    anhisto = (TH2I*)fmain->Get("attn");
+    anhisto = (TH2I*)fmain->Get("attn_100");
 
 
     badfit = 0;
