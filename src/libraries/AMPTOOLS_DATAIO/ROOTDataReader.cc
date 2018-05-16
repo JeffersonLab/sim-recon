@@ -47,10 +47,12 @@ ROOTDataReader::ROOTDataReader( const vector< string >& args ):
 	m_inTree->SetBranchAddress( "Px_Beam", &m_pxBeam );
 	m_inTree->SetBranchAddress( "Py_Beam", &m_pyBeam );
 	m_inTree->SetBranchAddress( "Pz_Beam", &m_pzBeam );
-	if(m_inTree->GetBranch("Weight") != NULL)
+
+	if(m_inTree->GetBranch("Weight") != NULL) {
+
+	  m_useWeight = true;
 	  m_inTree->SetBranchAddress( "Weight", &m_weight );
-	else
-	  m_useWeight=false;
+	}
 }
 
 ROOTDataReader::~ROOTDataReader()
