@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 #include <CDC/DCDCHit.h>
 
 #include "DCDCHit_factory.h"
@@ -155,7 +156,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  //if ((RocID[k] == RocID[n]) && (Slot[k] == Slot[n]) && (Connector[k] == Connector[n]) ){
 	  if(hit_info_vec[k] == hit_info_vec[n]) {
 	    double dt = (hit_info_vec[k].time - hit_info_vec[n].time)/8.; // units of samples (8ns)
-	    if ( fabs(dt+CorrelatedHitPeak)<CorrelationHitsCut) {
+	    if ( std::fabs(dt+CorrelatedHitPeak)<CorrelationHitsCut) {
 	      Mark4Removal[n] = true;
 	      //cout<<"remove "<<hits[n]->ring<<" "<<hits[n]->straw<<endl;
 	    }
