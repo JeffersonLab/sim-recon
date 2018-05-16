@@ -109,10 +109,16 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
   loop->Get(MCThrowns);
   unsigned int NumThrown=MCThrowns.size();
   double Ethrown=0;
+  double thetathrown=0;
   if (NumThrown == 1) {
     const DMCThrown* locMCThrown = MCThrowns[0];
     Ethrown = locMCThrown->energy();
+    DVector3 pgen = locMCThrown->momentum();
+    //pgen.Print();
+    thetathrown = 180./3.14159*pgen.Theta();
   }
+
+  if (thetathrown > 12) {   // ignore photons hitting end of bcal
 
     // Get vector of neutral showers in event
   	vector<const DNeutralShower*> NeutralShowers;
@@ -150,6 +156,8 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
 
         Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Eshower", Eshower,
                          "BCAL SiPM Saturation; Shower Energy (GeV)",4*nbins,0,10);
+        Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Thrown Theta", thetathrown,
+                         "BCAL SiPM Saturation; Thrown Theta (degrees)",4*90,0,90);
 
         // Fill 2D histograms
         Fill2DHistogram ("BCAL_SiPM_saturation", "Hists2D", "Eshower_vs_Ethrown", Ethrown, Eshower,
@@ -160,7 +168,7 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
                          4*nbins,0,10,nbins,-0.5,0.5);
         Fill2DHistogram ("BCAL_SiPM_saturation", "Hists2D", "EDiff/Ethrown_vs_Ethrown", Ethrown, (Eshower - Ethrown)/Ethrown,
                          "BCAL SiPM Saturation; Thrown Energy (GeV); (EShower - EThrown)/Ethrown",
-                         4*nbins,0,10,nbins,-0.1,0.1);
+                         4*nbins,0,10,nbins,-0.2,0.2);
 	
         // Get vector of points in this shower
         vector<const DBCALPoint*> Points;
@@ -296,6 +304,7 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
 
 
     }
+  }
   }
     return NOERROR;
 }
