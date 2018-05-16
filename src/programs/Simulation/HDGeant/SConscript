@@ -17,7 +17,8 @@ else:
 	# get env object and clone it
 	env = env.Clone()
 
-	bms_osname = os.environ['BMS_OSNAME']
+	#bms_osname = os.environ['BMS_OSNAME']
+	bms_osname = env['OSNAME']
 	bms_split = bms_osname.split('gcc')
 	versions = bms_split[1].split('.')
 	if int(versions[0]) >= 4 and int(versions[1]) >= 8 or int(versions[0]) >= 5:
