@@ -25,7 +25,6 @@
 #include <PID/DDetectorMatches.h>
 #include <PID/DParticleID.h>
 #include <PID/DEventRFBunch.h>
-#include <PID/DNeutralShower.h>
 #include <RF/DRFTime.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include <START_COUNTER/DSCHit.h>

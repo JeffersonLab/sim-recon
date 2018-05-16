@@ -28,6 +28,9 @@
                 tzcorr="float" Ezcorr="float"
                 lunit="cm" tunit="ns" Eunit="GeV">
 	   <fcalCorrelations maxOccurs="1" minOccurs="0" Excorr="float" Eycorr="float" Etcorr="float" txcorr="float" tycorr="float"/>
+       <fcalShowerClassification minOccurs="0" classifierOuput="float"/>
+       <fcalShowerProperties minOccurs="0" maxOccurs="1" docaTrack="float" timeTrack="float" sumU="float" sumV="float"
+                             E1E9="float" E9E25="float"/>
     </fcalShower>
     <bcalShower minOccurs="0" maxOccurs="unbounded" jtag="string"
                 x="float" y="float" z="float" t="float" E="float"
