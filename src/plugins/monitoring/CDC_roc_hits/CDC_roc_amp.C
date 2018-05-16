@@ -49,7 +49,7 @@
       c1->Update();  
 
       hh->GetXaxis()->SetRangeUser(290,1780);
-      hh->GetYaxis()->SetRangeUser(100,500);
+      hh->GetYaxis()->SetRangeUser(0,500);
       hh->GetYaxis()->SetNdivisions(210,kFALSE);
       hh->GetYaxis()->SetTickLength(0.001);
 
