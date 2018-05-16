@@ -20,6 +20,7 @@ using namespace std;
 #include "DTOFGeometry.h"
 #include "TTAB/DTranslationTable.h"
 #include "TTAB/DTTabUtilities.h"
+#include <DAQ/Df250PulseData.h>
 using namespace jana;
 
 

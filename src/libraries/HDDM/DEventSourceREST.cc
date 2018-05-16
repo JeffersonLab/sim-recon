@@ -798,6 +798,25 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
 	  }
 	  shower->ExyztCovariance = covariance;
 
+      // MVA classifier output - this information is being calculated in DNeutralShower now!
+      //const hddm_r::FcalShowerClassificationList& locFcalShowerClassificationList = iter->getFcalShowerClassifications();
+      //hddm_r::FcalShowerClassificationList::iterator locFcalShowerClassificationIterator = locFcalShowerClassificationList.begin();
+      //if(locFcalShowerClassificationIterator != locFcalShowerClassificationList.end()) {
+	  //        shower->setClassifierOutput(locFcalShowerClassificationIterator->getClassifierOuput());
+      //}
+
+      // shower shape and other parameters.  used e.g. as input to MVA classifier
+      const hddm_r::FcalShowerPropertiesList& locFcalShowerPropertiesList = iter->getFcalShowerPropertiesList();
+      hddm_r::FcalShowerPropertiesList::iterator locFcalShowerPropertiesIterator = locFcalShowerPropertiesList.begin();
+      if(locFcalShowerPropertiesIterator != locFcalShowerPropertiesList.end()) {
+	          shower->setDocaTrack(locFcalShowerPropertiesIterator->getDocaTrack());
+	          shower->setTimeTrack(locFcalShowerPropertiesIterator->getTimeTrack());
+	          shower->setSumU(locFcalShowerPropertiesIterator->getSumU());
+	          shower->setSumV(locFcalShowerPropertiesIterator->getSumV());
+	          shower->setE1E9(locFcalShowerPropertiesIterator->getE1E9());
+	          shower->setE9E25(locFcalShowerPropertiesIterator->getE9E25());
+      }
+      
       data.push_back(shower);
    }
 

@@ -637,15 +637,21 @@ def AddCCDB(env):
 ##################################
 def AddSQLite(env):
 	sqlitecpp_home = os.getenv('SQLITECPP_HOME')
-        env.Append(CPPDEFINES='SQLITE_USE_LEGACY_STRUCT=ON')
-        SQLITECPP_CPPPATH = ["%s/include" % (sqlitecpp_home)]
-        env.AppendUnique(CPPPATH = SQLITECPP_CPPPATH)
-        SQLITECPP_LIBPATH = ["%s/lib" % (sqlitecpp_home)]
-        env.AppendUnique(LIBPATH = SQLITECPP_LIBPATH)
-        env.AppendUnique(LIBS    = 'SQLiteCpp')
-	AddSQLite.SQLITE_LINKFLAGS= "-lsqlite3"
-	AddLinkFlags(env, AddSQLite.SQLITE_LINKFLAGS)
-
+	env.Append(CPPDEFINES={'SQLITE_USE_LEGACY_STRUCT':'ON'})
+	SQLITECPP_CPPPATH = ["%s/include" % (sqlitecpp_home)]
+	env.AppendUnique(CPPPATH = SQLITECPP_CPPPATH)
+	SQLITECPP_LIBPATH = ["%s/lib" % (sqlitecpp_home)]
+	env.AppendUnique(LIBPATH = SQLITECPP_LIBPATH)
+	env.AppendUnique(LIBS    = 'SQLiteCpp')
+	sqlite_home = os.getenv('SQLITE_HOME')
+	if(sqlite_home != None) :
+		SQLITE_CPPPATH = ["%s/include" % (sqlite_home)]
+		env.AppendUnique(CPPPATH = SQLITE_CPPPATH)
+		SQLITE_LIBPATH = ["%s/lib" % (sqlite_home)]
+		env.AppendUnique(LIBPATH = SQLITE_LIBPATH)
+		AddSQLite.SQLITE_LINKFLAGS = "-Wl,-rpath=%s/lib" % (sqlite_home)
+		AddLinkFlags(env, AddSQLite.SQLITE_LINKFLAGS)
+	env.AppendUnique(LIBS = 'sqlite3')
 
 ##################################
 # RCDB
@@ -658,11 +664,11 @@ def AddRCDB(env):
 		env.AppendUnique(CPPPATH = RCDB_CPPPATH)
  
 		# add MySQL
-		env.Append(CPPDEFINES='RCDB_MYSQL')
+		env.Append(CPPDEFINES={'RCDB_MYSQL':1})
 		AddMySQL(env)
 
 		# add SQlite
-		env.Append(CPPDEFINES='RCDB_SQLITE')
+		env.Append(CPPDEFINES={'RCDB_SQLITE':1})
 		AddSQLite(env)
 
 ##################################

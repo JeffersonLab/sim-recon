@@ -6,6 +6,7 @@
 // Richard Jones, 1-July-2012
 
 #include "JEventProcessor_danarest.h"
+#include <TRACKING/DMCThrown.h>
 
 // Make us a plugin
 // for initializing plugins
@@ -21,7 +22,7 @@ extern "C" {
 //-------------------------------
 jerror_t JEventProcessor_danarest::init(void)
 {
-   return NOERROR;
+  return NOERROR;
 }
 
 //-------------------------------
@@ -29,6 +30,7 @@ jerror_t JEventProcessor_danarest::init(void)
 //-------------------------------
 jerror_t JEventProcessor_danarest::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
+  
    return NOERROR;
 }
 
@@ -37,10 +39,14 @@ jerror_t JEventProcessor_danarest::brun(JEventLoop *locEventLoop, int32_t runnum
 //-------------------------------
 jerror_t JEventProcessor_danarest::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
+  // Check if we have thrown events (therefore MC)
+  vector<const DMCThrown *>throwns;
+  locEventLoop->Get(throwns);
+
 	//CHECK TRIGGER TYPE
 	const DTrigger* locTrigger = NULL;
 	locEventLoop->GetSingle(locTrigger);
-	if(!locTrigger->Get_IsPhysicsEvent())
+	if(throwns.size()==0 && (!locTrigger->Get_IsPhysicsEvent()))
 		return NOERROR;
 
 	// Write this event to the rest output stream.

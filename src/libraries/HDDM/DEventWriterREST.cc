@@ -225,7 +225,22 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		locFcalCorrelationsList().setEycorr(fcalshowers[i]->EYcorr());
 		locFcalCorrelationsList().setTxcorr(fcalshowers[i]->XTcorr());
 		locFcalCorrelationsList().setTycorr(fcalshowers[i]->YTcorr());
-	}
+
+        // add in classification based on MVA		
+        //hddm_r::FcalShowerClassificationList locFcalShowerClassificationList = fcal().addFcalShowerClassifications(1);
+        //        locFcalShowerClassificationList().setClassifierOuput(fcalshowers[i]->getClassifierOutput());
+
+        // add in shower properties used for MVA algorithm, etc.
+        
+        hddm_r::FcalShowerPropertiesList locFcalShowerPropertiesList = fcal().addFcalShowerPropertiesList(1);
+        locFcalShowerPropertiesList().setDocaTrack(fcalshowers[i]->getDocaTrack());
+        locFcalShowerPropertiesList().setTimeTrack(fcalshowers[i]->getTimeTrack());
+        locFcalShowerPropertiesList().setSumU(fcalshowers[i]->getSumU());
+        locFcalShowerPropertiesList().setSumV(fcalshowers[i]->getSumV());
+        locFcalShowerPropertiesList().setE1E9(fcalshowers[i]->getE1E9());
+        locFcalShowerPropertiesList().setE9E25(fcalshowers[i]->getE9E25());
+    }
+            
 
 	// push any DBCALShower objects to the output record
 	for (size_t i=0; i < bcalshowers.size(); i++)
@@ -544,8 +559,8 @@ bool DEventWriterREST::Write_RESTEvent(string locOutputFileName, hddm_r::HDDM& l
 		{
 			//open: get pointer, write event
 			hddm_r::ostream* locOutputRESTFileStream = Get_RESTOutputFilePointers()[locOutputFileName].second;
-			*(locOutputRESTFileStream) << locRecord;
 			japp->Unlock("RESTWriter");
+			*(locOutputRESTFileStream) << locRecord;
 			return true;
 		}
 

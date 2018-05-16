@@ -49,6 +49,37 @@ void GetCCDBConstants(TString path, Int_t run, TString variation, vector<double>
    gSystem->ClosePipe(inputPipe);
 }
 
+void GetCCDBConstants2D(TString path, Int_t run, TString variation, vector< vector<double> >& container, Int_t numColumns){
+   char command[256];
+
+   sprintf(command, "ccdb dump %s:%i:%s", path.Data(), run, variation.Data());
+   FILE* inputPipe = gSystem->OpenPipe(command, "r");
+   if(inputPipe == NULL)
+      return;
+   //get the first (comment) line
+   char buff[1024];
+   if(fgets(buff, sizeof(buff), inputPipe) == NULL)
+      return;
+   //get the remaining lines
+   double entry;
+   int counter = 0;
+   vector<double> row;
+   while(fgets(buff, sizeof(buff), inputPipe) != NULL){
+      istringstream locConstantsStream(buff);
+      while (locConstantsStream >> entry){
+         counter++;
+	 if(counter == numColumns) {
+		 container.push_back(row);
+		 row.clear();
+		 counter = 0;
+	 }
+         row.push_back(entry);
+      }
+   }
+   //Close the pipe
+   gSystem->ClosePipe(inputPipe);
+}
+
 //Overload this function to handle the base time offsets
 void GetCCDBConstants1(TString path, Int_t run, TString variation, double& constant1){
    char command[256];
@@ -108,7 +139,10 @@ int GetF1TDCslotTAGH(int id) {
 void FindFDCPackageChamber(int plane, int &package, int &chamber) {
   package = plane / 6 + 1;
   chamber = plane % 6;
-  if(chamber == 0) chamber = 6;
+  if(chamber == 0) {
+    chamber = 6;
+    package--;
+  }
 }
 
 void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TString variation = "default", bool verbose = false,TString prefix = ""){
@@ -116,6 +150,9 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
    bool FIX_START_COUNTER = false;    // should we keep the start counter peak aligned to a certain time?
                                      // this helps in certain analysis without tracks
    double start_counter_t0 = 0.;     // time we should move the start counter time peak to 
+   bool DONT_SHIFT_SC_RF = true;
+   bool USE_NEUTRALS_FOR_BCAL_RF_ALIGN = false;
+   bool USE_NEUTRALS_FOR_FCAL_RF_ALIGN = true;
 
    // set "prefix" in case you want to ship the txt files elsewhere...
    cout << "Performing adjustment timing fits for File: " << fileName.Data() << " Run: " << runNumber << " Variation: " << variation.Data() << endl;
@@ -136,6 +173,10 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
    vector<double> tagh_tdc_time_offsets;
    vector<double> tagh_fadc_time_offsets;
    vector<double> tagh_counter_quality;
+   vector< vector<double> > fdc_wire_offsets_package1;
+   vector< vector<double> > fdc_wire_offsets_package2;
+   vector< vector<double> > fdc_wire_offsets_package3;
+   vector< vector<double> > fdc_wire_offsets_package4;
 
    double sc_t_base_fadc, sc_t_base_tdc;
    double tof_t_base_fadc, tof_t_base_tdc;
@@ -170,6 +211,16 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
    GetCCDBConstants("/PHOTON_BEAM/hodoscope/counter_quality"    ,runNumber, variation, tagh_counter_quality,2);
    GetCCDBConstants("/TOF/adc_timing_offsets",runNumber, variation, tof_fadc_time_offsets);
    GetCCDBConstants("/TOF/timing_offsets",runNumber, variation, tof_tdc_time_offsets);
+   GetCCDBConstants2D("/FDC/package1/wire_timing_offsets", runNumber, variation, fdc_wire_offsets_package1, 96);
+   GetCCDBConstants2D("/FDC/package2/wire_timing_offsets", runNumber, variation, fdc_wire_offsets_package2, 96);
+   GetCCDBConstants2D("/FDC/package3/wire_timing_offsets", runNumber, variation, fdc_wire_offsets_package3, 96);
+   GetCCDBConstants2D("/FDC/package4/wire_timing_offsets", runNumber, variation, fdc_wire_offsets_package4, 96);
+
+   vector< vector< vector<double> > >  old_FDC_wire_offsets;
+   old_FDC_wire_offsets.push_back( fdc_wire_offsets_package1 );
+   old_FDC_wire_offsets.push_back( fdc_wire_offsets_package2 );
+   old_FDC_wire_offsets.push_back( fdc_wire_offsets_package3 );
+   old_FDC_wire_offsets.push_back( fdc_wire_offsets_package4 );
 
    cout << "CDC base times = " << cdc_t_base << endl;
    cout << "FCAL base times = " << fcal_t_base << endl;
@@ -206,7 +257,7 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
    TH2I *thisHist; 
    thisHist = ExtractTrackBasedTimingNS::Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - SC Target Time");
 
-   /** DISABLE this - microscope calibrations are mostly handled in TAGM_TW.  just need to align the main peak
+
    if (useRF) thisHist = ExtractTrackBasedTimingNS::Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch Time");
    if (thisHist != NULL){
       //Statistics on these histograms are really quite low we will have to rebin and do some interpolation
@@ -326,12 +377,12 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
       outFile.close();
 
    }
-   **/
+
 
    TH1I *tagmRFalignHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch 1D Time");
    if(tagmRFalignHist != NULL) {
      double maximum = tagmRFalignHist->GetBinCenter(tagmRFalignHist->GetMaximumBin());
-     TFitResultPtr fr = tagmRFalignHist->Fit("gaus", "SQ", "", maximum - 0.3, maximum + 0.3);
+     TFitResultPtr fr = tagmRFalignHist->Fit("gaus", "SQ", "", maximum - 0.3, maximum + 0.4);
      double meanOffset = fr->Parameter(1);
    
      outFile.open(prefix + "tagm_base_time.txt", ios::out);
@@ -580,24 +631,27 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
 	 }
 
 	 // now align RF times
+     if(!DONT_SHIFT_SC_RF) { 
          TH1I *scRFHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "SC_Target_RF_Compare", Form("Sector %.2i", sector));
          if (scRFHist == NULL) continue;
          //Do the fit
          TFitResultPtr fr = scRFHist->Fit("pol0", "SQ", "", -2, 2);
          double p0 = fr->Parameter(0);
-
+         
          f->FixParameter(0,p0);
          f->SetParLimits(2, -2, 2);
          f->SetParLimits(3, 0, 2);
          f->SetParameter(1, 10);
          f->SetParameter(2, scRFHist->GetBinCenter(scRFHist->GetMaximumBin()));
          f->SetParameter(3, 0);
-
+         
          fr = scRFHist->Fit(f, "SQ", "", -2, 2);
          double SCOffset = fr->Parameter(2);
          selectedSCSectorOffset->SetBinContent(sector, SCOffset);
          selectedSCSectorOffsetDistribution->Fill(SCOffset);
+     }
       }
+
       // Now write out the offsets
       meanSCOffset = selectedSCSectorOffsetDistribution->GetMean();
       // Move mean SC time around if we want it to end up in a particular location
@@ -646,7 +700,7 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
    if(this1DHist != NULL){
       //Gaussian
       Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
-      TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 1.5, maximum + 1.5);
+      TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 0.25, maximum + 0.25);
       float mean = fr->Parameter(1);
       outFile.open(prefix + "tof_base_time.txt");
       if (verbose) {
@@ -657,11 +711,14 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
       outFile.close();
    }
 
-   this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - RF Time");
+   if(USE_NEUTRALS_FOR_BCAL_RF_ALIGN)
+	   this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - RF Time (Neutral)");
+   else
+	   this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - RF Time");
    if(this1DHist != NULL){
       //Gaussian
       Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
-      TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 5, maximum + 5);
+      TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 0.55, maximum + 0.55);
       float mean = fr->Parameter(1);
       outFile.open(prefix + "bcal_base_time.txt");
       if (verbose) {
@@ -672,11 +729,14 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
       outFile.close();
    }
 
-   this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - RF Time");
+   if(USE_NEUTRALS_FOR_FCAL_RF_ALIGN)
+	   this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - RF Time (Neutral)");
+   else
+	   this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - RF Time");
    if(this1DHist != NULL){
       //Gaussian
       Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
-      TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 5, maximum + 5);
+      TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 1., maximum + 1.);
       float mean = fr->Parameter(1);
       outFile.open(prefix + "fcal_base_time.txt");
       if (verbose) {
@@ -690,7 +750,7 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
    if(this1DHist != NULL){
       //Gaussian
       Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
-      TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 15, maximum + 10);
+      TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 10, maximum + 6);
       float mean = fr->Parameter(1);
       outFile.open(prefix + "cdc_base_time.txt");
       if (verbose) {
@@ -705,15 +765,21 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
    this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "FDC", "FDCHit Cathode time;1");
     if(this1DHist != NULL){
         Int_t firstBin = this1DHist->FindFirstBinAbove( 1 , 1); // Find first bin with content above 1 in the histogram
-        for (int i = 0; i <= 16; i++){
+        // extended range due to extra FDC noise - sdobbs, 4/9/2018
+        for (int i = 0; i <= 46; i++){
             if ((firstBin + i) > 0) this1DHist->SetBinContent((firstBin + i), 0);
         }
         //Fit a gaussian to the left of the main peak
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
+
+        //cout << "FDC max = " << maximum << endl;
+        //cout << "FDC first = " << firstBin << endl;
+        //this1DHist->Print("all");
+
         TF1 *f = new TF1("f", "gaus");
         f->SetParameters(100, maximum, 20);
         //this1DHist->Rebin(2);
-        TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 10, maximum + 7); // Cant fix value at end of range
+        TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 17, maximum + 7); // Cant fix value at end of range
         double mean = fr->Parameter(1);
         float sigma = fr->Parameter(2);
         FDC_ADC_Offset = mean;
@@ -730,7 +796,7 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
         TF1 *f = new TF1("f", "gaus");
         f->SetParameters(100, maximum, 20);
-        TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 10, maximum + 5); // Cant fix value at end of range
+        TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 10, maximum + 6); // Cant fix value at end of range
         double mean = fr->Parameter(1);
         float sigma = fr->Parameter(2);
         FDC_TDC_Offset = mean;
@@ -743,16 +809,10 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
    if(this1DHist != NULL){
       //Landau
       Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
-      TFitResultPtr fr = this1DHist->Fit("landau", "S", "", maximum - 2.5, maximum + 4);
+      TFitResultPtr fr = this1DHist->Fit("landau", "S", "", maximum - 3.5, maximum + 6);
+      //TFitResultPtr fr = this1DHist->Fit("landau", "S", "", maximum - 2., maximum + 6);
       //float MPV = fr->Parameter(1);
       MPV = fr->Parameter(1);
-      outFile.open(prefix + "fdc_base_time.txt");
-      if (verbose) {
-         printf("FDC ADC Base = %f - (%f) - (%f) - (%f) = %f\n",fdc_t_base_fadc, MPV, meanSCOffset, FDC_ADC_TDC_Offset, fdc_t_base_fadc - MPV - meanSCOffset - FDC_ADC_TDC_Offset);
-         printf("FDC TDC Base = %f - (%f) - (%f) = %f\n",fdc_t_base_tdc, MPV, meanSCOffset, fdc_t_base_tdc - MPV - meanSCOffset);
-      }
-      outFile << fdc_t_base_fadc - MPV - meanSCOffset - FDC_ADC_TDC_Offset << " " << fdc_t_base_tdc - MPV - meanSCOffset << endl;
-      outFile.close();
    }
 
    //cerr << "*** MPV = " << MPV << endl;
@@ -760,14 +820,16 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
    // see if we need to correct any FDC individual wire times.  generally, assume that most of the detector is in time
    // so the main wire timing peak is correct.  then if any TDC modules deviate from this, then align them to the main peak
    thisHist = ExtractTrackBasedTimingNS::Get2DHistogram("HLDetectorTiming", "FDC", "FDCHit Wire time vs. module");
+   double avg_FDC_TDC_wire_offsets = 0;
    if(thisHist != NULL){
      bool package_times_shifted[4] = { false, false, false, false };
      double FDC_wire_offsets[4][6][96] = { 0. };
      for(int plane=1; plane<=24; plane++) {
        // check one half of the plane
        char buf[50];
-       sprintf(buf,"temp_%d", 2*plane-1);
+       sprintf(buf,"temp_fdc_%d", 2*plane-1);
        TH1D *projY = thisHist->ProjectionY(buf, 2*plane-1, 2*plane-1);
+       cout << " plane " << plane << endl;
        //TH1D *projY = thisHist->ProjectionY("temp", 2*plane-1, 2*plane-1);
        //Int_t firstBin = projY->FindLastBinAbove( 1 , 1); // Find first bin with content above 1 in the histogram
        //for (int i = 0; i <= 15; i++){
@@ -775,24 +837,27 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
        //}
        //Fit a gaussian to the left of the main peak
        Double_t maximum = projY->GetBinCenter(projY->GetMaximumBin());
-       //cout << " plane  " << plane << " max = " << maximum << endl;
        double mean1 = 40.;
        float sigma1 = 0.;
        TF1 *f = new TF1("f", "gaus");
        
        if(maximum > -190.) {
-	 //TF1 *f = new TF1("f", "gaus");
-	 f->SetParameters(100, maximum, 20);
-	 TFitResultPtr fr = projY->Fit(f, "S", "", maximum - 10, maximum + 5); // Cant fix value at end of range
-	 mean1 = fr->Parameter(1) + MPV;
-	 sigma1 = fr->Parameter(2);
-	 //cerr << " mean = " << mean1 << endl;
-	 //delete f;
+           mean1 = maximum - MPV;
+           //cout << mean1 << " " << maximum << " " << MPV << endl;
+           // Disable fits for now, not terribly stable
+           //TF1 *f = new TF1("f", "gaus");
+           TF1 fg("fg", "gaus");
+           fg.SetParameters(100, maximum, 20);
+           TFitResultPtr fr = projY->Fit(&fg, "S", "", maximum - 10, maximum + 8); // Cant fix value at end of range
+           mean1 = fr->Parameter(1) - MPV;
+           sigma1 = fr->Parameter(2);
+           //cerr << " mean = " << mean1 << endl;
+           //delete f;
        }
 
 
        // now check the other half
-       sprintf(buf,"temp_%d", 2*plane);
+       sprintf(buf,"temp_fdc_%d", 2*plane);
        projY = thisHist->ProjectionY(buf, 2*plane, 2*plane);
        //projY = thisHist->ProjectionY("temp", 2*plane, 2*plane);
        //firstBin = projY->FindLastBinAbove( 1 , 1); // Find first bin with content above 1 in the histogram
@@ -801,41 +866,55 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
        //}
        //Fit a gaussian to the left of the main peak
        maximum = projY->GetBinCenter(projY->GetMaximumBin());
-       //cout << " plane' " << plane << " max = " << maximum << endl;
        double mean2 = 40.;
        float sigma2 = 0.;
 
        if(maximum > -190.) {
-	 //f = new TF1("f", "gaus");
-	 f->SetParameters(100, maximum, 20);
-	 TFitResultPtr fr2 = projY->Fit(f, "S", "", maximum - 10, maximum + 5); // Cant fix value at end of range
-	 mean2 = fr2->Parameter(1) + MPV;
-	 sigma2 = fr2->Parameter(2);
-	 //cerr << " mean = " << mean2 << endl;
-	 //delete f;
+           mean2 = maximum - MPV;
+           //cout << mean2 << " " << maximum << " " << MPV << endl;
+           // Disable fits for now, not terribly stable 
+           //f = new TF1("f", "gaus");
+           TF1 fg2("fg2", "gaus");
+           fg2.SetParameters(100, maximum, 20);
+           TFitResultPtr fr2 = projY->Fit(&fg2, "S", "", maximum - 10, maximum + 8); // Cant fix value at end of range
+           mean2 = fr2->Parameter(1) - MPV;
+           sigma2 = fr2->Parameter(2);
+           //cerr << " mean = " << mean2 << endl;
+           //delete f;
        }
-       
-
-       // ignore any shift smaller than 5 ns
-       if( (fabs(mean1) < 5.) && (fabs(mean2) < 5.) ) 
-	 continue;
        
        int package = 0;
        int chamber = 0;
        FindFDCPackageChamber(plane, package, chamber);
-       
+
        package_times_shifted[package-1] = true;
        
        // handle TDC modules separately
-       if(fabs(mean1) > 5.) {
-	 for(int wire=0; wire<48; wire++)
-	   FDC_wire_offsets[package-1][chamber-1][wire] = mean1;
+       for(int wire=0; wire<48; wire++) {
+	       // only correct wire shifts greater than some amount
+	       //if(fabs(mean1) > 8.) {
+           FDC_wire_offsets[package-1][chamber-1][wire] = mean1 + old_FDC_wire_offsets[package-1][chamber-1][wire];
+	       //} else {
+		   //    FDC_wire_offsets[package-1][chamber-1][wire] = old_FDC_wire_offsets[package-1][chamber-1][wire];
+	       //}
        }
-       if(fabs(mean2) > 5.) {
-	 for(int wire=48; wire<96; wire++)
-	   FDC_wire_offsets[package-1][chamber-1][wire] = mean2;
+
+       for(int wire=48; wire<96; wire++) {
+	       // only correct wire shifts greater than some amount
+	       //if(fabs(mean2) > 8.) {
+           FDC_wire_offsets[package-1][chamber-1][wire] = mean2 + old_FDC_wire_offsets[package-1][chamber-1][wire];
+	       //} else {
+           //FDC_wire_offsets[package-1][chamber-1][wire] = old_FDC_wire_offsets[package-1][chamber-1][wire];
+	       //}
        }
+
+       // keep an average on a per-module basis
+       avg_FDC_TDC_wire_offsets += FDC_wire_offsets[package-1][chamber-1][1];
+       avg_FDC_TDC_wire_offsets += FDC_wire_offsets[package-1][chamber-1][50];
      }
+
+     // make the average 
+     avg_FDC_TDC_wire_offsets /= 48.;
 
      // now write out anything we need
      for(int package = 0; package<4; package++) {
@@ -845,15 +924,32 @@ void AdjustTiming(TString fileName = "hd_root.root", int runNumber = 10390, TStr
 	 outFile.open(buf);
 	 for(int chamber=0; chamber<6; chamber++) {
 	   for(int wire=0; wire<96; wire++) {
-	     outFile << FDC_wire_offsets[package][chamber][wire] << " ";
+		   outFile << (FDC_wire_offsets[package][chamber][wire] - avg_FDC_TDC_wire_offsets)/2. << " ";
 	   }
 	   outFile << endl;
 	 }
 	 outFile.close();
        }
      }
-
    }
+
+   // now we can finally write out the FDC offsets
+   outFile.open(prefix + "fdc_base_time.txt");
+   if (verbose) {
+	   printf("FDC ADC Base = %f - (%f) - (%f) - (%f) = %f\n",fdc_t_base_fadc, MPV, meanSCOffset, FDC_ADC_TDC_Offset, fdc_t_base_fadc - MPV - meanSCOffset - FDC_ADC_TDC_Offset);
+	   printf("FDC TDC Base = %f - (%f) - (%f) = %f\n",fdc_t_base_tdc, MPV, meanSCOffset, fdc_t_base_tdc - MPV - meanSCOffset);
+   }
+   //outFile << fdc_t_base_fadc - MPV - meanSCOffset - (FDC_ADC_TDC_Offset-avg_FDC_TDC_wire_offsets) << " " << fdc_t_base_tdc - MPV - avg_FDC_TDC_wire_offsets - meanSCOffset << endl;
+   outFile << fdc_t_base_fadc + 5. - MPV - meanSCOffset - FDC_ADC_Offset << " " << fdc_t_base_tdc + 5. - MPV - avg_FDC_TDC_wire_offsets - meanSCOffset << endl;
+   outFile.close();
+   
+   
+   cout << "FDC ADC: " << fdc_t_base_fadc << " " <<  MPV << " " <<  meanSCOffset << " "<< FDC_ADC_Offset << " "
+	<< (FDC_ADC_TDC_Offset-avg_FDC_TDC_wire_offsets) << " "
+	<< (fdc_t_base_fadc - MPV - meanSCOffset - FDC_ADC_TDC_Offset) << endl;
+   cout << "FDC TDC: " << fdc_t_base_tdc << " " << MPV << " " << avg_FDC_TDC_wire_offsets << " " << meanSCOffset << " "
+	<< (fdc_t_base_tdc - MPV - avg_FDC_TDC_wire_offsets - meanSCOffset) << endl;
+   
 
    ExtractTrackBasedTimingNS::thisFile->Write();
    return;

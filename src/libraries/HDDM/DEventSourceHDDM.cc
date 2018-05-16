@@ -1206,12 +1206,18 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
    
    if (factory == NULL)
        return OBJECT_NOT_AVAILABLE;
-   if (tag != "" && tag != "TRUTH")
+
+   // Since we are writing out CDC hits with the new "Calib" tag by default
+   // assume that is what we are reading in, so that we don't support the
+   // default tag anymore
+   // sdobbs -- 3/13/2018
+   //if (tag != "" && tag != "TRUTH" && tag != "Calib")
+   if (tag != "TRUTH" && tag != "Calib")
       return OBJECT_NOT_AVAILABLE;
    
    vector<DCDCHit*> data;
 
-   if (tag == "") {
+   if ( tag == "" || tag == "Calib" ) {
       vector<const DCDCHit*> locTruthHits;
       locEventLoop->Get(locTruthHits, "TRUTH");
 
@@ -1220,21 +1226,30 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
 		for(auto& locTruthHit : locTruthHits)
 			locTruthHitMap[std::make_pair(locTruthHit->ring, locTruthHit->straw)].push_back(locTruthHit);
 
-      const hddm_s::CdcStrawHitList &hits = record->getCdcStrawHits();
-      hddm_s::CdcStrawHitList::iterator iter;
-      int locIndex = 0;
-      for (iter = hits.begin(); iter != hits.end(); ++iter) {
-         DCDCHit *hit = new DCDCHit;
-         hit->ring   = iter->getRing();
-         hit->straw  = iter->getStraw();
-         hit->q      = iter->getQ();
-         hit->t      = iter->getT();
-         if(iter->getCdcDigihits().size() > 0) {
-             hit->amp  = iter->getCdcDigihit().getPeakAmp();
-         }
-         hit->d      = 0.; // initialize to zero to avoid any NaN
-         hit->itrack = 0;  // track information is in TRUTH tag
-         hit->ptype  = 0;  // ditto
+        const hddm_s::CdcStrawHitList &hits = record->getCdcStrawHits();
+        hddm_s::CdcStrawHitList::iterator iter;
+        int locIndex = 0;
+        for (iter = hits.begin(); iter != hits.end(); ++iter) {
+            DCDCHit *hit = new DCDCHit;
+            hit->ring   = iter->getRing();
+            hit->straw  = iter->getStraw();
+            hit->q      = iter->getQ();
+            hit->t      = iter->getT();
+            if(iter->getCdcDigihits().size() > 0) {
+                hit->amp  = iter->getCdcDigihit().getPeakAmp();
+            }
+	    else{  
+	      // for generated events (not folded-in background events) for which we
+	      // have no digi hits we simply scale q using Naomi's factor of 28.8
+	      hit->amp=hit->q/28.8;
+	    }
+            hit->QF     = 0;
+            if(iter->getCdcHitQFs().size() > 0) {
+                hit->QF  = iter->getCdcHitQF().getQF();
+            }            
+            hit->d      = 0.; // initialize to zero to avoid any NaN
+            hit->itrack = 0;  // track information is in TRUTH tag
+            hit->ptype  = 0;  // ditto
 
 			//match hit between truth & recon
 			auto& locPotentialTruthHits = locTruthHitMap[std::make_pair(hit->ring, hit->straw)];

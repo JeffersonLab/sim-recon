@@ -17,6 +17,7 @@ using namespace std;
 #include "DReferenceTrajectory.h"
 #include "DTrackCandidate.h"
 #include "DMagneticFieldStepper.h"
+#include <TMatrix.h>
 #include "HDGEOMETRY/DRootGeom.h"
 #define ONE_THIRD 0.33333333333333333
 #define TWO_THIRD 0.66666666666666667
@@ -69,7 +70,8 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	gPARMS->SetDefaultParameter("TRK:MIN_STEP_SIZE" , MIN_STEP_SIZE, "Minimum step size in cm to take when swimming a track with adaptive step sizes");
 	gPARMS->SetDefaultParameter("TRK:MAX_STEP_SIZE" , MAX_STEP_SIZE, "Maximum step size in cm to take when swimming a track with adaptive step sizes");
 	gPARMS->SetDefaultParameter("TRK:MAX_SWIM_STEPS" , MAX_SWIM_STEPS, "Number of swim steps for DReferenceTrajectory to allocate memory for (when not using external buffer)");
-
+	gPARMS->SetDefaultParameter("TRK:DEBUG_LEVEL" , this->debug_level);
+	
 	// It turns out that the greatest bottleneck in speed here comes from
 	// allocating/deallocating the large block of memory required to hold
 	// all of the trajectory info. The preferred way of calling this is 
@@ -2566,7 +2568,7 @@ jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,
 // Find the mid-point of the line connecting the points of closest approach of the
 // trajectories of two tracks.  Return the positions, momenta, and error matrices 
 // at these points for the two tracks.
-jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, DKinematicData *track1_kd, DKinematicData *track2_kd, DVector3 &pos, double &doca, double &var_doca) const {
+jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, DKinematicData *track1_kd, DKinematicData *track2_kd, DVector3 &pos, double &doca, double &var_doca, double &vertex_chi2, bool DoFitVertex) const {
   const swim_step_t *swim_step1=this->swim_steps;
   const swim_step_t *swim_step2=rt2->swim_steps;
   
@@ -2585,6 +2587,7 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
   double q2=rt2->q;
   double mass_sq1=this->mass_sq;
   double mass_sq2=rt2->mass_sq;
+  vertex_chi2=0.;
   
   // Initialize the doca and traverse both particles' trajectories
   doca=1000.;
@@ -2594,7 +2597,7 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
     DVector3 pos2=swim_step2->origin;
     DVector3 diff=pos1-pos2;
     double new_doca=diff.Mag();
-    
+ 
     if (new_doca>doca){
       int prev_i=i-1;		   
       // positions and momenta of tracks at the center of the 
@@ -2632,7 +2635,7 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 	  // Compute the revised estimate for the doca
 	  diff=pos1-pos2;
 	  new_doca=diff.Mag();
-	  
+
 	  if(new_doca > doca){
 	    pos1=oldpos1;
 	    pos2=oldpos2;
@@ -2670,29 +2673,16 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
       // "Vertex" is mid-point of line connecting the positions of closest
       // approach of the two tracks
       pos=0.5*(pos1+pos2);
-
+          
       if((track1_kd != NULL) && (track2_kd != NULL)){
-	// Adjust flight times
-	double one_over_p1_sq=1./mom1.Mag2();
-	tflight1+=ds*sqrt(1.+mass_sq1*one_over_p1_sq)/SPEED_OF_LIGHT;
-				  
-	double one_over_p2_sq=1./mom2.Mag2();
-	tflight2+=ds*sqrt(1.+mass_sq2*one_over_p2_sq)/SPEED_OF_LIGHT;
-
-    *locCovarianceMatrix1 = cov1;
-    track1_kd->setErrorMatrix(locCovarianceMatrix1);
-	track1_kd->setMomentum(mom1);
-	track1_kd->setPosition(pos1);
-	track1_kd->setTime(track1_kd->time() + tflight1);
-
-    *locCovarianceMatrix2 = cov2;
-	track2_kd->setErrorMatrix(locCovarianceMatrix2);
-	track2_kd->setMomentum(mom2);
-	track2_kd->setPosition(pos2);
-	track2_kd->setTime(track2_kd->time() + tflight2);
-	
+	if (DoFitVertex){
+	  // Use lagrange multiplier method to try to find a better common 
+	  // vertex between the two tracks	
+	  FitVertex(pos1,mom1,pos2,mom2,cov1,cov2,pos,vertex_chi2);
+	}
 	// Compute the variance on the doca
 	diff=pos1-pos2;
+	if (DoFitVertex) doca=diff.Mag(); // update if necessary
 	double dx=diff.x();
 	double dy=diff.y();
 	double dz=diff.z();
@@ -2700,9 +2690,29 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 		  +dy*dy*(cov1(kY,kY)+cov2(kY,kY))
 		  +dz*dz*(cov1(kZ,kZ)+cov2(kZ,kZ))
 		  +2.*dx*dy*(cov1(kX,kY)+cov2(kX,kY))
-				    +2.*dx*dz*(cov1(kX,kZ)+cov2(kX,kZ))
+		  +2.*dx*dz*(cov1(kX,kZ)+cov2(kX,kZ))
 		  +2.*dy*dz*(cov1(kY,kZ)+cov2(kY,kZ)))
 	  /(doca*doca);
+
+	  
+	// Adjust flight times
+	double one_over_p1_sq=1./mom1.Mag2();
+	tflight1+=ds*sqrt(1.+mass_sq1*one_over_p1_sq)/SPEED_OF_LIGHT;
+				  
+	double one_over_p2_sq=1./mom2.Mag2();
+	tflight2+=ds*sqrt(1.+mass_sq2*one_over_p2_sq)/SPEED_OF_LIGHT;
+
+	*locCovarianceMatrix1 = cov1;
+	track1_kd->setErrorMatrix(locCovarianceMatrix1);
+	track1_kd->setMomentum(mom1);
+	track1_kd->setPosition(pos1);
+	track1_kd->setTime(track1_kd->time() + tflight1);
+
+	*locCovarianceMatrix2 = cov2;
+	track2_kd->setErrorMatrix(locCovarianceMatrix2);
+	track2_kd->setMomentum(mom2);
+	track2_kd->setPosition(pos2);
+	track2_kd->setTime(track2_kd->time() + tflight2);
       }      
       break;
     }
@@ -2831,3 +2841,160 @@ jerror_t DReferenceTrajectory::BrentsAlgorithm(DVector3 &pos1,DVector3 &mom1,
 }
 
 
+// Use lagrange multiplier method to find better approximation for the vertex
+// position given the track momenta and positions and the corresponding error
+// matrices.  See Frodesen, et al., Probability and Statistics in Particle 
+// Physics, pp 298-320.
+// Assumes we can ignore the magnetic field.
+void DReferenceTrajectory::FitVertex(const DVector3 &pos1,const DVector3 &mom1,
+				     const DVector3 &pos2,const DVector3 &mom2,
+				     const TMatrixFSym &cov1,
+				     const TMatrixFSym &cov2,
+				     DVector3 &pos,double &vertex_chi2) const{
+  // Vectors of measured quantities (eta0) and these quantities after adjustment
+  // based on constraints (eta)
+  TMatrix eta0(12,1),eta(12,1);
+  // Vectors of unmeasured quantities (common vertex {x,y,z})
+  TMatrix xi(3,1),xi_old(3,1);
+  TMatrix f(4,1); // vector representing constraint equations
+  TMatrix F_eta(4,12);  // Matrix of derivatives of f with respect to eta
+  TMatrix F_xi(4,3);  // Matrix of derivatives of f with respect to xi
+
+  // Initialize to guess we got from Brent's algorithm
+  xi(0,0)=pos.x();
+  xi(1,0)=pos.y();
+  xi(2,0)=pos.z();
+
+  // Initialize to the measured values
+  eta0(kX,0)=pos1.x();
+  eta0(kY,0)=pos1.y();
+  eta0(kZ,0)=pos1.z();
+  eta0(kPx,0)=mom1.x();
+  eta0(kPy,0)=mom1.y();
+  eta0(kPz,0)=mom1.z(); 
+  eta0(kX+6,0)=pos2.x();
+  eta0(kY+6,0)=pos2.y();
+  eta0(kZ+6,0)=pos2.z();
+  eta0(kPx+6,0)=mom2.x();
+  eta0(kPy+6,0)=mom2.y();
+  eta0(kPz+6,0)=mom2.z();
+
+  // Fill error matrix V from covariance matrices from the two tracks
+  TMatrix V(12,12);
+  for (int m=0;m<6;m++){
+    for (int n=0;n<6;n++){
+      V(m,n)=cov1(n,m);
+      V(m+6,n+6)=cov2(n,m);	  
+    }
+  }
+
+  // Start with the actual measurement
+  eta=eta0;
+  
+  // Define some matrices needed for some of the internal steps of the procedure
+  TMatrix LagMul(4,1);  //Lagrange multipliers
+  TMatrix r(4,1);  // r=f+F_eta*(eta0-eta)
+  TMatrix S(4,4),Sinv(4,4); // S=F_eta*S*F_eta^T
+      
+  if (debug_level>1){
+    cout << "Measured quantities:" <<endl;
+    eta.Print(); 
+    cout << "Covariance matrix for measured quantities:"<<endl;
+    V.Print();
+    cout << "Initial guess for common vertex position:"<<endl;
+    xi.Print();
+  }
+  // Iterate to find the minimum chi^2 
+  double chi2=1.e6,chi2_old=1e6;
+  for (int iter=0;iter<4;iter++){
+    chi2_old=chi2;
+    
+    double dx1=xi(0,0)-eta(kX,0);
+    double dy1=xi(1,0)-eta(kY,0);
+    double dz1=xi(2,0)-eta(kZ,0); 
+    double dx2=xi(0,0)-eta(kX+6,0);
+    double dy2=xi(1,0)-eta(kY+6,0);
+    double dz2=xi(2,0)-eta(kZ+6,0);
+    double px1=eta(kPx,0);
+    double py1=eta(kPy,0);
+    double pz1=eta(kPz,0);  
+    double px2=eta(kPx+6,0);
+    double py2=eta(kPy+6,0);
+    double pz2=eta(kPz+6,0);
+    
+    // Constraint equations
+    f(0,0)=pz1*dx1-px1*dz1;
+    f(1,0)=pz1*dy1-py1*dz1; 
+    f(2,0)=pz2*dx2-px2*dz2;
+    f(3,0)=pz2*dy2-py2*dz2;
+    
+    if (iter>0){
+      TMatrix LagMul_T(TMatrix::kTransposed,LagMul);
+      chi2=(LagMul_T*S*LagMul)(0,0);
+      LagMul_T*=2.;
+      chi2+=(LagMul_T*f)(0,0);
+
+      if (debug_level>0){
+	cout << "iter " << iter << " : chi2=" << chi2 <<  endl;
+	if (debug_level>1){
+	  cout << "Constraint equations:" << endl;
+	  f.Print();
+	  cout << "Unmeasured quantities:" << endl;
+	  xi.Print();
+	  cout << "Measured quantities:" << endl;
+	  eta.Print();
+	}
+      }
+
+      if (chi2>chi2_old) break;
+    }
+     
+    // Compute the Jacobian matrix for eta
+    F_eta(0,kX)=-pz1;
+    F_eta(0,kZ)=+px1;
+    F_eta(0,kPx)=-dz1;
+    F_eta(0,kPz)=+dx1;  
+    F_eta(1,kY)=-pz1;
+    F_eta(1,kZ)=+py1;
+    F_eta(1,kPy)=-dz1;
+    F_eta(1,kPz)=+dy1; 
+    F_eta(2,kX+6)=-pz2;
+    F_eta(2,kZ+6)=+px2;
+    F_eta(2,kPx+6)=-dz2;
+    F_eta(2,kPz+6)=+dx2;  
+    F_eta(3,kY+6)=-pz2;
+    F_eta(3,kZ+6)=+py2;
+    F_eta(3,kPy+6)=-dz2;
+    F_eta(3,kPz+6)=+dy2;
+    
+    // Compute the Jacobian matrix for xi
+    F_xi(0,0)=pz1;
+    F_xi(0,2)=-px1;
+    F_xi(1,1)=pz1;
+    F_xi(1,2)=-py1; 
+    F_xi(2,0)=pz2;
+    F_xi(2,2)=-px2;
+    F_xi(3,1)=pz2;
+    F_xi(3,2)=-py2;
+    
+    if (debug_level>1){	
+      cout << "Jacobian matrices for eta and xi" <<endl;
+      F_eta.Print();      
+      F_xi.Print();      
+    }
+        
+    TMatrix F_eta_T(TMatrix::kTransposed,F_eta);
+    TMatrix F_xi_T(TMatrix::kTransposed,F_xi);
+    
+    // Adjust xi, then the Lagrange multipliers, then eta for this iteration
+    xi_old=xi;
+    S=F_eta*V*F_eta_T;
+    Sinv=S.Invert();
+    r=f+F_eta*(eta0-eta);
+    xi=xi_old-(F_xi_T*Sinv*F_xi).Invert()*F_xi_T*Sinv*r;
+    LagMul=Sinv*(r+F_xi*(xi-xi_old));
+    eta=eta0-V*F_eta_T*LagMul;
+  }
+  pos.SetXYZ(xi_old(0,0),xi_old(1,0),xi_old(2,0));
+  vertex_chi2=chi2_old;
+} 

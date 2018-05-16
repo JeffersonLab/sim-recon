@@ -1055,14 +1055,15 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          if (V<0) return VALUE_OUT_OF_RANGE;
 
          // Add the pull
+	 double myscale=1./sqrt(1.+tx*tx+ty*ty);
+	 double cosThetaRel=wire->udir.Dot(DVector3(myscale*tx,myscale*ty,myscale));
          DTrackFitter::pull_t thisPull(resi,sqrt(V),
-               trajectory[m].t*SPEED_OF_LIGHT,
-               cdc_updates[id].tdrift,
-               d,
-               hits[id], NULL,
-               diff.Phi(), //docaphi
-               trajectory[m].z,
-               cdc_updates[id].tdrift);
+				       trajectory[m].t*SPEED_OF_LIGHT,
+				       cdc_updates[id].tdrift,
+				       d,hits[id], NULL,
+				       diff.Phi(), //docaphi
+				       trajectory[m].z,cosThetaRel,
+				       cdc_updates[id].tdrift);
 
          // Derivatives for alignment
          double wtx=wire->udir.X(), wty=wire->udir.Y(), wtz=wire->udir.Z();
@@ -2065,18 +2066,20 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          }
 
          // Implement derivatives wrt track parameters needed for millepede alignment
-
+	  // Add the pull
+	 double scale=1./sqrt(1.+tx*tx+ty*ty);
+	 double cosThetaRel=hits[id]->wire->udir.Dot(DVector3(scale*tx,scale*ty,scale));
          DTrackFitter::pull_t thisPull(resi_a,sqrt(V(0,0)),
-               trajectory[m].t*SPEED_OF_LIGHT,
-               fdc_updates[id].tdrift,
-               fdc_updates[id].d,
-               NULL,hits[id],
-               0.0, //docaphi
-               trajectory[m].z, 
-               0.0, //tcorr
-               resi_c, sqrt(V(1,1))
-               );
-
+				       trajectory[m].t*SPEED_OF_LIGHT,
+				       fdc_updates[id].tdrift,
+				       fdc_updates[id].d,
+				       NULL,hits[id],
+				       0.0, //docaphi
+				       trajectory[m].z,cosThetaRel, 
+				       0.0, //tcorr
+				       resi_c, sqrt(V(1,1))
+				       );
+	 
          if (hits[id]->wire->layer!=PLANE_TO_SKIP){
             vector<double> derivatives;
             derivatives.resize(FDCTrackD::size);
@@ -2257,14 +2260,15 @@ DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
          if (V<0) return VALUE_OUT_OF_RANGE;
 
          // Add the pull
+	 double myscale=1./sqrt(1.+tx*tx+ty*ty);
+	 double cosThetaRel=wire->udir.Dot(DVector3(myscale*tx,myscale*ty,myscale));
          DTrackFitter::pull_t thisPull(resi,sqrt(V),
-               trajectory[m].t*SPEED_OF_LIGHT,
-               cdc_updates[id].tdrift,
-               d,
-               cdc_hits[id], NULL,
-               diff.Phi(), //docaphi
-               trajectory[m].z,
-               cdc_updates[id].tdrift);
+				       trajectory[m].t*SPEED_OF_LIGHT,
+				       cdc_updates[id].tdrift,
+				       d,cdc_hits[id], NULL,
+				       diff.Phi(), //docaphi
+				       trajectory[m].z,cosThetaRel,
+				       cdc_updates[id].tdrift);
 
          // Derivatives for alignment
          double wtx=wire->udir.X(), wty=wire->udir.Y(), wtz=wire->udir.Z();
