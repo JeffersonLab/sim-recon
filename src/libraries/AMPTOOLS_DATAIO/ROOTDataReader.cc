@@ -15,17 +15,17 @@
 using namespace std;
 
 ROOTDataReader::ROOTDataReader( const vector< string >& args ):
- UserDataReader< ROOTDataReader >( args ),
- m_eventCounter( 0 ),
- m_useWeight( false )
+  UserDataReader< ROOTDataReader >( args ),
+  m_eventCounter( 0 ),
+  m_useWeight( false )
 {
   assert( args.size() == 2 || args.size() == 1 );
   
-	TH1::AddDirectory( kFALSE );
+  TH1::AddDirectory( kFALSE );
   
-	//this way of opening files works with URLs of the form
-	// root://xrootdserver/path/to/myfile.root
-	m_inFile = TFile::Open( args[0].c_str() );
+  //this way of opening files works with URLs of the form
+  // root://xrootdserver/path/to/myfile.root
+  m_inFile = TFile::Open( args[0].c_str() );
 
   
   // default to tree name of "kin" if none is provided
@@ -38,21 +38,25 @@ ROOTDataReader::ROOTDataReader( const vector< string >& args ):
     m_inTree = dynamic_cast<TTree*>( m_inFile->Get( args[1].c_str() ) );
   }
   
-	m_inTree->SetBranchAddress( "NumFinalState", &m_nPart );
-	m_inTree->SetBranchAddress( "E_FinalState", m_e );
-	m_inTree->SetBranchAddress( "Px_FinalState", m_px );
-	m_inTree->SetBranchAddress( "Py_FinalState", m_py );
-	m_inTree->SetBranchAddress( "Pz_FinalState", m_pz );
-	m_inTree->SetBranchAddress( "E_Beam", &m_eBeam );
-	m_inTree->SetBranchAddress( "Px_Beam", &m_pxBeam );
-	m_inTree->SetBranchAddress( "Py_Beam", &m_pyBeam );
-	m_inTree->SetBranchAddress( "Pz_Beam", &m_pzBeam );
+  m_inTree->SetBranchAddress( "NumFinalState", &m_nPart );
+  m_inTree->SetBranchAddress( "E_FinalState", m_e );
+  m_inTree->SetBranchAddress( "Px_FinalState", m_px );
+  m_inTree->SetBranchAddress( "Py_FinalState", m_py );
+  m_inTree->SetBranchAddress( "Pz_FinalState", m_pz );
+  m_inTree->SetBranchAddress( "E_Beam", &m_eBeam );
+  m_inTree->SetBranchAddress( "Px_Beam", &m_pxBeam );
+  m_inTree->SetBranchAddress( "Py_Beam", &m_pyBeam );
+  m_inTree->SetBranchAddress( "Pz_Beam", &m_pzBeam );
 
-	if(m_inTree->GetBranch("Weight") != NULL) {
+  if(m_inTree->GetBranch("Weight") != NULL) {
 
-	  m_useWeight = true;
-	  m_inTree->SetBranchAddress( "Weight", &m_weight );
-	}
+    m_useWeight = true;
+    m_inTree->SetBranchAddress( "Weight", &m_weight );
+  }
+  else{
+
+    m_useWeight = false;
+  }
 }
 
 ROOTDataReader::~ROOTDataReader()
@@ -64,11 +68,11 @@ void
 ROOTDataReader::resetSource()
 {
 	
-	cout << "Resetting source " << m_inTree->GetName() 
-	<< " in " << m_inFile->GetName() << endl;
+  cout << "Resetting source " << m_inTree->GetName() 
+       << " in " << m_inFile->GetName() << endl;
   
-	// this will cause the read to start back at event 0
-	m_eventCounter = 0;
+  // this will cause the read to start back at event 0
+  m_eventCounter = 0;
 }
 
 Kinematics*
