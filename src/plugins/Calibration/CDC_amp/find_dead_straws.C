@@ -56,8 +56,6 @@ void find_dead_straws(void) {
 
       if (!eff) printf("n=%i counts %.0f mean for ring is %i\n",j+1,a_n,mean_n);
 
-      if (j+1 == 3522) eff = 1;  // not sure why not seeing counts for this straw but it's ok 
-
       fprintf(outfile,"%i\n",eff);
 
     }
