@@ -7,7 +7,7 @@
 
 
 #include "DReaction_factory_B3pi_eff_missgamma.h"
-#include "DCustomAction_dEdxCut.h"
+//#include "DCustomAction_dEdxCut.h"
 
 //------------------
 // brun
@@ -96,7 +96,7 @@ jerror_t DReaction_factory_B3pi_eff_missgamma::evnt(JEventLoop* locEventLoop, ui
         locReaction->Set_EventStoreSkims("q+, q-"); //boolean-AND of skims
 
         // Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-        locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
+        locReaction->Set_MaxPhotonRFDeltaT(3.5*dBeamBunchPeriod); //should be minimum cut value
 
         // Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
                 // Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
@@ -129,9 +129,7 @@ jerror_t DReaction_factory_B3pi_eff_missgamma::evnt(JEventLoop* locEventLoop, ui
         locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
         //locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal                                     
 
-
-//        locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true));
-        locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+        locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction)); //false: measured data                            
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_TOF)); //false: measured data                            
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL)); //false: measured data                                   
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_FCAL)); //false: measured data                                   
