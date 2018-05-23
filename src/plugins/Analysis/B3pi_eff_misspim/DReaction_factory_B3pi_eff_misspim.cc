@@ -7,7 +7,6 @@
 
 
 #include "DReaction_factory_B3pi_eff_misspim.h"
-#include "../CustomActions/DCustomAction_dEdxCut.h"
 
 //------------------
 // brun
@@ -127,8 +126,7 @@ jerror_t DReaction_factory_B3pi_eff_misspim::evnt(JEventLoop* locEventLoop, uint
         //locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal                                     
 
 
-//        locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true));
-        locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+        locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction)); //false: measured data                            
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_TOF)); //false: measured data                            
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL)); //false: measured data                                   
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_FCAL)); //false: measured data                                   
