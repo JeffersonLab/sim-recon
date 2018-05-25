@@ -4,11 +4,14 @@
 #include <TStyle.h>
 #include <TCanvas.h>
 
-void MakeAmpToolsFlat::Loop()
+Int_t foption;    // select which file to write
+
+
+void MakeAmpToolsFlat::Loop(Int_t foption)
 {
   // This file was created in the following way
-  //  root> TFile *f = TFile::Open("treeFlat_DSelector_Z2pi_trees_amptool.root")
-  //  root> TTree *t = (TTree *) f->Get("kin")
+  //  root> TFile *f = TFile::Open("treeFlat_DSelector_Z2pi_trees.root")
+  //  root> TTree *t = (TTree *) f->Get("pippimmisspb208_TreeFlat")
   //  root> t->MakeClass("MakeAmpToolsFlat_gen")
   //
 //   In a ROOT session, you can do:
@@ -36,10 +39,33 @@ void MakeAmpToolsFlat::Loop()
 //by  b_branchname->GetEntry(ientry); //read only this branch
    if (fChain == 0) return;
 
-   // Initialize output Tree
 
-   outFile = new TFile("AmpToolsInputTree.root", "RECREATE");
-   m_OutTree = new TTree("kin", "kin");
+   // Define diagnostic histograms
+   TH1D *h1_twopimass_intime = new TH1D ("h1_twopimass_intime","Two pi mass intime (w=1)",200,0.2,0.8);
+   TH1D *h1_twopimass_outtime = new TH1D ("h1_twopimass_outtime","Two pi mass outtime (w=1)",200,0.2,0.8);
+   TH1D *h1_twopimass_total = new TH1D ("h1_twopimass_total","Two pi mass total (w=1)",200,0.2,0.8);
+   TH1D *h1_twopimass_signal = new TH1D ("h1_twopimass_signal","Two pi mass (weighted)",200,0.2,0.8);
+   TH1D *h1_twopimass_signalpos = new TH1D ("h1_twopimass_signalpos","Two pi mass (positive weighted)",200,0.2,0.8);
+
+   // Three output Trees, depending on foption
+   // foption=1: First output has weights (positive and negative)
+   // foption=2: Second output has in-time only (weight=1)
+   // foption=3: Third output has out-time only (weight=negative 1/nbunches)
+
+   if (foption == 1){ 
+     outFile = new TFile("AmpToolsInputTree.root", "RECREATE");
+   }
+   else if (foption == 2) { 
+     outFile = new TFile("AmpToolsInputTreeInTime.root", "RECREATE");
+     }
+   else if (foption == 3) {
+     outFile = new TFile("AmpToolsInputTreeOutTime.root", "RECREATE");
+     }
+   else {
+     cout << "*** Loop, illegal foption=" << foption << endl;
+   }
+    
+   m_OutTree = new TTree("kin", "kin2");
 
    static size_t locNumFinalStateParticles = 3;
 
@@ -74,12 +100,8 @@ void MakeAmpToolsFlat::Loop()
    m_OutTree->SetBranchAddress("Py_Beam", &m_pyBeam);
    m_OutTree->SetBranchAddress("Pz_Beam", &m_pzBeam);
    m_OutTree->SetBranchAddress("Weight", &m_weight);
-  
-
 
   // Process entries in Tree
-
-
 
    Long64_t nentries = fChain->GetEntriesFast();
 
@@ -87,8 +109,8 @@ void MakeAmpToolsFlat::Loop()
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
       Long64_t ientry = LoadTree(jentry);
       if (ientry < 0) break;
-      // nb = fChain->GetEntry(jentry); 
-      nb = b_pip_p4_kin->GetEntry(jentry);
+      nb = fChain->GetEntry(jentry); 
+      /*nb = b_pip_p4_kin->GetEntry(jentry);
       nbytes += nb; 
       nb = b_pim_p4_kin->GetEntry(jentry);
       nbytes += nb; 
@@ -96,7 +118,7 @@ void MakeAmpToolsFlat::Loop()
       nbytes += nb; 
       nb = b_beam_p4_kin->GetEntry(jentry);
       nbytes += nb;
-      nb = b_AccWeight->GetEntry(jentry);
+      nb = b_AccWeight->GetEntry(jentry);*/
       nbytes += nb;
       // if (Cut(ientry) < 0) continue;
         
@@ -123,13 +145,49 @@ void MakeAmpToolsFlat::Loop()
    m_pyBeam = beam_p4_kin->Py();
    m_pzBeam = beam_p4_kin->Pz();
    m_weight = AccWeight;
+   // m_weight = abs(AccWeight);
 
-   m_OutTree->Fill();
+   TLorentzVector twopi;
+   twopi = *pip_p4_kin + *pim_p4_kin;
+   Double_t twopimass = twopi.M(); 
+
+   if (foption == 1) {
+     if (AccWeight > 0) h1_twopimass_intime->Fill(twopimass);
+     if (AccWeight < 0) h1_twopimass_outtime->Fill(twopimass);
+     h1_twopimass_total->Fill(twopimass);
+     h1_twopimass_signal->Fill(twopimass,AccWeight);
+     h1_twopimass_signalpos->Fill(twopimass,abs(AccWeight));
+     m_OutTree->Fill();
+   }
+   else if (foption == 2) {
+     if (AccWeight > 0) m_OutTree->Fill();   // in time
+   }
+   else if (foption == 3) {
+     if (AccWeight < 0) {
+       m_weight = abs(AccWeight);            // make all weights positve
+       m_OutTree->Fill();   // out of time
+     }
+   }
+   else {
+     cout << " *** Loop, illegal foption=" << foption << endl;
+     exit (1);
+   }
    }
 
    // write out tree
 
-   cout << "Completed loop: nbytes =" << nbytes << " nentries=" << nentries << endl;
+   cout << "Completed loop: foption=" << foption << " nbytes =" << nbytes << " nentries=" << nentries << endl;
    m_OutTree->Write();
    outFile->Close();
+
+   if (foption == 1) {
+   TFile *histFile = new TFile("AmpToolsDiagnosticHist.root", "RECREATE");
+   h1_twopimass_intime->Write();
+   h1_twopimass_outtime->Write();
+   h1_twopimass_total->Write();
+   h1_twopimass_signal->Write();
+   h1_twopimass_signalpos->Write();
+   histFile->Close();
+   }
+
 }

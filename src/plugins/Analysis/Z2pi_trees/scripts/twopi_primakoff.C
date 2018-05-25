@@ -40,26 +40,44 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     TH1F *M2pigen = (TH1F*)f->Get("M2pigen");
     TH1F *M2piacc = (TH1F*)f->Get("M2piacc");
     TH1F *M2pidat = (TH1F*)f->Get("M2pidat");
+    TH1F *M2pibkgnd = (TH1F*)f->Get("M2pibkgnd");
+    TH1F *M2pidatsub = (TH1F*)M2pidat->Clone("M2pidatsub");
+    M2pidatsub->Add(M2pibkgnd,-1);
     
     TH1F *cosThetagen = (TH1F*)f->Get("cosThetagen");
     TH1F *cosThetaacc = (TH1F*)f->Get("cosThetaacc");
     TH1F *cosThetadat = (TH1F*)f->Get("cosThetadat");
+    TH1F *cosThetabkgnd = (TH1F*)f->Get("cosThetabkgnd");
+    TH1F *cosThetadatsub = (TH1F*)cosThetadat->Clone("cosThetadatsub");
+    cosThetadatsub->Add(cosThetabkgnd,-1);
     
     TH1F *psigen = (TH1F*)f->Get("psigen");
     TH1F *psiacc = (TH1F*)f->Get("psiacc");
     TH1F *psidat = (TH1F*)f->Get("psidat");
+    TH1F *psibkgnd = (TH1F*)f->Get("psibkgnd");
+    TH1F *psidatsub = (TH1F*)psidat->Clone("psidatsub");
+    psidatsub->Add(psibkgnd,-1);
     
     TH1F *Phigen = (TH1F*)f->Get("Phigen");
     TH1F *Phiacc = (TH1F*)f->Get("Phiacc");
     TH1F *Phidat = (TH1F*)f->Get("Phidat");
+    TH1F *Phibkgnd = (TH1F*)f->Get("Phibkgnd");
+    TH1F *Phidatsub = (TH1F*)Phidat->Clone("Phidatsub");
+    Phidatsub->Add(Phibkgnd,-1);
     
     TH1F *phigen = (TH1F*)f->Get("phigen");
     TH1F *phiacc = (TH1F*)f->Get("phiacc");
     TH1F *phidat = (TH1F*)f->Get("phidat");
+    TH1F *phibkgnd = (TH1F*)f->Get("phibkgnd");
+    TH1F *phidatsub = (TH1F*)phidat->Clone("phidatsub");
+    phidatsub->Add(phibkgnd,-1);
     
     TH1F *tgen = (TH1F*)f->Get("tgen");
     TH1F *tacc = (TH1F*)f->Get("tacc");
     TH1F *tdat = (TH1F*)f->Get("tdat");
+    TH1F *tbkgnd = (TH1F*)f->Get("tbkgnd");
+    TH1F *tdatsub = (TH1F*)tdat->Clone("tdatsub");
+    tdatsub->Add(tbkgnd,-1);
     
     
    TCanvas *c0 = new TCanvas("c0", "c0",200,10,1000,700);
@@ -70,7 +88,7 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     Double_t xmin = 0.2;
     Double_t xmax = 0.8;
     Double_t ymin = 0/scale_factor;
-    Double_t ymax = 16000/scale_factor;
+    Double_t ymax = 4000/scale_factor;
         
     M2pigen->SetTitle(filename);
     M2pigen->GetXaxis()->SetRangeUser(xmin,xmax);
@@ -84,19 +102,24 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     M2pidat->SetLineColor(2);
     M2pidat->SetMarkerStyle(20);
     M2pidat->SetMarkerSize(0.1);
+    M2pibkgnd->SetMarkerStyle(20);
+    M2pibkgnd->SetMarkerSize(0.1);
+    M2pibkgnd->SetMarkerColor(1);
+    M2pibkgnd->SetLineColor(1);
     M2pigen->Draw("p");
     M2pidat->Draw("samep");
+    M2pibkgnd->Draw("samep");
     
     TLegend *leg = new TLegend(0.6,0.3,0.8,0.5);
     leg->AddEntry(M2pigen,"Gen","lp");
-    // leg->AddEntry(M2piacc,"Acc","lp");
+    leg->AddEntry(M2pibkgnd,"Bkgnd","lp");
     leg->AddEntry(M2pidat,"Data","lp");
     leg->Draw();
     
     c0->cd(2);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 20000/scale_factor;
+    ymax = 10000/scale_factor;
     
     cosThetagen->SetTitle(filename);
     // cosThetagen->GetXaxis()->SetRangeUser(xmin,xmax);
@@ -111,12 +134,17 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     cosThetadat->SetLineColor(2);
     cosThetadat->SetMarkerStyle(20);
     cosThetadat->SetMarkerSize(0.1);
+    cosThetabkgnd->SetMarkerStyle(20);
+    cosThetabkgnd->SetMarkerSize(0.1);
+    cosThetabkgnd->SetMarkerColor(1);
+    cosThetabkgnd->SetLineColor(1);
     cosThetadat->Draw("samep");
+    cosThetabkgnd->Draw("samep");
     
     c0->cd(3);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 20000/scale_factor;
+    ymax = 10000/scale_factor;
     
     TF1 *cos2phi = new TF1("cos2phi","[0]*(1+[1]*cos(2*x))",-3.14159,3.14159);
     TF1 *cosphi = new TF1("cosphi","[0]+[1]*cos(x)",-3.14159,3.14159);
@@ -135,12 +163,17 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     psidat->SetLineColor(2);
     psidat->SetMarkerStyle(20);
     psidat->SetMarkerSize(0.1);
+    psibkgnd->SetMarkerStyle(20);
+    psibkgnd->SetMarkerSize(0.1);
+    psibkgnd->SetMarkerColor(1);
+    psibkgnd->SetLineColor(1);
     psidat->Draw("samep");
+    psibkgnd->Draw("samep");
     
     c0->cd(4);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 16000/scale_factor;
+    ymax = 8000/scale_factor;
     
     Phigen->SetTitle(filename);
     // Phigen->GetXaxis()->SetRangeUser(xmin,xmax);
@@ -156,12 +189,17 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     Phidat->SetLineColor(2);
     Phidat->SetMarkerStyle(20);
     Phidat->SetMarkerSize(0.1);
+    Phibkgnd->SetMarkerStyle(20);
+    Phibkgnd->SetMarkerSize(0.1);
+    Phibkgnd->SetMarkerColor(1);
+    Phibkgnd->SetLineColor(1);
     Phidat->Draw("samep");
+    Phibkgnd->Draw("samep");
     
     c0->cd(5);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 16000/scale_factor;
+    ymax = 8000/scale_factor;
     
     phigen->SetTitle(filename);
     // phigen->GetXaxis()->SetRangeUser(xmin,xmax);
@@ -177,7 +215,12 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     phidat->SetLineColor(2);
     phidat->SetMarkerStyle(20);
     phidat->SetMarkerSize(0.1);
+    phibkgnd->SetMarkerStyle(20);
+    phibkgnd->SetMarkerSize(0.1);
+    phibkgnd->SetMarkerColor(1);
+    phibkgnd->SetLineColor(1);
     phidat->Draw("samep");
+    phibkgnd->Draw("samep");
     
     c0->cd(6);
     gPad->SetLogy(); // use  gPad->SetLogy();
@@ -200,7 +243,12 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     tdat->Fit("expo","","",0.002,0.01);
     tdat->Draw("p");
     tgen->SetMarkerColor(4);
-      tgen->Draw("samep");
+    tbkgnd->SetMarkerStyle(20);
+    tbkgnd->SetMarkerSize(0.1);
+    tbkgnd->SetMarkerColor(1);
+    tbkgnd->SetLineColor(1);
+    tgen->Draw("samep");
+    tbkgnd->Draw("samep");
     
     
     TCanvas *c2 = new TCanvas("c2", "c2",200,10,1000,700);
@@ -209,7 +257,7 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     c2->cd(1);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 0.4;
+    ymax = 1.2;
     
     TH1F *M2piAcceptance = (TH1F*)M2piacc->Clone("M2piAcceptance");
     M2piAcceptance->SetTitle("Acceptance");
@@ -273,7 +321,7 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     c2->cd(5);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 1.2;
+    // ymax = 1.2;
     
     TH1F *phiAcceptance = (TH1F*)phiacc->Clone("phiAcceptance");
     phiAcceptance->SetTitle("Acceptance");
@@ -289,7 +337,7 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     c2->cd(6);
     // gPad->SetLogy();
     ymin = 0;
-    ymax = 1.2;
+    // ymax = 1.2;
     xmin = 0;
     xmax = 0.012;
     
@@ -325,8 +373,13 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     M2pidat->SetLineColor(2);
     M2pidat->SetMarkerStyle(20);
     M2pidat->SetMarkerSize(0.1);
+    M2pibkgnd->SetMarkerColor(4);
+    M2pibkgnd->SetLineColor(4);
+    M2pibkgnd->SetMarkerStyle(20);
+    M2pibkgnd->SetMarkerSize(0.1);
     M2piacc->Draw("p");
     M2pidat->Draw("samep");
+    M2pibkgnd->Draw("samep");
     
     TLegend *leg1 = new TLegend(0.6,0.3,0.8,0.5);
     // leg1->AddEntry(M2pigen,"Gen","lp");
@@ -353,7 +406,12 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     cosThetadat->SetLineColor(2);
     cosThetadat->SetMarkerStyle(20);
     cosThetadat->SetMarkerSize(0.1);
+    cosThetabkgnd->SetMarkerColor(4);
+    cosThetabkgnd->SetLineColor(4);
+    cosThetabkgnd->SetMarkerStyle(20);
+    cosThetabkgnd->SetMarkerSize(0.1);
     cosThetadat->Draw("samep");
+    cosThetabkgnd->Draw("samep");
     
     c1->cd(3);
     // gPad->SetLogy();
@@ -375,7 +433,12 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     psidat->SetLineColor(2);
     psidat->SetMarkerStyle(20);
     psidat->SetMarkerSize(0.1);
+    psibkgnd->SetMarkerColor(4);
+    psibkgnd->SetLineColor(4);
+    psibkgnd->SetMarkerStyle(20);
+    psibkgnd->SetMarkerSize(0.1);
     psidat->Draw("samep");
+    psibkgnd->Draw("samep");
     
     c1->cd(4);
     // gPad->SetLogy();
@@ -397,7 +460,12 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     Phidat->SetLineColor(2);
     Phidat->SetMarkerStyle(20);
     Phidat->SetMarkerSize(0.1);
+    Phibkgnd->SetMarkerColor(4);
+    Phibkgnd->SetLineColor(4);
+    Phibkgnd->SetMarkerStyle(20);
+    Phibkgnd->SetMarkerSize(0.1);
     Phidat->Draw("samep");
+    Phibkgnd->Draw("samep");
     
     
     c1->cd(5);
@@ -420,7 +488,12 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     phidat->SetLineColor(2);
     phidat->SetMarkerStyle(20);
     phidat->SetMarkerSize(0.1);
+    phibkgnd->SetMarkerColor(4);
+    phibkgnd->SetLineColor(4);
+    phibkgnd->SetMarkerStyle(20);
+    phibkgnd->SetMarkerSize(0.1);
     phidat->Draw("samep");
+    phibkgnd->Draw("samep");
     
     c1->cd(6);
     gPad->SetLogy();  // use  gPad->SetLogy();
@@ -443,7 +516,12 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     tdat->Draw("p");
     tacc->SetMarkerColor(1);
     tacc->SetLineColor(1);
+    tbkgnd->SetMarkerColor(4);
+    tbkgnd->SetLineColor(4);
+    tbkgnd->SetMarkerStyle(20);
+    tbkgnd->SetMarkerSize(0.1);
     tacc->Draw("samep");
+    tbkgnd->Draw("samep");
     
     TCanvas *c3 = new TCanvas("c3", "c3",200,10,1000,700);
     
@@ -461,12 +539,12 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     M2piacc->GetXaxis()->SetTitle("M(#pi^{+}#pi^{-})");
     M2piacc->SetMarkerColor(1);
     // M2piacc->Draw("samep");
-    M2pidat->SetMarkerColor(2);
-    M2pidat->SetLineColor(2);
-    M2pidat->SetMarkerStyle(20);
-    M2pidat->SetMarkerSize(0.1);
+    M2pidatsub->SetMarkerColor(2);
+    M2pidatsub->SetLineColor(2);
+    M2pidatsub->SetMarkerStyle(20);
+    M2pidatsub->SetMarkerSize(0.1);
     M2piacc->Draw("p");
-    M2pidat->Draw("samep");
+    M2pidatsub->Draw("samep");
     
     c3->cd(2);
     // gPad->SetLogy();
@@ -482,11 +560,11 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     cosThetaacc->SetLineColor(1);
     cosThetaacc->Draw("p");
     // cosThetaacc->Draw("samep");
-    cosThetadat->SetMarkerColor(2);
-    cosThetadat->SetLineColor(2);
-    cosThetadat->SetMarkerStyle(20);
-    cosThetadat->SetMarkerSize(0.1);
-    cosThetadat->Draw("samep");
+    cosThetadatsub->SetMarkerColor(2);
+    cosThetadatsub->SetLineColor(2);
+    cosThetadatsub->SetMarkerStyle(20);
+    cosThetadatsub->SetMarkerSize(0.1);
+    cosThetadatsub->Draw("samep");
     
     c3->cd(3);
     // gPad->SetLogy();
@@ -505,11 +583,11 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     Phiacc->Fit(cos2phi);
     Phiacc->Draw("p");
     // Phiacc->Draw("samep");
-    Phidat->SetMarkerColor(2);
-    Phidat->SetLineColor(2);
-    Phidat->SetMarkerStyle(20);
-    Phidat->SetMarkerSize(0.1);
-    Phidat->Draw("samep");
+    Phidatsub->SetMarkerColor(2);
+    Phidatsub->SetLineColor(2);
+    Phidatsub->SetMarkerStyle(20);
+    Phidatsub->SetMarkerSize(0.1);
+    Phidatsub->Draw("samep");
     
     
     c3->cd(4);
@@ -528,11 +606,11 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     psiacc->Fit(cos2phi);
     psiacc->Draw("p");
     // psiacc->Draw("samep");
-    psidat->SetMarkerColor(2);
-    psidat->SetLineColor(2);
-    psidat->SetMarkerStyle(20);
-    psidat->SetMarkerSize(0.1);
-    psidat->Draw("samep");
+    psidatsub->SetMarkerColor(2);
+    psidatsub->SetLineColor(2);
+    psidatsub->SetMarkerStyle(20);
+    psidatsub->SetMarkerSize(0.1);
+    psidatsub->Draw("samep");
 
     
     c3->cd(5);
@@ -551,11 +629,11 @@ void twopi_primakoff(TString filename, Int_t maxev=100000)
     phiacc->Fit(cosphi);
     phiacc->Draw("p");
     // phiacc->Draw("samep");
-    phidat->SetMarkerColor(2);
-    phidat->SetLineColor(2);
-    phidat->SetMarkerStyle(20);
-    phidat->SetMarkerSize(0.1);
-    phidat->Draw("samep");
+    phidatsub->SetMarkerColor(2);
+    phidatsub->SetLineColor(2);
+    phidatsub->SetMarkerStyle(20);
+    phidatsub->SetMarkerSize(0.1);
+    phidatsub->Draw("samep");
 
     c3->cd(6);
     
