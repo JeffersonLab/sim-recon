@@ -775,17 +775,16 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
       for (unsigned int i=0;i<used.size();i++){
 	if (total_num_used==used.size()) break;
 	if (used[i]==0){
-	  double z=points[i]->wire->origin.z();
-	  double z0=segment->hits[0]->wire->origin.z();
-	  if (z<z0 
-	      || z>segment->hits[segment->hits.size()-1]->wire->origin.z()){
+	  unsigned int packNo=(points[i]->wire->layer-1)/6;
+	  if (packNo==segment->package){
+	    double z=points[i]->wire->origin.z();
+	    double z0=segment->hits[0]->wire->origin.z();
 	    double phi_s=segment->Phi1
 	      +rotation_sense*(z-z0)/(segment->rc*segment->tanl);
 	    
 	    double dx=segment->xc+segment->rc*cos(phi_s)-points[i]->xy.X();
 	    double dy=segment->yc+segment->rc*sin(phi_s)-points[i]->xy.Y();
 	    double dr=sqrt(dx*dx+dy*dy);
-
 	    if (dr<MATCH_RADIUS){
 	      used[i]=1;
 	      added_hits=true;
@@ -807,7 +806,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	    CircleFit(segment->hits);
 	    LineFit(segment->hits);
 	  }
-	  
+
 	  FillSegmentData(segment);
 	} 
       }
