@@ -1506,7 +1506,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	 DVector3 mom=cdccan->momentum();
 	 DVector3 pos=cdccan->position();
 	 double q=cdccan->charge();
-	 
+
 	 // Try to match unmatched fdc candidates
 	 int num_match=0;
 	 int num_hits=0;
@@ -1515,19 +1515,21 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	     unsigned int ind=segments[m]->hits.size()-1-n;
 	     const DFDCPseudo *hit=segments[m]->hits[ind];
 	     
-	     ProjectHelixToZ(hit->wire->origin.z(),q,mom,pos);
-
-	     // difference
-	     DVector2 XY=hit->xy;
-	     double dx=XY.X()-pos.x();
-	     double dy=XY.Y()-pos.y();
-	     double dr2=dx*dx+dy*dy;
-	     
-	     double variance=1.0;
-	     double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
-	     if (prob>0.01) num_match++;
-	     
-	     num_hits++;
+	     if (pos.Perp()<48.5){
+	       ProjectHelixToZ(hit->wire->origin.z(),q,mom,pos);
+	       
+	       // difference
+	       DVector2 XY=hit->xy;
+	       double dx=XY.X()-pos.x();
+	       double dy=XY.Y()-pos.y();
+	       double dr2=dx*dx+dy*dy;
+	       
+	       double variance=1.0;
+	       double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+	       if (prob>0.01) num_match++;
+	       
+	       num_hits++;
+	     }
 	   }
 	   if (num_match>=3 
 	       || (num_match>0 && double(num_match)/double(num_hits)>0.33)){
@@ -2014,7 +2016,6 @@ void DTrackCandidate_factory::MatchMethod6(DTrackCandidate *can,
     UpdatePositionAndMomentum(can,firsthit,fit,Bz_avg,axial_id);
   
     if (DEBUG_LEVEL>0) _DBG_ << "... matched stray CDC hits ..." << endl;
-    cout<< "... matched stray CDC hits ..." <<endl;
 
   } // match at least one cdc hit
 }
@@ -2484,6 +2485,7 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 
 	  // Try to match segments by swimming through the field
 	  got_match=MatchMethod11(q,mypos,mymom,fit2,segment,segments2[0]);
+	  //	  _DBG_ << endl;
 	}
 	if (got_match){
 	  forward_matches[k]=1;
@@ -2772,36 +2774,38 @@ bool DTrackCandidate_factory::MatchMethod11(double q,DVector3 &mypos,
   stepper->SetCharge(q);
   stepper->SwimToPlane(mypos1,mymom1,secondhit->wire->origin,norm,NULL);
 
-  // Look for match at first hit
-  double dx=mypos1.x()-secondhit->xy.X();
-  double dy=mypos1.y()-secondhit->xy.Y();
-  double d2=dx*dx+dy*dy;
+  //  _DBG_<< endl;
   double variance=1.;
-  double prob=TMath::Prob(d2/variance,1);
-  
-  unsigned int num_match=(prob>0.01)?1:0;
-  
-  // Try to match more hits
-  for (unsigned int i=1;i<segment2->hits.size();i++){
-    const DFDCPseudo *hit=segment2->hits[i];
-
-    ProjectHelixToZ(hit->wire->origin.z(),q,mymom1,mypos1);
-	  
-    DVector2 XY=hit->xy;
-    double dx=XY.X()-mypos1.x();
-    double dy=XY.Y()-mypos1.y();
-    double dr2=dx*dx+dy*dy;
-	  
-    double variance=1.0;
-    double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
-    if (prob>0.01) num_match++;	  
-  } 
-  if (num_match>=3){ 
-    // if (DEBUG_LEVEL>0)
-      {
-      _DBG_ << "Method 11:  found match!" << endl;
+  if (mypos1.Perp()<48.5){
+    // Look for match at first hit
+    double dx=mypos1.x()-secondhit->xy.X();
+    double dy=mypos1.y()-secondhit->xy.Y();
+    double d2=dx*dx+dy*dy;
+    double prob=TMath::Prob(d2/variance,1);
+    
+    unsigned int num_match=(prob>0.01)?1:0;
+    
+    // Try to match more hits
+    for (unsigned int i=1;i<segment2->hits.size();i++){
+      const DFDCPseudo *hit=segment2->hits[i];
+      
+      ProjectHelixToZ(hit->wire->origin.z(),q,mymom1,mypos1);
+      
+      DVector2 XY=hit->xy;
+      double dx=XY.X()-mypos1.x();
+      double dy=XY.Y()-mypos1.y();
+      double dr2=dx*dx+dy*dy;
+      
+      double variance=1.0;
+      double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+      if (prob>0.01) num_match++;	  
+    } 
+    if (num_match>=3){ 
+      if (DEBUG_LEVEL>0){
+	_DBG_ << "Method 11:  found match!" << endl;
+      }
+      return true;
     }
-    return true;
   }
 
   // Try swimming in opposite direction	  
@@ -2810,37 +2814,38 @@ bool DTrackCandidate_factory::MatchMethod11(double q,DVector3 &mypos,
   double q2=fit2.h*FactorForSenseOfRotation;
   stepper->SetCharge(q2);
   stepper->SwimToPlane(mypos2,mymom2,secondhit->wire->origin,norm,NULL);
-
-  // Look for match at first hit
-  dx=mypos2.x()-secondhit->xy.X();
-  dy=mypos2.y()-secondhit->xy.Y();
-  d2=dx*dx+dy*dy;
-  
-  prob=TMath::Prob(d2/variance,1);
-	  
-  num_match=(prob>0.01)?1:0;
-	
-  // Try to match more hits
-  for (unsigned int i=1;i<segment1->hits.size();i++){
-    const DFDCPseudo *hit=segment1->hits[i];
-	  
-    ProjectHelixToZ(hit->wire->origin.z(),q2,mymom2,mypos2);
-	  
-    DVector2 XY=hit->xy;
-    double dx=XY.X()-mypos2.x();
-    double dy=XY.Y()-mypos2.y();
-    double dr2=dx*dx+dy*dy;
+  //  _DBG_ << mypos2.x() << " " << mypos2.y() << endl;
+  if (mypos2.Perp()<48.5){
+    // Look for match at first hit
+    double dx=mypos2.x()-secondhit->xy.X();
+    double dy=mypos2.y()-secondhit->xy.Y();
+    double d2=dx*dx+dy*dy;
     
-    double variance=1.0;
-    double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
-    if (prob>0.01) num_match++;  
-  } 
-  if (num_match>=3){
-    //if (DEBUG_LEVEL>0)
-      {
-      _DBG_ << "Method 11:  found match!" << endl;
+    double prob=TMath::Prob(d2/variance,1);
+    
+    unsigned int num_match=(prob>0.01)?1:0;
+	
+    // Try to match more hits
+    for (unsigned int i=1;i<segment1->hits.size();i++){
+      const DFDCPseudo *hit=segment1->hits[i];
+	  
+      ProjectHelixToZ(hit->wire->origin.z(),q2,mymom2,mypos2);
+	  
+      DVector2 XY=hit->xy;
+      double dx=XY.X()-mypos2.x();
+      double dy=XY.Y()-mypos2.y();
+      double dr2=dx*dx+dy*dy;
+      
+      double variance=1.0;
+      double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+      if (prob>0.01) num_match++;  
+    } 
+    if (num_match>=3){
+      if (DEBUG_LEVEL>0){
+	_DBG_ << "Method 11:  found match!" << endl;
+      }
+      return true;
     }
-    return true;
   }
 
   return false;
