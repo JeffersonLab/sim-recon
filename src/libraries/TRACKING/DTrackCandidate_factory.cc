@@ -44,7 +44,7 @@ using namespace std;
 
 #define CUT 10.
 #define RADIUS_CUT 50.0
-#define BEAM_VAR 0.0208 // cm^2
+#define BEAM_VAR 1. // cm^2
 #define EPS 0.001
 
 //------------------
@@ -536,6 +536,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       }
     }
   }
+
   // Of the remaining fdc candidates, output those that have more than one 
   // segment associated with them.
   if (num_fdc_cands_remaining>0){ 
@@ -607,7 +608,6 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
   }
 
-
   // We should be left with only single-segment fdc candidates:
   if (num_fdc_cands_remaining){
     for (unsigned int j=0;j<forward_matches.size();j++){
@@ -659,137 +659,28 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   // any track segment.  In this case, try to attach these stray hits to a
   // track in the FDC that has hits in the first package.
   if (num_unmatched_cdcs>0){
+    if (DEBUG_LEVEL>0){
+      _DBG_ << "Trying to use stray CDC hits in match to FDC..." << endl;
+    }
+
     for (unsigned int i=0;i<trackcandidates.size();i++){
-       DTrackCandidate *candidate=trackcandidates[i];
-       // Get the hits from the candidate
-       vector<const DFDCPseudo*>usedfdchits;
-       candidate->GetT(usedfdchits);
+      if (num_unmatched_cdcs>0){
+	DTrackCandidate *candidate=trackcandidates[i];
+	// Get the hits from the candidate
        vector<const DCDCTrackHit *>usedcdchits;
        candidate->GetT(usedcdchits);
-       if (usedcdchits.size()==0
-	   && (usedfdchits[0]->wire->layer-1)/6==0
-	   ){
+       if (usedcdchits.size()==0){
+	 vector<const DFDCPseudo*>usedfdchits;
+	 candidate->GetT(usedfdchits);
 	 // Sort the hits 
 	 sort(usedfdchits.begin(),usedfdchits.end(),FDCHitSortByLayerincreasing);
-	 double q=candidate->charge();
-	 DVector3 mom=candidate->momentum();
-	 DVector3 pos=candidate->position();
-	 vector<unsigned int>cdc_hits_to_add;	 
-	 for (unsigned int k=0;k<used_cdc_hits.size();k++){
-	   if (!used_cdc_hits[k]){
-	     double variance=1.6;
-	     // Use a helical approximation to the track to match both axial and
-	     // stereo wires
-	     double doca2=DocaToHelix(mycdchits[k],q,pos,mom);
-	     double prob=isfinite(doca2) ? TMath::Prob(doca2/variance,1):0.0;
-	     if (prob>0.01){
-	       cdc_hits_to_add.push_back(k);
-	     }
-	   }
-	 }
-	 // It's probably not worth doing this unless there are at least 2
-	 // hits in the cdc that can be associated with the track...
-	 if (cdc_hits_to_add.size()>1){
-	   // variables needed for average Bz
-	   unsigned int num_hits=0;
-	   double Bz=0;
-
-	   // Redo the fit if there are enough axial straws
-	   DHelicalFit fit;
-	   unsigned int inner_index=0;
-	   int min_ring=28;
-	   for (unsigned int k=0;k<cdc_hits_to_add.size();k++){
-	     unsigned int ind=cdc_hits_to_add[k];
-	     used_cdc_hits[ind]=1;
-	     candidate->AddAssociatedObject(mycdchits[ind]);
-	     if (mycdchits[ind]->is_stereo==false){
-	       double cov=0.213;  //guess
-	       const DVector3 origin=mycdchits[ind]->wire->origin;
-	       double x=origin.x(),y=origin.y(),z=origin.z();
-	       fit.AddHitXYZ(x,y,z,cov,cov,0.,true);
-	       Bz+=bfield->GetBz(x,y,z);
-	       num_hits++;
-	     }   
-	     if (mycdchits[ind]->wire->ring<min_ring){
-	       inner_index=ind;
-	       min_ring=mycdchits[ind]->wire->ring;
-	     }
-	   }
-	   if (num_hits>=2){
-	     for (unsigned int n=0;n<usedfdchits.size();n++){
-	       const DFDCPseudo *fdchit=usedfdchits[n];
-	       fit.AddHit(fdchit);
-	       //bfield->GetField(x,y,z,Bx,By,Bz);
-	       //Bz_avg-=Bz;
-	       Bz+=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),fdchit->wire->origin.z());
-	     }
-	     num_hits+=usedfdchits.size();
-	     Bz=fabs(Bz)/double(num_hits);
-	     
-	     // redo the circle fit
-	     if (fit.FitCircleRiemann(candidate->rc)==NOERROR){
-	  
-	       // Determine the polar angle
-	       double theta=mom.Theta();
-	       fit.tanl=tan(M_PI_2-theta);
-	       
-	       double p=0.003*fit.r0*Bz/cos(atan(fit.tanl));
-	       if (p>3.){	
-		 // momentum is suspiciously high for a track going through both
-		 // the FDC and the CDC... try alternate circle fit...
-		 fit.FitCircle();
-	       }
-
-	       // circle parameters
-	       candidate->rc=fit.r0;
-	       candidate->xc=fit.x0;
-	       candidate->yc=fit.y0;
-
-	       DVector3 origin=mycdchits[inner_index]->wire->origin;      
-	       if (GetPositionAndMomentum(fit,Bz,origin,pos,mom)==NOERROR){
-		 // FDC hit
-		 const DFDCPseudo *fdchit=usedfdchits[0];
-		 // Find the z-position at the new position in x and y
-		 DVector2 xy0(pos.X(),pos.Y());
-		 double tworc=2.*fit.r0;
-		 double ratio=(fdchit->xy-xy0).Mod()/tworc;
-		 double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;	
-		 pos.SetZ(fdchit->wire->origin.z()-sperp*fit.tanl);
-	       }
-
-	       candidate->chisq=fit.chisq;
-	       candidate->Ndof=fit.ndof;
-	       candidate->setMomentum(mom);
-	       candidate->setPosition(pos);
-	     }
-	   } // check for minimum number of extra hits for refit
-	   else{
-	     // FDC hit
-	     const DFDCPseudo *fdchit=usedfdchits[0];
-	     double z=fdchit->wire->origin.z();
-	     
-	     // B-field at FDC segment
-	     double Bz=fabs(bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),z));
-
-	     DVector3 origin=mycdchits[inner_index]->wire->origin;      
-	     if (GetPositionAndMomentum(candidate,Bz,origin,pos,mom)==NOERROR){
-	       // Find the z-position at the new position in x and y
-	       DVector2 xy0(pos.X(),pos.Y());
-	       double tworc=2.*candidate->rc;
-	       double ratio=(fdchit->xy-xy0).Mod()/tworc;
-	       double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;	
-	       pos.SetZ(z-sperp*tanl(M_PI_2-mom.Theta()));
-	     }
-
-	     candidate->setMomentum(mom);
-	     candidate->setPosition(pos);
-	     
-	   }
+	 if ((usedfdchits[0]->wire->layer-1)/6==0){
+	   MatchMethod6(candidate,usedfdchits,used_cdc_hits,num_unmatched_cdcs);
 	 }
        }
+      }
     }
   }
-
 
   // Only output the candidates that have at least a minimum number of hits
   for (unsigned int i=0;i<trackcandidates.size();i++){
@@ -889,7 +780,14 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
   double yc2=yc*yc;
   double xc2_plus_yc2=xc2+yc2;
   double a=(r2-xc2_plus_yc2-rc2)/(2.*rc);
-  double temp1=yc*sqrt(xc2_plus_yc2-a*a);
+  double b=xc2_plus_yc2-a*a;
+  if (b<0){
+    // We did not find an intersection between the two circles, so return 
+    // an error.  The values of mom and pos are not changed. 
+    return VALUE_OUT_OF_RANGE;
+  }
+
+  double temp1=yc*sqrt(b);
   double temp2=xc*a;
   double cosphi_plus=(temp2+temp1)/xc2_plus_yc2;
   double cosphi_minus=(temp2-temp1)/xc2_plus_yc2;
@@ -897,13 +795,6 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
   // Direction tangent and transverse momentum
   double tanl=fit.tanl;
   double pt=0.003*Bz*rc;
-
-  if((!isfinite(temp1)) || (!isfinite(temp2))){
-    // We did not find an intersection between the two circles, so return 
-    // an error.  The values of mom and pos are not changed. 
-    //    _DBG_ << endl;
-    return VALUE_OUT_OF_RANGE;
-  }
 
   double phi_plus=acos(cosphi_plus);
   double phi_minus=acos(cosphi_minus);
@@ -957,7 +848,14 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
   double yc2=yc*yc;
   double xc2_plus_yc2=xc2+yc2;
   double a=(r2-xc2_plus_yc2-rc2)/(2.*rc);
-  double temp1=yc*sqrt(xc2_plus_yc2-a*a);
+  double b=xc2_plus_yc2-a*a;
+  if (b<0){
+    // We did not find an intersection between the two circles, so return 
+    // an error.  The values of mom and pos are not changed. 
+    return VALUE_OUT_OF_RANGE;
+  }
+
+  double temp1=yc*sqrt(b);
   double temp2=xc*a;
   double cosphi_plus=(temp2+temp1)/xc2_plus_yc2;
   double cosphi_minus=(temp2-temp1)/xc2_plus_yc2;
@@ -965,13 +863,6 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
   // Direction tangent and transverse momentum
   double tanl=fit.tanl;
   double pt=0.003*Bz*rc;
-
-  if((!isfinite(temp1)) || (!isfinite(temp2))){
-    // We did not find an intersection between the two circles, so return 
-    // an error.  The values of mom and pos are not changed. 
-    //    _DBG_ << endl;
-    return VALUE_OUT_OF_RANGE;
-  }
 
   double phi_plus=acos(cosphi_plus);
   double phi_minus=acos(cosphi_minus);
@@ -1014,7 +905,7 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
   else{
     fit.h=1.;
     phi_plus*=-1.;   
-    pos.SetXYZ(x_plus,y_plus,0.); // z will be fillted later
+    pos.SetXYZ(x_plus,y_plus,0.); // z will be filled later
     mom.SetXYZ(pt*sin(phi_plus),pt*cos(phi_plus),pt*tanl);
 
   }
@@ -1037,6 +928,13 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(const DTrackCandidate *
   double yc2=yc*yc;
   double xc2_plus_yc2=xc2+yc2;
   double a=(r2-xc2_plus_yc2-rc2)/(2.*rc);
+  double b=xc2_plus_yc2-a*a;
+  if (b<0){
+    // We did not find an intersection between the two circles, so return 
+    // an error.  The values of mom and pos are not changed. 
+    return VALUE_OUT_OF_RANGE;
+  }
+  
   double temp1=yc*sqrt(xc2_plus_yc2-a*a);
   double temp2=xc*a;
   double cosphi_plus=(temp2+temp1)/xc2_plus_yc2;
@@ -1045,13 +943,6 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(const DTrackCandidate *
   // Direction tangent and transverse momentum
   double tanl=tan(M_PI_2-mom.Theta());
   double pt=0.003*Bz*rc;
-
-  if((!isfinite(temp1)) || (!isfinite(temp2))){
-    // We did not find an intersection between the two circles, so return 
-    // an error.  The values of mom and pos are not changed. 
-    //    _DBG_ << endl;
-    return VALUE_OUT_OF_RANGE;
-  }
 
   double phi_plus=acos(cosphi_plus);
   double phi_minus=acos(cosphi_minus);
@@ -1142,6 +1033,7 @@ double DTrackCandidate_factory::DocaToHelix(const DCDCTrackHit *hit,
   double x0=pos.X();
   double y0=pos.Y();
   double z0=pos.Z();
+  //  _DBG_ <<endl;
   double B=fabs(bfield->GetBz(x0,y0,z0));
   double twokappa=FactorForSenseOfRotation*0.003*B*q/pt;
   double one_over_twokappa=1./twokappa;
@@ -1772,7 +1664,7 @@ bool DTrackCandidate_factory::MatchMethod4(const DTrackCandidate *srccan,
 	DVector3 pos=srccan->position();
 	double q=srccan->charge();
 	DVector3 norm(0.,0.,1.);
-	
+
 	if (pack2_last<pack1_first){
 	  mom=(-1.0)*mom;
 	}
@@ -2012,7 +1904,7 @@ bool DTrackCandidate_factory::MatchMethod5(DTrackCandidate *can,
 // Method to match FDC candidates with stray CDC hits unassociated with track
 // candidates
 void DTrackCandidate_factory::MatchMethod6(DTrackCandidate *can, 
-					   vector<const DFDCSegment *>&segments,
+					   vector<const DFDCPseudo*>&fdchits,
 					   vector<unsigned int>&used_cdc_hits,  
 					   unsigned int &num_unmatched_cdcs
 					   ){
@@ -2089,22 +1981,21 @@ void DTrackCandidate_factory::MatchMethod6(DTrackCandidate *can,
 
   // We found some matched hits.  Update the start position of the candidate.
   if (num_match_cdc>0){
-    const DFDCPseudo *firsthit=segments[0]->hits[0];
+    const DFDCPseudo *firsthit=fdchits[0];
     
     int axial_id=-1;
     if (num_axial>0) axial_id=matched_ids[0];
 
     // Compute the average Bz
     double Bz_avg=0.,denom=0.;
-    for (unsigned int m=0;m<segments.size();m++){
-      for (unsigned int n=0;n<segments[m]->hits.size();n++){	
-	const DFDCPseudo *fdchit=segments[m]->hits[n];
-	double x=fdchit->xy.X();
-	double y=fdchit->xy.Y();
-	double z=fdchit->wire->origin.z();
-	Bz_avg+=bfield->GetBz(x,y,z);
-	denom+=1.;
-      }
+    for (unsigned int m=0;m<fdchits.size();m++){
+      const DFDCPseudo *fdchit=fdchits[m];
+      double x=fdchit->xy.X();
+      double y=fdchit->xy.Y();
+      double z=fdchit->wire->origin.z();
+      
+      Bz_avg+=bfield->GetBz(x,y,z);
+      denom+=1.;
     }
     Bz_avg=fabs(Bz_avg)/denom;
 
@@ -2220,6 +2111,7 @@ bool DTrackCandidate_factory::MatchMethod7(DTrackCandidate *srccan,
 	  for (unsigned int i=0;i<fdchits.size();i++){
 	    fit.AddHit(fdchits[i]);
 	    double zhit=fdchits[i]->wire->origin.z();
+	   
 	    Bz+=bfield->GetBz(fdchits[i]->xy.X(),fdchits[i]->xy.Y(),zhit);
 	    num_hits++;
 
@@ -2234,6 +2126,7 @@ bool DTrackCandidate_factory::MatchMethod7(DTrackCandidate *srccan,
 	      const DFDCPseudo *fdchit=segments[m]->hits[n];
 	      fit.AddHit(fdchit);
 	      double zhit=fdchit->wire->origin.z();
+
 	      Bz+=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),zhit);
 	      srccan->AddAssociatedObject(fdchit);
 	    }
@@ -2341,9 +2234,10 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
 	  
     // Determine the tangent of the dip angle
     double tworc=2.*fit.r0;
-    double sperp=tworc*asin(wirepos.Perp()/tworc);
+    double ratio=wirepos.Perp()/tworc;
+    double sperp=tworc*((ratio<1.)?asin(ratio):M_PI_2);
     fit.tanl=(wirepos.z()-TARGET_Z)/sperp;
-	  
+
     // Find sense of rotation (proportional to the charge)
     fit.GuessChargeFromCircleFit();
     double q=fit.h*FactorForSenseOfRotation;
@@ -2353,13 +2247,14 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
     DVector3 pos,mom;
     if (GetPositionAndMomentum(fit,Bz,cdchits[0]->wire->origin,pos,mom)
 	==NOERROR){
+     
       // Find the z-position at the new position in x and y
       DVector2 xy0(pos.X(),pos.Y());
       double tworc=2.*fit.r0;
       double ratio=(wirepos-pos).Perp()/tworc;
       double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;   
       pos.SetZ(wirepos.z()-sperp*fit.tanl);
-	    
+
       // Set the charge for the stepper 
       stepper->SetCharge(q);
       // Vector normal to the fdc planes
@@ -2375,6 +2270,9 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
 	  fdccan->GetT(segments);
 	  sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
 	
+	  // only do this for candidates with segments in the first package
+	  if (segments[0]->package>0) continue;
+
 	  const DFDCPseudo *firsthit=segments[0]->hits[0];
 	  
 	  // Make copies of the momentum and position vectors for input to 
@@ -2517,6 +2415,9 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 					   const DFDCSegment *segment,
 					   vector<const DTrackCandidate*>&cands,
 					   vector<int> &forward_matches){
+  if (DEBUG_LEVEL>0){
+    _DBG_ << "Attempting Match method #9..." << endl;
+  }
   double q=srccan->charge();
   int pack1=segment->package;
 
@@ -2612,7 +2513,7 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 	    const DFDCPseudo *hit=segments2[0]->hits[n];
 	    fit1.AddHit(hit); 
 	    can->AddAssociatedObject(hit);
-	    
+	
 	    Bz+=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
 			      hit->wire->origin.z());
 	    num_hits++;		  
@@ -2659,7 +2560,11 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 	  can->setMomentum(mom);
 	  
 	  trackcandidates.push_back(can);
-	  
+	 
+	  if (DEBUG_LEVEL>1){
+	    _DBG_ << "Match method #9 succeeded..." << endl;
+	  }
+
 	  return true;
 	} // circle center match
       } // different packages?
@@ -2677,6 +2582,9 @@ bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
 					   const DFDCSegment *segment,
 					   vector<const DTrackCandidate*>&cands,
 					   vector<int> &forward_matches){
+  if (DEBUG_LEVEL>0){
+    _DBG_ << "Attempting Match method #10..." << endl;
+  }
   double q=srccan->charge();
   int pack1=segment->package;
 
@@ -2749,7 +2657,7 @@ bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
 	  for (unsigned int n=0;n<segment->hits.size();n++){
 	    const DFDCPseudo *fdchit=segment->hits[n];
 	    can->AddAssociatedObject(fdchit);
-	    
+	 
 	    Bz+=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),
 			      fdchit->wire->origin.z());
 	    num_hits++;
@@ -2762,7 +2670,7 @@ bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
 	    const DFDCPseudo *hit=segments2[0]->hits[n];
 	    fit1.AddHit(hit); 
 	    can->AddAssociatedObject(hit);
-	    
+	  
 	    Bz+=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
 			      hit->wire->origin.z());
 	    num_hits++;		  
@@ -2809,7 +2717,10 @@ bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
 	  can->setMomentum(mom);
 	  
 	  trackcandidates.push_back(can);
-	  
+
+	  if (DEBUG_LEVEL>1){
+	    _DBG_ << "Match method #10 succeeded..." << endl;
+	  }
 	  return true;
 	} // minimum number of matching hits
       } // different packages?
@@ -2827,6 +2738,10 @@ bool DTrackCandidate_factory::MatchMethod11(double q,DVector3 &mypos,
 					    const DFDCSegment *segment1,
 					    const DFDCSegment *segment2
 					    ){
+  if (DEBUG_LEVEL>0){
+    _DBG_ << "Attempting Match method #11..." << endl;
+  }
+
   // Package numbers
   int pack1=segment1->package;
   int pack2=segment2->package;
@@ -2838,22 +2753,28 @@ bool DTrackCandidate_factory::MatchMethod11(double q,DVector3 &mypos,
   double x=segment2->hits[0]->xy.X();
   double y=segment2->hits[0]->xy.Y();
   double z=segment2->hits[0]->wire->origin.z();
+
   double Bz=fabs(bfield->GetBz(x,y,z));
+
+  // Make local copies of input momentum and position
+  DVector3 mymom1(mymom);
+  DVector3 mypos1(mypos);
 	
   // Get position and momentum for the second segment
   DVector3 mypos2,mymom2;
   GetPositionAndMomentum(z,fit2,Bz,mypos2,mymom2);
+
   if (pack2>pack1) mymom2=(-1.)*mymom2;
 
   // Swim from the first segment to the second segment using the stepper
   const DFDCPseudo *secondhit=segment2->hits[0];
   DVector3 norm(0.,0.,1.);
   stepper->SetCharge(q);
-  stepper->SwimToPlane(mypos,mymom,secondhit->wire->origin,norm,NULL);
+  stepper->SwimToPlane(mypos1,mymom1,secondhit->wire->origin,norm,NULL);
 
   // Look for match at first hit
-  double dx=mypos.x()-secondhit->xy.X();
-  double dy=mypos.y()-secondhit->xy.Y();
+  double dx=mypos1.x()-secondhit->xy.X();
+  double dy=mypos1.y()-secondhit->xy.Y();
   double d2=dx*dx+dy*dy;
   double variance=1.;
   double prob=TMath::Prob(d2/variance,1);
@@ -2863,19 +2784,23 @@ bool DTrackCandidate_factory::MatchMethod11(double q,DVector3 &mypos,
   // Try to match more hits
   for (unsigned int i=1;i<segment2->hits.size();i++){
     const DFDCPseudo *hit=segment2->hits[i];
-	  
-    ProjectHelixToZ(hit->wire->origin.z(),q,mymom,mypos);
+
+    ProjectHelixToZ(hit->wire->origin.z(),q,mymom1,mypos1);
 	  
     DVector2 XY=hit->xy;
-    double dx=XY.X()-mypos.x();
-    double dy=XY.Y()-mypos.y();
+    double dx=XY.X()-mypos1.x();
+    double dy=XY.Y()-mypos1.y();
     double dr2=dx*dx+dy*dy;
 	  
     double variance=1.0;
     double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
     if (prob>0.01) num_match++;	  
   } 
-  if (num_match>=3){
+  if (num_match>=3){ 
+    // if (DEBUG_LEVEL>0)
+      {
+      _DBG_ << "Method 11:  found match!" << endl;
+    }
     return true;
   }
 
@@ -2911,6 +2836,10 @@ bool DTrackCandidate_factory::MatchMethod11(double q,DVector3 &mypos,
     if (prob>0.01) num_match++;  
   } 
   if (num_match>=3){
+    //if (DEBUG_LEVEL>0)
+      {
+      _DBG_ << "Method 11:  found match!" << endl;
+    }
     return true;
   }
 
