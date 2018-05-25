@@ -1688,16 +1688,18 @@ bool DTrackCandidate_factory::MatchMethod4(const DTrackCandidate *srccan,
 	for (unsigned int i=1;i<segments[0]->hits.size();i++){
 	  const DFDCPseudo *hit=segments[0]->hits[i];
 	  
-	  ProjectHelixToZ(hit->wire->origin.z(),q,mom,pos);
-	  
-	  DVector2 XY=hit->xy;
-	  double dx=XY.X()-pos.x();
-	  double dy=XY.Y()-pos.y();
-	  double dr2=dx*dx+dy*dy;
-
-	  double variance=1.0;
-	  double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
-	  if (prob>0.01) num_match++;
+	  if (pos.Perp()<48.5){
+	    ProjectHelixToZ(hit->wire->origin.z(),q,mom,pos);
+	    
+	    DVector2 XY=hit->xy;
+	    double dx=XY.X()-pos.x();
+	    double dy=XY.Y()-pos.y();
+	    double dr2=dx*dx+dy*dy;
+	    
+	    double variance=1.0;
+	    double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+	    if (prob>0.01) num_match++;
+	  }
 	} 
 	if (num_match>=3){
 	  forward_matches[k]=1;
@@ -2072,16 +2074,18 @@ bool DTrackCandidate_factory::MatchMethod7(DTrackCandidate *srccan,
 	for (unsigned int i=1;i<segments[0]->hits.size();i++){
 	  const DFDCPseudo *hit=segments[0]->hits[i];
 	  
-	  ProjectHelixToZ(hit->wire->origin.z(),q,mom,pos);
-	  
-	  DVector2 XY=hit->xy;
-	  double dx=XY.X()-pos.x();
-	  double dy=XY.Y()-pos.y();
-	  double dr2=dx*dx+dy*dy;
-
-	  double variance=1.0;
-	  double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
-	  if (prob>0.01) num_match++;
+	  if (pos.Perp()<48.5){
+	    ProjectHelixToZ(hit->wire->origin.z(),q,mom,pos);
+	    
+	    DVector2 XY=hit->xy;
+	    double dx=XY.X()-pos.x();
+	    double dy=XY.Y()-pos.y();
+	    double dr2=dx*dx+dy*dy;
+	    
+	    double variance=1.0;
+	    double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+	    if (prob>0.01) num_match++;
+	  }
 	} 
 	if (num_match>=3){
 	  forward_matches[k]=1;
@@ -2298,16 +2302,18 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
 	  for (unsigned int i=1;i<segments[0]->hits.size();i++){
 	    const DFDCPseudo *hit=segments[0]->hits[i];
 		   
-	    ProjectHelixToZ(hit->wire->origin.z(),q,my_mom,my_pos);
-		   
-	    DVector2 XY=hit->xy;
-	    double dx=XY.X()-my_pos.x();
-	    double dy=XY.Y()-my_pos.y();
-	    double dr2=dx*dx+dy*dy;
-	    
-	    double variance=1.0;
-	    double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
-	    if (prob>0.01) num_match++;
+	    if (my_pos.Perp()<48.5){
+	      ProjectHelixToZ(hit->wire->origin.z(),q,my_mom,my_pos);
+	      
+	      DVector2 XY=hit->xy;
+	      double dx=XY.X()-my_pos.x();
+	      double dy=XY.Y()-my_pos.y();
+	      double dr2=dx*dx+dy*dy;
+	      
+	      double variance=1.0;
+	      double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+	      if (prob>0.01) num_match++;
+	    }
 	  } 
 	  if (num_match>=3){
 	    forward_matches[k]=1;
@@ -2789,16 +2795,18 @@ bool DTrackCandidate_factory::MatchMethod11(double q,DVector3 &mypos,
     for (unsigned int i=1;i<segment2->hits.size();i++){
       const DFDCPseudo *hit=segment2->hits[i];
       
-      ProjectHelixToZ(hit->wire->origin.z(),q,mymom1,mypos1);
-      
-      DVector2 XY=hit->xy;
-      double dx=XY.X()-mypos1.x();
-      double dy=XY.Y()-mypos1.y();
-      double dr2=dx*dx+dy*dy;
-      
-      double variance=1.0;
-      double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
-      if (prob>0.01) num_match++;	  
+      if (mypos1.Perp()<48.5){
+	ProjectHelixToZ(hit->wire->origin.z(),q,mymom1,mypos1);
+	
+	DVector2 XY=hit->xy;
+	double dx=XY.X()-mypos1.x();
+	double dy=XY.Y()-mypos1.y();
+	double dr2=dx*dx+dy*dy;
+	
+	double variance=1.0;
+	double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+	if (prob>0.01) num_match++;
+      }
     } 
     if (num_match>=3){ 
       if (DEBUG_LEVEL>0){
@@ -2829,17 +2837,19 @@ bool DTrackCandidate_factory::MatchMethod11(double q,DVector3 &mypos,
     for (unsigned int i=1;i<segment1->hits.size();i++){
       const DFDCPseudo *hit=segment1->hits[i];
 	  
-      ProjectHelixToZ(hit->wire->origin.z(),q2,mymom2,mypos2);
-	  
-      DVector2 XY=hit->xy;
-      double dx=XY.X()-mypos2.x();
-      double dy=XY.Y()-mypos2.y();
-      double dr2=dx*dx+dy*dy;
+      if (mypos2.Perp()<48.5){
+	ProjectHelixToZ(hit->wire->origin.z(),q2,mymom2,mypos2);
+	
+	DVector2 XY=hit->xy;
+	double dx=XY.X()-mypos2.x();
+	double dy=XY.Y()-mypos2.y();
+	double dr2=dx*dx+dy*dy;
       
-      double variance=1.0;
-      double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
-      if (prob>0.01) num_match++;  
-    } 
+	double variance=1.0;
+	double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+	if (prob>0.01) num_match++;  
+      }
+    }
     if (num_match>=3){
       if (DEBUG_LEVEL>0){
 	_DBG_ << "Method 11:  found match!" << endl;
