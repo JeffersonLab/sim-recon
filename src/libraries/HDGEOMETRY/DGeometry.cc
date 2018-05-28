@@ -1785,6 +1785,8 @@ bool DGeometry::GetTargetLength(double &target_length) const
 bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
 				    vector<vector<DVector3> >&norm
 				    ) const{
+				    
+  JCalibration *jcalib = dapp->GetJCalibration(runnumber);
 
   // Check if Start Counter geometry is present
   vector<double> sc_origin;
@@ -1809,12 +1811,32 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
     //double ThetaY=sc_rot_angles[1]*M_PI/180.;
     double ThetaZ=sc_rot_angles[2]*M_PI/180.;
 
+	// Get overall alignment shifts from CCDB
+    map<string,double> sc_global_offsets;
+    if (jcalib->Get("START_COUNTER/global_alignment_parms",sc_global_offsets)==false) {
+   		// translations
+   		dx += sc_global_offsets["SC_ALIGN_X"];
+   		dy += sc_global_offsets["SC_ALIGN_Y"];
+   		z0 += sc_global_offsets["SC_ALIGN_Z"];
+
+		// rotations
+		ThetaX += sc_global_offsets["SC_ALIGN_ROTX"]*M_PI/180.;
+		ThetaY += sc_global_offsets["SC_ALIGN_ROTY"]*M_PI/180.;
+		ThetaZ += sc_global_offsets["SC_ALIGN_ROTZ"]*M_PI/180.;
+    }
+
     double num_paddles;
     Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
     double dSCdphi = M_TWO_PI/num_paddles;
     
     vector<vector<double> > sc_rioz;
     GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
+    
+    // Get individual paddle alignment parameters
+    vector< map<string,double> > sc_paddle_offsets;
+	bool loaded_paddle_offsets = false;
+    if (jcalib->Get("START_COUNTER/paddle_alignment_parms",sc_paddle_offsets)==false)
+    	loaded_paddle_offsets = true;
     
     // Create vectors of positions and normal vectors for each paddle
     for (unsigned int i=0;i<30;i++){
@@ -1843,6 +1865,19 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
 	ray.SetXYZ(x,y,sc_rioz[k][2]); 
 	ray.RotateX(ThetaX);
 	ray.RotateY(ThetaY);  
+	// Apply alignment parameters
+	if(loaded_paddle_offsets) {
+      // allow for a maximum extent of the paddle in z
+	  double max_z = sc_paddle_offsets[i]["SC_MAX_Z"];
+	  if(ray.Z() > max_z) {
+		ray.SetZ(max_z);
+	  }
+	  // allow for a modification of the bend angle of the paddle (18.5 deg from horizontal)
+	  // this should just be a perturbation around this angle, so assume a linear interpolation
+	  double delta_theta = sc_paddle_offsets[i]["SC_CURVE_THETA"];   // in degrees, r of curvature = 120 cm
+	  ray.SetX(ray.X()+delta_theta*1.65);   // 1 degree ~ 1.65 cm in x
+	  ray.SetY(ray.Y()-delta_theta*0.55);   // 1 degree ~ 0.55 cm in y
+	}
 	// Second point in the plane of the scintillator
 	DVector3 ray2(r,10.,sc_rioz[k][2]);
 	ray2.RotateZ(phi+0.5*dSCdphi*(1.+1./15.*((i>14)?29-i:i)));	
@@ -1851,7 +1886,7 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
 	// Compute normal vector to plane
 	DVector3 dir=(ray-oldray).Cross(ray2-oldray);
 	dir.SetMag(1.);
-	dirvec.push_back(dir);	
+	dirvec.push_back(dir);
 	posvec.push_back(DVector3(oldray.X()+dx,oldray.Y()+dy,oldray.Z()+z0));
       }
       posvec.push_back(DVector3(ray.X(),ray.Y(),ray.Z()+z0)); //SAVE THE ENDPOINT OF THE LAST PLANE
