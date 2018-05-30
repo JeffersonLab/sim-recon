@@ -43,7 +43,11 @@ class DTOFPaddleHit_factory:public JFactory<DTOFPaddleHit>{
   double ATTEN_LENGTH;
   double ENERGY_ATTEN_FACTOR;
   double TIME_COINCIDENCE_CUT;
-  vector<double>propagation_speed;
+
+  int TOF_NUM_PLANES;
+  int TOF_NUM_BARS;
+
+  vector<double> propagation_speed;
 
   vector < vector <float> > AttenuationLengths;
 

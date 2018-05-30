@@ -36,6 +36,8 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 		double ATTEN_LENGTH;
 		double ONESIDED_PADDLE_MIDPOINT_MAG; //+/- this number for North/South
 
+		int NUM_BARS;
+
 		const DTOFGeometry* dTOFGeometry;
 		
 		class tof_spacetimehit_t
