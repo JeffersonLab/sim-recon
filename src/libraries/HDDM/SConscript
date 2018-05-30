@@ -131,19 +131,19 @@ def HDDM_PY(target, source, env):
 if env['SHOWBUILD']==0:
 	hddmcaction   = SCons.Script.Action(HDDM_C  , 'HDDM-C     [$SOURCE]')
 	hddmcppaction = SCons.Script.Action(HDDM_CPP, 'HDDM-CPP   [$SOURCE]')
-    #hddmpyaction  = SCons.Script.Action(HDDM_PY,  'HDDM-PY    [$SOURCE]')
+	hddmpyaction  = SCons.Script.Action(HDDM_PY,  'HDDM-PY    [$SOURCE]')
 else:
 	hddmcaction   = SCons.Script.Action(HDDM_C)
 	hddmcppaction = SCons.Script.Action(HDDM_CPP)
-	#hddmpyaction  = SCons.Script.Action(HDDM_PY)
+	hddmpyaction  = SCons.Script.Action(HDDM_PY)
 
 # Create the actual scons builders from the actions defined above
 bldc   = SCons.Script.Builder(action = hddmcaction)
 bldcpp = SCons.Script.Builder(action = hddmcppaction)
-#bldpy  = SCons.Script.Builder(action = hddmpyaction)
+bldpy  = SCons.Script.Builder(action = hddmpyaction)
 env.Append(BUILDERS = {'HDDMC'   : bldc})
 env.Append(BUILDERS = {'HDDMCPP' : bldcpp})
-#env.Append(BUILDERS = {'HDDMPY'  : bldpy})
+env.Append(BUILDERS = {'HDDMPY'  : bldpy})
 
 
 # Add the C/C++ HDDM (de)serializer source dependencies
@@ -154,16 +154,16 @@ env.Append(BUILDERS = {'HDDMCPP' : bldcpp})
 # the SConscript in src/programs/Utilities/hddm.
 hddmc = str(env.File("#.%s/programs/Utilities/hddm/hddm-c" % osname))
 hddmcpp = str(env.File("#.%s/programs/Utilities/hddm/hddm-cpp" % osname))
-#hddmpy = str(env.File("#.%s/programs/Utilities/hddm/hddm-py" % osname))
+hddmpy = str(env.File("#.%s/programs/Utilities/hddm/hddm-py" % osname))
 env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_s.h', 'hddm_s.c'], ['event.xml', hddmc]))
 env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_mc_s.h', 'hddm_mc_s.c'], ['mc.xml',hddmc]))
 env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_r.h', 'hddm_r.c'], ['rest.xml', hddmc]))
 env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_s.hpp', 'hddm_s++.cpp'], ['event.xml', hddmcpp]))
 env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_mc_s.hpp', 'hddm_mc_s++.cpp'], ['mc.xml', hddmcpp]))
 env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_r.hpp', 'hddm_r++.cpp'], ['rest.xml', hddmcpp]))
-#env.AppendUnique(HDDMPY_SRC  = env.HDDMPY(['setup_hddm_s.py', 'pyhddm_s.cpy'], ['event.xml', hddmpy]))
-#env.AppendUnique(HDDMPY_SRC  = env.HDDMPY(['setup_hddm_mc_s.py', 'pyhddm_mc_s.cpy'], ['mc.xml', hddmpy]))
-#env.AppendUnique(HDDMPY_SRC  = env.HDDMPY(['setup_hddm_r.py', 'pyhddm_r.cpy'], ['rest.xml', hddmpy]))
+env.AppendUnique(HDDMPY_SRC  = env.HDDMPY(['setup_hddm_s.py', 'pyhddm_s.cpy'], ['event.xml', hddmpy]))
+env.AppendUnique(HDDMPY_SRC  = env.HDDMPY(['setup_hddm_mc_s.py', 'pyhddm_mc_s.cpy'], ['mc.xml', hddmpy]))
+env.AppendUnique(HDDMPY_SRC  = env.HDDMPY(['setup_hddm_r.py', 'pyhddm_r.cpy'], ['rest.xml', hddmpy]))
 
 # Additional dependencies in the generated module source files
 env.Depends(['setup_hddm_s.py', 'pyhddm_s.cpy'], ['hddm_s.hpp', 'hddm_s++.cpp'])
@@ -179,9 +179,9 @@ sbms.AddDANA(env)
 sbms.library(env)
 
 # Add dependencies for the python modules as well
-#sbms.python_so_module(env, 'hddm_s')
-#sbms.python_so_module(env, 'hddm_mc_s')
-#sbms.python_so_module(env, 'hddm_r')
+sbms.python_so_module(env, 'hddm_s')
+sbms.python_so_module(env, 'hddm_mc_s')
+sbms.python_so_module(env, 'hddm_r')
 
 
 #========================================================================
