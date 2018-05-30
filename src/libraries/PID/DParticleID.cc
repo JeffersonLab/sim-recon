@@ -64,6 +64,7 @@ DParticleID::DParticleID(JEventLoop *loop)
   locGeometry->GetFCALZ(dFCALz);
 
 	// Get start counter geometry;
+	int MAX_SC_SECTORS = 0;    // keep track of the number of sectors
 	if (locGeometry->GetStartCounterGeom(sc_pos, sc_norm))
 	{
 		dSCphi0=sc_pos[0][0].Phi();
@@ -85,6 +86,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 			sc_dir.push_back(temp);
 		}
 	  START_EXIST = true;      // Found Start Counter
+	  MAX_SC_SECTORS = sc_pos.size();
 	}
 	else {
 	  START_EXIST = false;      // no Start Counter found
@@ -238,7 +240,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 	      }
 	  }
 
-	// Individual attneuation calibrations (FIU bench mark data) 
+	// Individual attenuation calibrations (FIU bench mark data) 
 	if(loop->GetCalib("START_COUNTER/attenuation_factor", attn_vals))
 	  jout << "Error in loading START_COUNTER/attenuation_factor !" << endl;
 	else
@@ -263,12 +265,12 @@ DParticleID::DParticleID(JEventLoop *loop)
     if(loop->GetCalib("START_COUNTER/time_resol_paddle_v2", sc_paddle_resolution_params))
         jout << "Error in loading START_COUNTER/time_resol_paddle_v2 !" << endl;
 	else {
-        if(sc_paddle_resolution_params.size() != (unsigned int)DSCHit_factory::MAX_SECTORS)
+        if(sc_paddle_resolution_params.size() != MAX_SC_SECTORS)
             jerr << "Start counter paddle resolutions table has wrong number of entries:" << endl
                  << "  loaded = " << sc_paddle_resolution_params.size()
-                 << "  expected = " << DSCHit_factory::MAX_SECTORS << endl;
+                 << "  expected = " << MAX_SC_SECTORS << endl;
 
-        for(int i=0; i<DSCHit_factory::MAX_SECTORS; i++) {
+        for(int i=0; i<MAX_SC_SECTORS; i++) {
             SC_MAX_RESOLUTION.push_back( sc_paddle_resolution_params[i][0] );
             SC_BOUNDARY1.push_back( sc_paddle_resolution_params[i][1] );
             SC_BOUNDARY2.push_back( sc_paddle_resolution_params[i][2] );

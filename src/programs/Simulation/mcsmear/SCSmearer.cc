@@ -1,5 +1,4 @@
 #include "SCSmearer.h"
-#include "START_COUNTER/DSCHit_factory.h"
 
 //-----------
 // sc_config_t  (constructor)
@@ -10,6 +9,25 @@ sc_config_t::sc_config_t(JEventLoop *loop)
 	START_SIGMA           = 0.0; // 300ps
 	START_PHOTONS_PERMEV  = 0.0; // used to be 8000 should be more like 200
 	START_PADDLE_THRESHOLD  = 0.0;
+
+    // Get the geometry
+    DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+    if(!dapp){
+        jerr << "Cannot get DApplication from JEventLoop!" << endl;
+        return;
+    }
+    DGeometry* locGeometry = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
+
+    // Get start counter geometry
+    vector<vector<DVector3> >sc_norm; 
+    vector<vector<DVector3> >sc_pos;
+    unsigned int MAX_SECTORS=0;
+    if (locGeometry->GetStartCounterGeom(sc_pos, sc_norm))  {
+		MAX_SECTORS = sc_pos.size();
+        for(int sc_index=0; sc_index<sc_pos.size(); sc_index++)
+            SC_START_Z.push_back( sc_pos[sc_index][0].z() );
+
+    }
 
 	// Load data from CCDB
     cout << "Get START_COUNTER/start_parms parameters from CCDB..." << endl;
@@ -31,12 +49,12 @@ sc_config_t::sc_config_t(JEventLoop *loop)
     if(loop->GetCalib("START_COUNTER/time_resol_paddle_v2", sc_paddle_resolution_params))
         jout << "Error in loading START_COUNTER/time_resol_paddle_v2 !" << endl;
     else {
-        if(sc_paddle_resolution_params.size() != (unsigned int)DSCHit_factory::MAX_SECTORS)
+        if(sc_paddle_resolution_params.size() != MAX_SECTORS)
             jerr << "Start counter paddle resolutions table has wrong number of entries:" << endl
                  << "  loaded = " << sc_paddle_resolution_params.size()
-                 << "  expected = " << DSCHit_factory::MAX_SECTORS << endl;
+                 << "  expected = " << MAX_SECTORS << endl;
 
-        for(int i=0; i<DSCHit_factory::MAX_SECTORS; i++) {
+        for(int i=0; i<MAX_SECTORS; i++) {
             SC_MAX_RESOLUTION.push_back( sc_paddle_resolution_params[i][0] );
             SC_BOUNDARY1.push_back( sc_paddle_resolution_params[i][1] );
             SC_BOUNDARY2.push_back( sc_paddle_resolution_params[i][2] );
@@ -55,22 +73,6 @@ sc_config_t::sc_config_t(JEventLoop *loop)
     } else {
         SC_MC_CORRECTION_P0 = sc_mc_correction_factors["P0"];
         SC_MC_CORRECTION_P1 = sc_mc_correction_factors["P1"];
-    }
-
-    // Get the geometry
-    DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-    if(!dapp){
-        jerr << "Cannot get DApplication from JEventLoop!" << endl;
-        return;
-    }
-    DGeometry* locGeometry = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
-
-    // Get start counter geometry
-    vector<vector<DVector3> >sc_norm; 
-    vector<vector<DVector3> >sc_pos;
-    if (locGeometry->GetStartCounterGeom(sc_pos, sc_norm))  {
-        for(int sc_index=0; sc_index<30; sc_index++)
-            SC_START_Z.push_back( sc_pos[sc_index][0].z() );
     }
 
 }
