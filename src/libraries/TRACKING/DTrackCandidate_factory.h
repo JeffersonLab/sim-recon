@@ -108,7 +108,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		    vector<const DCDCTrackHit *>&cdchits,
 		    vector<int> &forward_matches);
   void MatchMethod6(DTrackCandidate *can, 
-		    vector<const DFDCSegment *>&segments,
+		    vector<const DFDCPseudo *>&fdchits,
 		    vector<unsigned int>&used_cdc_hits,  
 		    unsigned int &num_unmatched_cdcs
 		    );
