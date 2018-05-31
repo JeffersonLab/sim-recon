@@ -235,6 +235,16 @@ int main( int argc, char* argv[] ){
   outfile << "Sigma" << "\t" << Sigma << "\t" << Sigma_err << "\t";
   outfile  << "P" << "\t" << P << "\t" << P_err << "\t";
 
+  // output covariance matrix. Output only half since A+ and A- are constrained to be the same.
+  for (unsigned int j=0; j< covMatrix.size()/2; j++) {
+    outfile << endl;
+    for (unsigned int jj=0; jj< covMatrix.size()/2; jj++) {
+      outfile.width(20);
+      outfile << covMatrix[j][jj];
+    }
+  }
+
+
   outfile << endl;
 
     // ************************
