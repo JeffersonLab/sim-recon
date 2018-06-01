@@ -34,7 +34,10 @@ DParticleID::DParticleID(JEventLoop *loop)
 	C_EFFECTIVE = 15.0;
 	ATTEN_LENGTH = 150.0;
 	OUT_OF_TIME_CUT = 35.0; // Changed 200 -> 35 ns, March 2016
-    gPARMS->SetDefaultParameter("PID:OUT_OF_TIME_CUT",OUT_OF_TIME_CUT);
+    gPARMS->SetDefaultParameter("PID:OUT_OF_TIME_CUT",OUT_OF_TIME_CUT);	
+    CDC_TIME_CUT_FOR_DEDX = 1000.0; 
+    gPARMS->SetDefaultParameter("PID:CDC_TIME_CUT_FOR_DEDX",CDC_TIME_CUT_FOR_DEDX);
+
 
   DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
   if(!dapp){
@@ -322,14 +325,17 @@ jerror_t DParticleID::GroupTracks(vector<const DTrackTimeBased *> &tracks,
 // Compute the energy losses and the path lengths in the chambers for each hit 
 // on the track. Returns a list of dE and dx pairs with the momentum at the 
 // hit.
-jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>& dEdxHits_CDC, vector<dedx_t>& dEdxHits_FDC) const{
+jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>& dEdxHits_CDC,vector<dedx_t>& dEdxHits_FDC) const{
  
 
   // Position and momentum
   DVector3 pos,mom;
+  // flight time and t0 for the event
+  double tflight=0.;
+  double t0=track->t0();
   
   //dE and dx pairs
-  pair<double,double>de_and_dx;
+  dedx_t de_and_dx(0.,0.,0.,0.);
 
   //Get the list of cdc hits used in the fit
   vector<const DCDCTrackHit*>cdchits;
@@ -349,16 +355,24 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
 	  *cdchits[i]->wire->udir;
 	double doca2=(wirepos-cdc_extrapolations[j].position).Mag2();
 	if (doca2>doca2_old){
-	  mom=cdc_extrapolations[j-1].momentum;
-	  pos=cdc_extrapolations[j-1].position;
+	  unsigned int index=j-1;
+	  mom=cdc_extrapolations[index].momentum;
+	  pos=cdc_extrapolations[index].position;
+	  tflight=cdc_extrapolations[index].t;
 	  break;
 	}
 	doca2_old=doca2;
       }
+            
+      // Cut late drift time hits where the energy deposition is degraded
+      double dt=cdchits[i]->tdrift-tflight-t0;
+      if (dt>CDC_TIME_CUT_FOR_DEDX) continue;
+
       // Create the dE,dx pair from the position and momentum using a helical approximation for the path 
       // in the straw and keep track of the momentum in the active region of the detector
-      if (CalcdEdxHit(mom,pos,cdchits[i],de_and_dx)==NOERROR)
-	dEdxHits_CDC.push_back(dedx_t(de_and_dx.first, de_and_dx.second, mom.Mag()));
+      if (CalcdEdxHit(mom,pos,cdchits[i],de_and_dx)==NOERROR){
+	dEdxHits_CDC.push_back(de_and_dx);
+      }
     }
   }
   
@@ -381,7 +395,8 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
       }
    
       double gas_thickness = 1.0; // cm
-      dEdxHits_FDC.push_back(dedx_t(fdchits[i]->dE, gas_thickness/cos(mom.Theta()), mom.Mag()));
+      dEdxHits_FDC.push_back(dedx_t(fdchits[i]->dE,fdchits[i]->dE_amp,
+				    gas_thickness/cos(mom.Theta()), mom.Mag()));
     }
   }
 
@@ -392,36 +407,43 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
   return NOERROR;
 }
 
-jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdEdx_CDC_amp,double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
 {
-	vector<dedx_t> locdEdxHits_CDC, locdEdxHits_FDC;
-	jerror_t locReturnStatus = GetDCdEdxHits(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC);
+  vector<dedx_t> locdEdxHits_CDC, locdEdxHits_CDC_amp,locdEdxHits_FDC;
+  jerror_t locReturnStatus = GetDCdEdxHits(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC);
 	if(locReturnStatus != NOERROR)
 	{
 		locdEdx_FDC = numeric_limits<double>::quiet_NaN();
 		locdx_FDC = numeric_limits<double>::quiet_NaN();
 		locNumHitsUsedFordEdx_FDC = 0;
 		locdEdx_CDC = numeric_limits<double>::quiet_NaN();
+		locdEdx_CDC_amp = numeric_limits<double>::quiet_NaN();
 		locdx_CDC = numeric_limits<double>::quiet_NaN();
 		locNumHitsUsedFordEdx_CDC = 0;
 		return locReturnStatus;
 	}
-	return CalcDCdEdx(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
+	return CalcDCdEdx(locTrackTimeBased, locdEdxHits_CDC,locdEdxHits_FDC, 
+			  locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdEdx_CDC_amp,
+			  locdx_CDC, locNumHitsUsedFordEdx_FDC, 
+			  locNumHitsUsedFordEdx_CDC);
 }
 
-jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double &locdEdx_CDC_amp,double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
 {
 	locdx_CDC = 0.0;
 	locdEdx_CDC = 0.0;
+	locdEdx_CDC_amp = 0.0;
 	locNumHitsUsedFordEdx_CDC = locdEdxHits_CDC.size()*4/5;
 	if(locNumHitsUsedFordEdx_CDC > 0)
 	{
-		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_CDC; ++loc_i)
-		{
-			locdEdx_CDC += locdEdxHits_CDC[loc_i].dE; //weight is ~ #e- (scattering sites): dx!
-			locdx_CDC += locdEdxHits_CDC[loc_i].dx;
-		}
-		locdEdx_CDC /= locdx_CDC;
+	  for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_CDC; ++loc_i)
+	    {
+	      locdEdx_CDC += locdEdxHits_CDC[loc_i].dE; //weight is ~ #e- (scattering sites): dx!
+	      locdEdx_CDC_amp+=locdEdxHits_CDC[loc_i].dE_amp;
+	      locdx_CDC += locdEdxHits_CDC[loc_i].dx;
+	    }
+	  locdEdx_CDC /= locdx_CDC;
+	  locdEdx_CDC_amp/=locdx_CDC;
 	}
 
 	locdx_FDC = 0.0;
@@ -445,14 +467,18 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const
 jerror_t DParticleID::CalcdEdxHit(const DVector3 &mom,
 				  const DVector3 &pos,
 				  const DCDCTrackHit *hit,
-				  pair <double,double> &dedx) const{
+				  dedx_t &dedx) const{
   if (hit==NULL || hit->wire==NULL) return RESOURCE_UNAVAILABLE;
  
   double dx=CalcdXHit(mom,pos,hit->wire);
   if (dx>0.){
     // arc length and energy deposition
-    dedx.second=dx;
-    dedx.first=hit->dE; //GeV
+    dedx.dx=dx;
+    dedx.dE=hit->dE; //GeV
+    dedx.dE_amp=hit->dE_amp;
+    dedx.p=mom.Mag();
+    dedx.dEdx=hit->dE/dx;
+    dedx.dEdx_amp=hit->dE_amp/dx;
 
     return NOERROR;
   }

@@ -56,7 +56,7 @@ class DTrackTimeBased:public DTrackingData{
 		double ddEdx_FDC;
 		double ddx_FDC;
 		unsigned int dNumHitsUsedFordEdx_FDC;
-		double ddEdx_CDC;
+		double ddEdx_CDC,ddEdx_CDC_amp;
 		double ddx_CDC;
 		unsigned int dNumHitsUsedFordEdx_CDC;
 
@@ -72,7 +72,7 @@ class DTrackTimeBased:public DTrackingData{
 		void toStrings(vector<pair<string,string> > &items)const{
 			DKinematicData::toStrings(items);
 			AddString(items, "candidate","%d",candidateid);
-			AddString(items, "wirebased","%d",trackid);
+			//AddString(items, "wirebased","%d",trackid);
 			AddString(items, "chisq", "%f", chisq);
 			AddString(items, "Ndof", "%d", Ndof);
 			AddString(items, "FOM", "%f",(float)FOM);
