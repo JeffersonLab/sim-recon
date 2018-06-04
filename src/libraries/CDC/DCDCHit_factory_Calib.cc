@@ -44,6 +44,7 @@ jerror_t DCDCHit_factory_Calib::init(void)
   
   /// set the base conversion scales
   a_scale = 4.0E3/1.0E2; 
+  amp_a_scale = a_scale*28.8;
   t_scale = 8.0/10.0;    // 8 ns/count and integer time is in 1/10th of sample
   t_base  = 0.;       // ns
   
@@ -84,6 +85,7 @@ jerror_t DCDCHit_factory_Calib::brun(jana::JEventLoop *eventLoop, int32_t runnum
     a_scale = scale_factors["CDC_ADC_ASCALE"];
   else
     jerr << "Unable to get CDC_ADC_ASCALE from /CDC/digi_scales !" << endl;
+  amp_a_scale=a_scale*28.8;
   
 #ifdef ENABLE_UPSAMPLING
   //t_scale=1.;
@@ -202,10 +204,6 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	      straw, ring, Nstraws[ring-1]);
       throw JException(str);
     }
-    
-     // Get pedestal for integral. Preference is given to pedestal measured
-    // for event. Otherwise, use statistical one from CCDB
-    double pedestal = pedestals[ring-1][straw-1];
 
     // Grab the pedestal from the digihit since this should be consistent between the old and new formats
     int raw_ped           = digihit->pedestal;
@@ -289,14 +287,13 @@ jerror_t DCDCHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     // Apply calibration constants here
     double t_raw = double(digihit->pulse_time);
     
-    // Scale factor to account for gain variation and to convert to physical
-    // units 
-    double gain_scale=a_scale * gains[ring-1][straw-1];
+    // Scale factor to account for gain variation
+    double gain=gains[ring-1][straw-1];
        
-    // Charge and amplitude in energy-loss units
-    double q = gain_scale * double((digihit->pulse_integral<<IBIT)
-				   - scaled_ped*nsamples_integral);
-    double amp =  gain_scale*double(maxamp)*28.8;
+    // Charge and amplitude 
+    double q = a_scale *gain * double((digihit->pulse_integral<<IBIT)
+				      - scaled_ped*nsamples_integral);
+    double amp = amp_a_scale*gain*double(maxamp);
     
     double t = t_scale * t_raw - time_offsets[ring-1][straw-1] + t_base;
     

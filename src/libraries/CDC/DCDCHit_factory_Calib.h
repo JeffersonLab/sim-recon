@@ -32,7 +32,7 @@ class DCDCHit_factory_Calib:public jana::JFactory<DCDCHit>{
   const char* Tag(void){return "Calib";}
 
   // overall scale factors.
-  double a_scale;
+  double a_scale, amp_a_scale;
   double t_scale;
   double t_base;
   

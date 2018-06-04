@@ -140,7 +140,7 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 		double electron_charge=1.6022e-4; /* fC */
 		double dEscale=w_eff/(gas_gain*electron_charge);
 		hit->dE=cdchit->q*dEscale;
-		hit->dE_amp=cdchit->amp*dEscale*28.8; // using Naomi's scale factor
+		hit->dE_amp=cdchit->amp*dEscale; // using Naomi's scale factor
 		
 		// Calculate drift distance assuming no tof to wire for now.
 		// The tracking package will replace this once an estimate
