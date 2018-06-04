@@ -12,9 +12,12 @@
 #define M_TWO_PI 6.28318530717958647692
 #endif
 
-// Routine for sorting dEdx data
+// Routines for sorting dEdx data
 bool static DParticleID_dedx_cmp(DParticleID::dedx_t a,DParticleID::dedx_t b){
   return a.dEdx < b.dEdx;
+}
+bool static DParticleID_dedx_amp_cmp(DParticleID::dedx_t a,DParticleID::dedx_t b){
+  return a.dEdx_amp < b.dEdx_amp;
 }
 
 // Routine for sorting hypotheses accorpding to FOM
@@ -407,7 +410,7 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
   return NOERROR;
 }
 
-jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdEdx_CDC_amp,double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdEdx_CDC_amp,double& locdx_CDC, double& locdx_CDC_amp,unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
 {
   vector<dedx_t> locdEdxHits_CDC, locdEdxHits_CDC_amp,locdEdxHits_FDC;
   jerror_t locReturnStatus = GetDCdEdxHits(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC);
@@ -419,18 +422,20 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, doubl
 		locdEdx_CDC = numeric_limits<double>::quiet_NaN();
 		locdEdx_CDC_amp = numeric_limits<double>::quiet_NaN();
 		locdx_CDC = numeric_limits<double>::quiet_NaN();
+		locdx_CDC_amp = numeric_limits<double>::quiet_NaN();
 		locNumHitsUsedFordEdx_CDC = 0;
 		return locReturnStatus;
 	}
 	return CalcDCdEdx(locTrackTimeBased, locdEdxHits_CDC,locdEdxHits_FDC, 
 			  locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdEdx_CDC_amp,
-			  locdx_CDC, locNumHitsUsedFordEdx_FDC, 
+			  locdx_CDC, locdx_CDC_amp,locNumHitsUsedFordEdx_FDC, 
 			  locNumHitsUsedFordEdx_CDC);
 }
 
-jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double &locdEdx_CDC_amp,double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double &locdEdx_CDC_amp,double& locdx_CDC, double& locdx_CDC_amp,unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
 {
 	locdx_CDC = 0.0;
+	locdx_CDC_amp = 0.0;
 	locdEdx_CDC = 0.0;
 	locdEdx_CDC_amp = 0.0;
 	locNumHitsUsedFordEdx_CDC = locdEdxHits_CDC.size()*4/5;
@@ -439,11 +444,21 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const
 	  for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_CDC; ++loc_i)
 	    {
 	      locdEdx_CDC += locdEdxHits_CDC[loc_i].dE; //weight is ~ #e- (scattering sites): dx!
-	      locdEdx_CDC_amp+=locdEdxHits_CDC[loc_i].dE_amp;
 	      locdx_CDC += locdEdxHits_CDC[loc_i].dx;
 	    }
 	  locdEdx_CDC /= locdx_CDC;
-	  locdEdx_CDC_amp/=locdx_CDC;
+
+	  // Sort according to amplitude (the order of hits might be different
+	  // compared to sorting by the integral).
+	  vector<dedx_t>locdEdxHitsTemp(locdEdxHits_CDC);
+	  sort(locdEdxHitsTemp.begin(),locdEdxHitsTemp.end(),
+	       DParticleID_dedx_amp_cmp);  
+	  for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_CDC; ++loc_i)
+	    {
+	      locdEdx_CDC_amp+=locdEdxHitsTemp[loc_i].dE_amp;
+	      locdx_CDC_amp += locdEdxHitsTemp[loc_i].dx;
+	    }
+	  locdEdx_CDC_amp/=locdx_CDC_amp;
 	}
 
 	locdx_FDC = 0.0;
