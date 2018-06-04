@@ -1817,9 +1817,6 @@ bool DGeometry::GetTOFPaddlePerpPositions(vector<double> &y_tof) const
     Get("//composition[@name='forwardTOF_top1']/mposY[@volume='FTOC']/@ncopy",num_bars2); 
     int num_single_end_bars2 = 0;
     Get("//composition[@name='forwardTOF_south']/mposY[@volume='FTOH']/@ncopy",num_single_end_bars2); 
-
-	//cout << "BARS = " << num_bars1 << " " << num_narrow_bars1 << " "
-	//<< num_single_end_bars1 << " " << num_narrow_bars2 << " " << num_bars2 << endl;
 	
   	// First 19 long bars
   	Get("//composition[@name='forwardTOF_bottom1']/mposY/@Y0",y0);
@@ -1884,30 +1881,6 @@ bool DGeometry::GetTOFPaddlePerpPositions(vector<double> &y_tof) const
     
 	return true;
 }
-
-
-//---------------------------------
-// GetTOFZ_Local
-//---------------------------------
-/*
-bool DGeometry::GetTOFZ_Local(vector<double> &z_tof) const
-{
-   vector<double> ForwardTOF;
-   vector<double> forwardTOF[2];
-
-   // return position in TOF local coordinates
-   if(!Get("//section/composition/posXYZ[@volume='ForwardTOF']/@X_Y_Z", ForwardTOF)) return false;
-   if(!Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='0']", forwardTOF[0])) return false;
-   if(!Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='1']", forwardTOF[1])) return false;
-
-   z_tof.push_back(ForwardTOF[2] + forwardTOF[0][2]);
-   z_tof.push_back(ForwardTOF[2] + forwardTOF[1][2]);
-
-	cerr << "DGeometry::GetTOFZ_Local() = " << z_tof[0] << " " << z_tof[1] << endl;
-
-   return true;
-}
-*/
 
 //---------------------------------
 // GetTargetZ
