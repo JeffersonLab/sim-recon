@@ -174,7 +174,7 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
     // pass attenuation length parameters to the DBCALPoint constructor, since
     // many of the calculations are implemented there
-    double attenuation_length = m_BCALGeom->ATTEN_LENGTH;
+    double attenuation_length = m_BCALGeom->GetBCAL_attenutation_length();
     double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
     GetAttenuationParameters(table_id, attenuation_length, attenuation_L1, attenuation_L2);
     // if (GetAttenuationParameters(id, attenuation_length, attenuation_L1, attenuation_L2)) {

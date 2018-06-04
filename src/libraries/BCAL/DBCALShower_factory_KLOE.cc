@@ -107,23 +107,23 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int32_t runnumber)
     // Calculate Cell Position
     //////////////////////////////////////////////////////////////////
     
-    ATTEN_LENGTH = bcalGeom->ATTEN_LENGTH;
-    C_EFFECTIVE = bcalGeom->C_EFFECTIVE;
+    ATTEN_LENGTH = bcalGeom->GetBCAL_attenutation_length();
+    C_EFFECTIVE = bcalGeom->GetBCAL_c_effective();
     
     fiberLength = bcalGeom->GetBCAL_length(); // fiber length in cm
     zOffset = bcalGeom->GetBCAL_center();
 
     //the following uses some sad notation in which modmin=0 and modmax=48, when in fact there are 48 modules labelled either 0-47 or 1-48 depending on one's whim, although if we are using the methods from DBCALGeometry (e.g. cellId()), we must start counting from 1 and if we are accessing arrays we must of course start from 0
     int   modmin = 0;
-    int   modmax = bcalGeom->NBCALMODS;
+    int   modmax = bcalGeom->GetBCAL_Nmodules();
     int   rowmin1=0;
-    int   rowmax1= bcalGeom->NBCALLAYSIN;
+    int   rowmax1= bcalGeom->GetBCAL_NInnerLayers();
     int   rowmin2= rowmax1;
-    int   rowmax2= bcalGeom->NBCALLAYSOUT+rowmin2; 
+    int   rowmax2= bcalGeom->GetBCAL_NOuterLayers()+rowmin2; 
     int   colmin1=0;
-    int   colmax1=bcalGeom->NBCALSECSIN;
+    int   colmax1=bcalGeom->GetBCAL_NInnerSectors();
     int   colmin2=0;
-    int   colmax2=bcalGeom->NBCALSECSOUT;
+    int   colmax2=bcalGeom->GetBCAL_NOuterSectors();
     
     float r_inner= bcalGeom->GetBCAL_inner_rad();
     
@@ -579,25 +579,25 @@ void DBCALShower_factory_KLOE::PreCluster(JEventLoop *loop)
   // calculate cell position
     
   int   modmin = 0;
-  int   modmax = bcalGeom->NBCALMODS;
+  int   modmax = bcalGeom->GetBCAL_Nmodules();
 
 
   //these values make sense as actually minima/maxima if it is implied that rowmin1=1,colmin1=1,colmin2=1
-  int   rowmax1= bcalGeom->NBCALLAYSIN;
+  int   rowmax1= bcalGeom->GetBCAL_NInnerLayers();
   int   rowmin2= rowmax1+1;
   //int   rowmax2= bcalGeom->NBCALLAYSOUT+rowmin2-1;
-  int   colmax1=bcalGeom->NBCALSECSIN;
-  int   colmax2=bcalGeom->NBCALSECSOUT;
+  int   colmax1=bcalGeom->GetBCAL_NInnerSectors();
+  int   colmax2=bcalGeom->GetBCAL_NOuterSectors();
 
   float r_middle= bcalGeom->GetBCAL_middle_rad();
 
   //radial size of the outermost inner layer
-  float thick_inner=bcalGeom->rSize(bcalGeom->cellId(1,bcalGeom->NBCALLAYSIN,1));
+  float thick_inner=bcalGeom->rSize(bcalGeom->cellId(1,bcalGeom->GetBCAL_NInnerLayers(),1));
   //radial size of the innermost outer layer
-  float thick_outer=bcalGeom->rSize(bcalGeom->cellId(1,bcalGeom->NBCALLAYSIN+1,1));
+  float thick_outer=bcalGeom->rSize(bcalGeom->cellId(1,bcalGeom->GetBCAL_NInnerLayers()+1,1));
 
   // this is the radial distance between the center of the innermost outer layer and the outermost inner layer
-  float dis_in_out=bcalGeom->r(bcalGeom->cellId(1,bcalGeom->NBCALLAYSIN+1,1))-bcalGeom->r(bcalGeom->cellId(1,bcalGeom->NBCALLAYSIN,1));
+  float dis_in_out=bcalGeom->r(bcalGeom->cellId(1,bcalGeom->GetBCAL_NInnerLayers()+1,1))-bcalGeom->r(bcalGeom->cellId(1,bcalGeom->GetBCAL_NInnerLayers(),1));
     
   float degree_permodule=360.0/(modmax-modmin);
   float half_degree_permodule=degree_permodule/2.0;

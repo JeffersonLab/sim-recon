@@ -316,7 +316,7 @@ jerror_t JEventProcessor_BCAL_point_time::evnt(JEventLoop *loop, uint64_t eventn
 	if (numthrown==1) {
 		float pz = thrown[0]->pz();
 		float pt = sqrt(thrown[0]->px()*thrown[0]->px() + thrown[0]->py()*thrown[0]->py());
-		float z_p = pz/pt * dBCALGeom->m_radius[0];
+		float z_p = pz/pt * dBCALGeom->GetBCAL_radii()[0];
 		theta_thrown = degperrad*atan2(pt,pz);
 		//float z_targ = thrown[0]->z();
 		z_coord = z_p;

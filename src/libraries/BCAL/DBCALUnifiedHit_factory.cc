@@ -91,10 +91,10 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runn
             //tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
         }
         
-        for (int module=1; module<=dBCALGeom->NBCALMODS; module++) {
+        for (int module=1; module<=dBCALGeom->GetBCAL_Nmodules(); module++) {
             //shouldn't be hardcoded
             for (int sector=1; sector<=4; sector++) {
-                for (int layer=1; layer<=dBCALGeom->NBCALLAYSIN; layer++) {
+                for (int layer=1; layer<=dBCALGeom->GetBCAL_NInnerLayers(); layer++) {
                     int id = dBCALGeom->cellId(module, layer, sector);
                     //if (tdc_timewalk_map.count(readout_channel(id,dBCALGeom->kUpstream)) != 1) {
                     if (tdc_timewalk_map_c4.count(readout_channel(id,dBCALGeom->kUpstream)) != 1) {
