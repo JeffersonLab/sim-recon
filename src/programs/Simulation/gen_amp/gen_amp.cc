@@ -199,6 +199,11 @@ int main( int argc, char* argv[] ){
 
 	// generate over a range of mass
 	GammaPToNPartP resProd( threshold, highMass, childMasses, beamMaxE, beamPeakE, beamLowE, beamHighE, type, slope, seed );
+
+	if (childMasses.size() < 2){
+	  cout << "ConfigFileParser ERROR:  single particle production is not yet implemented" << endl; 
+	  return 1;
+	}
 		
 	// seed the distribution with a sum of noninterfering Breit-Wigners
 	// we can easily compute the PDF for this and divide by that when
