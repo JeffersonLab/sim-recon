@@ -22,7 +22,7 @@ jerror_t DTrigger_factory::evnt(JEventLoop* locEventLoop, uint64_t locEventNumbe
     {
         // IF TRIGGER INFO IS NOT IN THE DATA STREAM, LOAD TRIGGER SIMULATIONS LAZILY
         
-        //cerr << " event status = " << std::bitset<32>(locEventLoop->GetJEvent().GetStatus()) << endl;
+      // cerr << " event status = " << std::bitset<32>(locEventLoop->GetJEvent().GetStatus()) << endl;
 
         // don't bother simulating the trigger for non-physics events
         // for now, just don't run this for EVIO (raw data) events
@@ -44,26 +44,9 @@ jerror_t DTrigger_factory::evnt(JEventLoop* locEventLoop, uint64_t locEventNumbe
         }
         else 
         {
-            // old-style approximation of trigger simulation
-            vector<const DMCTrigger*> locOldMCTriggers;
-            locEventLoop->Get(locOldMCTriggers);
-            const DMCTrigger* locOldMCTrigger = locOldMCTriggers.empty() ? NULL : locOldMCTriggers[0];
-
-            if(locOldMCTrigger != NULL) {
-                //IS MC DATA: NO REALISTIC TRIGGER SIMULATION, DO NOT TRUST DMCTRIGGER: JUST ALWAYS SET TRIGGER BIT = 1
-                locTrigger->Set_L1TriggerBits(1);
-                locTrigger->Set_L1FrontPanelTriggerBits(0);
-            }
-            else
-            {
-                //NOTHING AVAILABLE: PROBABLY EARLY DATA/MC. OR EPICS/SYNC/etc. EVENTS
-                locTrigger->Set_L1FrontPanelTriggerBits(0);
-                if(locEventLoop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT))
-                    locTrigger->Set_L1TriggerBits(1); //OLD DATA: SET TRIG BIT TO ONE SO IS_PHYSICS WILL BE TRUE
-                else
-                    locTrigger->Set_L1TriggerBits(0); //e.g. EPICS event
-            }
-        }
+	  locTrigger->Set_L1TriggerBits(0);
+	  locTrigger->Set_L1FrontPanelTriggerBits(0); 
+	}
     }
 
 	//SET LEVEL-3 TRIGGER INFO HERE

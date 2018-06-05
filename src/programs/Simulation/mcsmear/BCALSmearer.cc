@@ -486,18 +486,30 @@ void BCALSmearer::ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<in
 
    if(bcal_config->NO_T_SMEAR) return;
 
+   // This is hardwired. Perhaps a future warrior would like to make it somehow work with CCDB?
+   double BCAL_TIMINGADCCOEFA = 0.055;
+   double BCAL_TIMINGADCCOEFB = 0.000;
+
    map<int, fADCHitList>::iterator it = fADCHits.begin();
    for(; it!=fADCHits.end(); it++){
       fADCHitList &hitlist = it->second;
       
       // upstream
       for(unsigned int i=0; i<hitlist.uphits.size(); i++){
-         hitlist.uphits[i].t += gDRandom.SampleGaussian(sigma_ns);
+         double EGeV = hitlist.uphits[i].E/1000;
+         double sqrtterm = BCAL_TIMINGADCCOEFA / sqrt(EGeV);
+         double linterm = BCAL_TIMINGADCCOEFB;
+         double sigma_ns_ADC = sqrt(sqrtterm*sqrtterm + linterm*linterm);
+         hitlist.uphits[i].t += gDRandom.SampleGaussian(sigma_ns_ADC);
       }
 
       // downstream
       for(unsigned int i=0; i<hitlist.dnhits.size(); i++){
-         hitlist.dnhits[i].t += gDRandom.SampleGaussian(sigma_ns);
+         double EGeV = hitlist.dnhits[i].E/1000;
+         double sqrtterm = BCAL_TIMINGADCCOEFA / sqrt(EGeV);
+         double linterm = BCAL_TIMINGADCCOEFB;
+         double sigma_ns_ADC = sqrt(sqrtterm*sqrtterm + linterm*linterm);
+         hitlist.dnhits[i].t += gDRandom.SampleGaussian(sigma_ns_ADC);
       }
    }
 

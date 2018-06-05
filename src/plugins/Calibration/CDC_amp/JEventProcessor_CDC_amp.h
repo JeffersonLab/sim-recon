@@ -34,6 +34,8 @@
 #include <TH2.h>
 #include <TH1.h>
 
+#include <TTree.h>
+
 using namespace std;
 using namespace jana;
 
@@ -56,6 +58,14 @@ class JEventProcessor_CDC_amp:public jana::JEventProcessor{
 
                 int32_t run_number;
 
+
+                // tree
+
+                int MAKETREE;
+
+                TTree *all; 
+                TTree *tracked; 
+
                 // default scaling factors will be overridden by Df125Config if present
 
                 uint16_t ASCALE = 1;   //amplitude  this was 8 for runs before 40,000
@@ -72,7 +82,19 @@ class JEventProcessor_CDC_amp:public jana::JEventProcessor{
                 TH1I *attsum = NULL; 
                 TH2I *attn = NULL; 
 
+                TH1I *attsum_100 = NULL; 
+                TH2I *attn_100 = NULL; 
+
                 TH2D *atheta = NULL;
+                TH2D *atime = NULL;
+                TH2D *attime = NULL;
+                TH2D *atttime = NULL;
+
+
+                TH1I *htime = NULL;
+                TH1I *ttime = NULL;
+                TH1I *tttime = NULL;
+
 
                 TH1D *qsum = NULL; 
                 TH2D *qn = NULL; 
@@ -84,6 +106,9 @@ class JEventProcessor_CDC_amp:public jana::JEventProcessor{
                 TH2D *qttn = NULL; 
 
                 TH2D *qtheta = NULL;
+                TH2D *qtime = NULL;
+                TH2D *qttime = NULL;
+                TH2D *qtttime = NULL;
 
 };
 

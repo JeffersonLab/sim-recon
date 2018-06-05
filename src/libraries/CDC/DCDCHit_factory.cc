@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 #include <CDC/DCDCHit.h>
 
 #include "DCDCHit_factory.h"
@@ -19,6 +20,10 @@ static double DIGI_THRESHOLD = -1.0e8;
 //------------------
 jerror_t DCDCHit_factory::init(void)
 {
+
+  LowTCut = -10000.;
+  HighTCut = 10000.;
+
   Disable_CDC_TimingCuts = 0; // this can be changed by a parameter in brun()
   // Note: That has to be done in brun() because the parameters are read from ccdb at every call to brun()
   gPARMS->SetDefaultParameter("CDCHit:Disable_TimingCuts", Disable_CDC_TimingCuts,
@@ -41,7 +46,7 @@ jerror_t DCDCHit_factory::init(void)
   CorrelatedHitPeak = 3.5;
   gPARMS->SetDefaultParameter("CDCHit:CorrelatedHitPeak", CorrelatedHitPeak,
                               "Location of peak time around which we cut correlated times in units of 8ns bins");
-  
+
   // Setting this flag makes it so that JANA does not delete the objects in _data.
   // This factory will manage this memory.
   SetFactoryFlag(NOT_OBJECT_OWNER);
@@ -58,6 +63,7 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
   /// Read in calibration constants
   
   vector<double> cdc_timing_cuts;
+  
   if (eventLoop->GetCalib("/CDC/timing_cut", cdc_timing_cuts)){
     LowTCut = -60.;
     HighTCut = 900.;
@@ -67,6 +73,11 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     HighTCut = cdc_timing_cuts[1];
     //jout<<"CDC Timing Cuts: "<<LowTCut<<" ... "<<HighTCut<<endl;
   }
+  
+  gPARMS->SetDefaultParameter("CDCHit:LowTCut", LowTCut,"Minimum acceptable CDC hit time (ns)");
+  gPARMS->SetDefaultParameter("CDCHit:HighTCut", HighTCut, "Maximum acceptable CDC hit time (ns)");
+  
+  //jout<<LowTCut<<" / "<<HighTCut<<endl;
 
   if (Disable_CDC_TimingCuts) {
     
@@ -76,7 +87,6 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     
   }
   
-
   eventLoop->Get(ttab);
   
   return NOERROR;
@@ -155,7 +165,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  //if ((RocID[k] == RocID[n]) && (Slot[k] == Slot[n]) && (Connector[k] == Connector[n]) ){
 	  if(hit_info_vec[k] == hit_info_vec[n]) {
 	    double dt = (hit_info_vec[k].time - hit_info_vec[n].time)/8.; // units of samples (8ns)
-	    if ( fabs(dt+CorrelatedHitPeak)<CorrelationHitsCut) {
+	    if ( std::fabs(dt+CorrelatedHitPeak)<CorrelationHitsCut) {
 	      Mark4Removal[n] = true;
 	      //cout<<"remove "<<hits[n]->ring<<" "<<hits[n]->straw<<endl;
 	    }

@@ -205,7 +205,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 
 	// Start counter calibration constants
 	// vector<map<string,double> > tvals;
-	vector<map<string,double> > pt_vals;
+	vector< vector<double> > pt_vals;
 	vector<map<string,double> > attn_vals;
 
 	// if(loop->GetCalib("/START_COUNTER/propagation_speed",tvals))
@@ -220,21 +220,21 @@ DParticleID::DParticleID(JEventLoop *loop)
 	// }
 
 	// Individual propagation speed calibrations (beam data)
-	if(loop->GetCalib("/START_COUNTER/propagation_speed", pt_vals))
-	  jout << "Error loading /START_COUNTER/propagation_speed !" << endl;
+	if(loop->GetCalib("/START_COUNTER/propagation_time_corr", pt_vals))
+	  jout << "Error loading /START_COUNTER/propagation_time_corr !" << endl;
 	else
 	  {
 	    for(unsigned int i = 0; i < pt_vals.size(); i++)
 	      {
 		// Functional form is: A + B*x
-		map<string, double> &row = pt_vals[i];
-		sc_pt_yint[SC_STRAIGHT].push_back(row["SC_STRAIGHT_PROPAGATION_A"]);
-		sc_pt_yint[SC_BEND].push_back(row["SC_BEND_PROPAGATION_A"]);
-		sc_pt_yint[SC_NOSE].push_back(row["SC_NOSE_PROPAGATION_A"]);
+              //map<string, double> &row = pt_vals[i];
+		sc_pt_yint[SC_STRAIGHT].push_back(pt_vals[i][0]);
+		sc_pt_yint[SC_BEND].push_back(pt_vals[i][2]);
+		sc_pt_yint[SC_NOSE].push_back(pt_vals[i][4]);
 		    
-		sc_pt_slope[SC_STRAIGHT].push_back(row["SC_STRAIGHT_PROPAGATION_B"]);
-		sc_pt_slope[SC_BEND].push_back(row["SC_BEND_PROPAGATION_B"]);
-		sc_pt_slope[SC_NOSE].push_back(row["SC_NOSE_PROPAGATION_B"]);
+		sc_pt_slope[SC_STRAIGHT].push_back(pt_vals[i][1]);
+		sc_pt_slope[SC_BEND].push_back(pt_vals[i][3]);
+		sc_pt_slope[SC_NOSE].push_back(pt_vals[i][5]);
 	      }
 	  }
 

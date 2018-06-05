@@ -4,6 +4,7 @@
 // hnamepath: /highlevel/KPlusKMinus
 // hnamepath: /highlevel/PiPlusPiMinusPiZero
 // hnamepath: /highlevel/L1bits_gtp
+// hnamepath: /highlevel/PSPairEnergy
 //
 // e-mail: davidl@jlab.org
 // e-mail: staylor@jlab.org
@@ -12,6 +13,7 @@
 //
 
 #include <time.h>
+
 
 {
 
@@ -501,14 +503,14 @@ class FitWrapper{
 
 	//------------------------- Macro starts here ------------------------
 
-	vector<bool> trig(6, true); // triggers to include 
+	vector<bool> trig(34, false); // triggers to include (33 is any physics bit was set)
+	trig[33-1] = true; // Any physics trigger (either bit 1 or bit 3)
 
 	TDirectory *locTopDirectory = gDirectory;
 
 	//Goto Beam Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("highlevel");
-	if(!locDirectory)
-		return;
+	if(!locDirectory)return;
 	locDirectory->cd();
 
 	TH1* EventInfo           = (TH1*)gDirectory->Get("EventInfo");
@@ -517,6 +519,33 @@ class FitWrapper{
 	TH1* KPlusKMinus         = (TH1*)gDirectory->Get("KPlusKMinus");
 	TH1* PiPlusPiMinusPiZero = (TH1*)gDirectory->Get("PiPlusPiMinusPiZero");
 	TH1* L1bits_gtp          = (TH1*)gDirectory->Get("L1bits_gtp");
+	TH1* PSPairEnergy        = (TH1*)gDirectory->Get("PSPairEnergy");
+
+	// These are used to keep track of normalization values when the PID
+	// histogram was last reset. This is only used for the Time Series
+	// DB. Because we can't use global variables here, we must store them
+	// in a histogram and retrieve them each time the macro is run.
+	enum {
+		NORM_pi0_trig = 1,
+		NORM_rho_trig,
+		NORM_phi_trig,
+		NORM_omega_trig,
+		NORM_pi0_ps,
+		NORM_rho_ps,
+		NORM_phi_ps,
+		NORM_omega_ps,
+		NORM_NUM
+	};
+	TH1* PIDNorms = (TH1*)gDirectory->Get("PIDNorms");
+	if( !PIDNorms ) PIDNorms = new TH1I("PIDNorms","", NORM_NUM, 0.0, NORM_NUM);
+	double Ntrig_tot_pi0   = PIDNorms->GetBinContent(NORM_pi0_trig);
+	double Ntrig_tot_rho   = PIDNorms->GetBinContent(NORM_rho_trig);
+	double Ntrig_tot_phi   = PIDNorms->GetBinContent(NORM_phi_trig);
+	double Ntrig_tot_omega = PIDNorms->GetBinContent(NORM_omega_trig);
+	double Nps_pi0         = PIDNorms->GetBinContent(NORM_pi0_trig);
+	double Nps_rho         = PIDNorms->GetBinContent(NORM_rho_ps);
+	double Nps_phi         = PIDNorms->GetBinContent(NORM_phi_ps);
+	double Nps_omega       = PIDNorms->GetBinContent(NORM_omega_ps);
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
@@ -526,12 +555,22 @@ class FitWrapper{
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(2, 2);
 
-	double Ntrig_tot = 0.0;
+	double Ntrig_tot  = 0.0;
+	double Ntrig_phys = 0.0;
+	double Ntrig_ps   = 0.0;
 	if(L1bits_gtp){
-		for(int itrig=1; itrig<=6; itrig++){
+		for(int itrig=1; itrig<=trig.size(); itrig++){
+			if(itrig > L1bits_gtp->GetNbinsX()) break;
 			if(trig[itrig-1]) Ntrig_tot += (double)L1bits_gtp->GetBinContent(itrig);
 		}
-	}	
+		Ntrig_phys = (double)(L1bits_gtp->GetBinContent(1) + L1bits_gtp->GetBinContent(2));
+		Ntrig_ps   = (double)L1bits_gtp->GetBinContent(4);
+	}
+	
+	double Nps = 0.0;
+	if(PSPairEnergy){
+		Nps = PSPairEnergy->Integral();
+	}
 	
 	// Get unix time for time series DB entries
 	double unix_time =  0;
@@ -602,55 +641,87 @@ class FitWrapper{
 		// Get number of pi0's
 		double I = fun->GetParameter(0)*fun->GetParameter(2)*sqrt(TMath::TwoPi());
 		I /= TwoGammaMass->GetBinWidth(1);
+
+
 		char str[256];
 		sprintf(str, "num. #pi^{o} : %g", I);
+
+		double max = 1.05*TwoGammaMass->GetMaximum();
+		latex.SetTextColor(kBlack);
+		latex.SetTextAngle(0.0);
+		latex.SetTextAlign(11);
+		latex.SetTextSize(0.075);
+		latex.DrawLatex(0.175, max*3.0/4.0, str);
+
+		// Print rate per trigger
+		double Ntrig = Ntrig_tot - Ntrig_tot_pi0;
+		double rate_per_1ktrig = I/Ntrig*1000.0;
+		if(Ntrig>0.0){
+			sprintf(str, "%3.1f per 1k triggers (bits 1,3)", rate_per_1ktrig);
+			latex.SetTextSize(0.06);
+			latex.DrawLatex(0.3, max*0.65, str);
+		}
+
+		// Print rate per PS (integral of reconstructed energy hist)
+		double Nmy_ps = Nps - Nps_pi0;
+		double rate_per_ps = I/Nmy_ps*1000.0;
+		if(Nmy_ps>0.0){
+			sprintf(str, "%3.1f per 1k PS coin(>7GeV)", rate_per_ps);
+			latex.SetTextSize(0.06);
+			latex.DrawLatex(0.3, max*0.565, str);
+		}
 
 		// Only try adding to time series if we have more than 20 particles in peak
 		cout << "====== pi0: I="<<I<<"  mean: " << pars[1] << " +/- " << errs[1] << "   sigma: "<< pars[2] << " +/- " << errs[2] << endl;
 		if( (I>1000.0) && (errs[1]<0.1*pars[1]) && (errs[2]<0.2*pars[2]) ){
 			// Add to time series
 			InsertSeriesMassFit("pi0", pars[1], pars[2], errs[1], errs[2], unix_time);
+			
+			// per 1k triggers
+			if(Ntrig>0.0){
+				stringstream ss;
+				ss << "fit_stats,ptype=pi0 ";
+				ss << "rate_per_1ktrig="<<rate_per_1ktrig;
+				ss << ",rate_per_1kps="<<rate_per_ps;
+				ss << ",counts="<<I;
+				ss << ",Ntrig_phys="<<Ntrig_phys;
+				ss << ",Ntrig_ps="<<Ntrig_ps;
+				ss << ",Nps="<<Nmy_ps;
+				if(unix_time!=0.0) ss<<" "<<(uint64_t)(unix_time*1.0E9);  // time is in units of ns
+				InsertSeriesData( ss.str() );
+			}
 		
 			// Optionally reset the histogram so next fit is independent of this one
-			if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/TwoGammaMass");
+			if(rs_GetFlag("RESET_AFTER_FIT")) {
+				rs_ResetHisto("/highlevel/TwoGammaMass");
+				PIDNorms->SetBinContent(NORM_pi0_trig, Ntrig_tot);
+				PIDNorms->SetBinContent(NORM_pi0_ps  , Nps);
+			}
 		}
 		
-		double max = 1.05*TwoGammaMass->GetMaximum();
 		TLine lin;
 		lin.SetLineColor(kMagenta);
 		lin.SetLineWidth(1);
 		lin.DrawLine(0.135, 0.0, 0.135, max);
 		
-		TLatex latex;
 		latex.SetTextAngle(90.0);
 		latex.SetTextSize(0.035);
 		latex.SetTextAlign(21);
 		latex.SetTextColor(kMagenta);
 		latex.DrawLatex(0.131, max/2.0, "135 MeV");
-
-		latex.SetTextColor(kBlack);
-		latex.SetTextAngle(0.0);
-		latex.SetTextAlign(11);
-		latex.SetTextSize(0.075);
-		latex.DrawLatex(0.175, max*3.0/4.0, str);
-		
-		// Print rate per trigger
-		if(Ntrig_tot>0.0){
-			sprintf(str, "%3.1f per 1k triggers", I/Ntrig_tot*1000.0);
-			latex.SetTextSize(0.06);
-			latex.DrawLatex(0.3, max*0.65, str);
-		}
 		
 		// Print number of L1 triggers
+		latex.SetTextColor(kBlack);
+		latex.SetTextAngle(0.0);
 		latex.SetTextSize(0.05);
 		latex.SetTextAlign(12);
 		if(L1bits_gtp){
 			sprintf(str, "trig bit 1 (FCAL/BCAL): %g", (double)L1bits_gtp->GetBinContent(1));
-			latex.DrawLatex(0.4, max*0.5, str);
+			latex.DrawLatex(0.4, max*0.45, str);
 			sprintf(str, "trig bit 3 (BCAL): %g", (double)L1bits_gtp->GetBinContent(3));
-			latex.DrawLatex(0.4, max*0.4, str);
+			latex.DrawLatex(0.4, max*0.35, str);
 			sprintf(str, "trig bit 4 (PS): %g", (double)L1bits_gtp->GetBinContent(4));
-			latex.DrawLatex(0.4, max*0.3, str);
+			latex.DrawLatex(0.4, max*0.25, str);
 		}	
 	}
 
@@ -683,21 +754,50 @@ class FitWrapper{
 			latex.DrawLatex(1.4, max*3.0/4.0, str);
 
 			// Print rate per trigger
+			double Ntrig = Ntrig_tot - Ntrig_tot_phi;
+			double rate_per_1ktrig = I/Ntrig*1000.0;
 			if(Ntrig_tot>0.0){
-				sprintf(str, "%3.3f per 1k triggers", I/Ntrig_tot*1000.0);
+				sprintf(str, "%3.3f per 1k triggers (bits 1,3)", rate_per_1ktrig);
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.4, max*0.65, str);
 			}
 
+			// Print rate per PS (integral of reconstructed energy hist)
+			double Nmy_ps = Nps - Nps_phi;
+			double rate_per_ps = I/Nmy_ps*1000.0;
+			if(Nmy_ps>0.0){
+				sprintf(str, "%3.3f per 1k PS coin(>7GeV)", rate_per_ps);
+				latex.SetTextSize(0.06);
+				latex.DrawLatex(1.4, max*0.565, str);
+			}
+
 			// Only try adding to time series if we have more than 20 particles in peak
 			cout << "====== phi: I="<<I<<"  mean: " << pars_out[1] << " +/- " << errs_out[1] << "   sigma: "<< pars_out[2] << " +/- " << errs_out[2] << endl;
-			if( (I>40.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
+			if( (I>100.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
 
 				// Add to time series
 				InsertSeriesMassFit("phi", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
-		
+			
+				// per 1k triggers
+				if(Ntrig_tot>0.0){
+					stringstream ss;
+					ss << "fit_stats,ptype=phi ";
+					ss << "rate_per_1ktrig="<<rate_per_1ktrig;
+					ss << ",rate_per_1kps="<<rate_per_ps;
+					ss << ",counts="<<I;
+					ss << ",Ntrig_phys="<<Ntrig_phys;
+					ss << ",Ntrig_ps="<<Ntrig_ps;
+					ss << ",Nps="<<Nmy_ps;
+					if(unix_time!=0.0) ss<<" "<<(uint64_t)(unix_time*1.0E9);  // time is in units of ns
+					InsertSeriesData( ss.str() );
+				}
+
 				// Optionally reset the histogram so next fit is independent of this one
-				if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/KPlusKMinus");
+				if(rs_GetFlag("RESET_AFTER_FIT")){
+					rs_ResetHisto("/highlevel/KPlusKMinus");
+					PIDNorms->SetBinContent(NORM_phi_trig, Ntrig_tot);
+					PIDNorms->SetBinContent(NORM_phi_ps  , Nps);
+				}
 			}
 		}
 	}
@@ -731,10 +831,21 @@ class FitWrapper{
 			latex.DrawLatex(1.005, max*3.0/4.0, str);
 
 			// Print rate per trigger
+			double Ntrig = Ntrig_tot - Ntrig_tot_rho;
+			double rate_per_1ktrig = I/Ntrig*1000.0;
 			if(Ntrig_tot>0.0){
-				sprintf(str, "%3.3f per 1k triggers", I/Ntrig_tot*1000.0);
+				sprintf(str, "%3.3f per 1k triggers (bits 1,3)", rate_per_1ktrig);
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.010, max*0.65, str);
+			}
+
+			// Print rate per PS (integral of reconstructed energy hist)
+			double Nmy_ps = Nps - Nps_rho;
+			double rate_per_ps = I/Nmy_ps*1000.0;
+			if(Nmy_ps>0.0){
+				sprintf(str, "%3.3f per 1k PS coin(>7GeV)", rate_per_ps);
+				latex.SetTextSize(0.06);
+				latex.DrawLatex(1.010, max*0.565, str);
 			}
 
 			// Only try adding to time series if we have more than 20 particles in peak
@@ -742,9 +853,27 @@ class FitWrapper{
 			if( (I>200.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
 				// Add to time series
 				InsertSeriesMassFit("rho", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
-		
+					
+				// per 1k triggers
+				if(Ntrig_tot>0.0){
+					stringstream ss;
+					ss << "fit_stats,ptype=rho ";
+					ss << "rate_per_1ktrig="<<rate_per_1ktrig;
+					ss << ",rate_per_1kps="<<rate_per_ps;
+					ss << ",counts="<<I;
+					ss << ",Ntrig_phys="<<Ntrig_phys;
+					ss << ",Ntrig_ps="<<Ntrig_ps;
+					ss << ",Nps="<<Nmy_ps;
+					if(unix_time!=0.0) ss<<" "<<(uint64_t)(unix_time*1.0E9);  // time is in units of ns
+					InsertSeriesData( ss.str() );
+				}
+
 				// Optionally reset the histogram so next fit is independent of this one
-				if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/PiPlusPiMinus");
+				if(rs_GetFlag("RESET_AFTER_FIT")){
+					rs_ResetHisto("/highlevel/PiPlusPiMinus");
+					PIDNorms->SetBinContent(NORM_rho_trig, Ntrig_tot);
+					PIDNorms->SetBinContent(NORM_rho_ps  , Nps);
+				}
 			}
 		}
 	}
@@ -778,20 +907,49 @@ class FitWrapper{
 			latex.DrawLatex(1.005, max*0.8, str);
 
 			// Print rate per trigger
+			double Ntrig = Ntrig_tot - Ntrig_tot_omega;
+			double rate_per_1ktrig = I/Ntrig*1000.0;
 			if(Ntrig_tot>0.0){
-				sprintf(str, "%3.3f per 1k triggers", I/Ntrig_tot*1000.0);
+				sprintf(str, "%3.3f per 1k triggers (bits 1,3)", rate_per_1ktrig);
 				latex.SetTextSize(0.06);
 				latex.DrawLatex(1.010, max*0.65, str);
 			}
 
+			// Print rate per PS (integral of reconstructed energy hist)
+			double Nmy_ps = Nps - Nps_omega;
+			double rate_per_ps = I/Nmy_ps*1000.0;
+			if(Nmy_ps>0.0){
+				sprintf(str, "%3.3f per 1k PS coin(>7GeV)", rate_per_ps);
+				latex.SetTextSize(0.06);
+				latex.DrawLatex(1.010, max*0.565, str);
+			}
+
 			// Only try adding to time series if we have more than 20 particles in peak
 			cout << "====== omega: I="<<I<<"  mean: " << pars_out[1] << " +/- " << errs_out[1] << "   sigma: "<< pars_out[2] << " +/- " << errs_out[2] << endl;
-			if( (I>50.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
+			if( (I>100.0) && (errs_out[1]<0.1*pars_out[1]) && (errs_out[2]<0.2*pars_out[2]) ){
 				// Add to time series
 				InsertSeriesMassFit("omega", pars_out[1], pars_out[2], errs_out[1], errs_out[2], unix_time);
+					
+				// per 1k triggers
+				if(Ntrig_tot>0.0){
+					stringstream ss;
+					ss << "fit_stats,ptype=omega ";
+					ss << "rate_per_1ktrig="<<rate_per_1ktrig;
+					ss << ",rate_per_1kps="<<rate_per_ps;
+					ss << ",counts="<<I;
+					ss << ",Ntrig_phys="<<Ntrig_phys;
+					ss << ",Ntrig_ps="<<Ntrig_ps;
+					ss << ",Nps="<<Nmy_ps;
+					if(unix_time!=0.0) ss<<" "<<(uint64_t)(unix_time*1.0E9);  // time is in units of ns
+					InsertSeriesData( ss.str() );
+				}
 		
 				// Optionally reset the histogram so next fit is independent of this one
-				if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/highlevel/PiPlusPiMinusPiZero");
+				if(rs_GetFlag("RESET_AFTER_FIT")){
+					rs_ResetHisto("/highlevel/PiPlusPiMinusPiZero");
+					PIDNorms->SetBinContent(NORM_omega_trig, Ntrig_tot);
+					PIDNorms->SetBinContent(NORM_omega_ps  , Nps);
+				}
 			}
 		}
 	}

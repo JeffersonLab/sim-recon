@@ -24,6 +24,9 @@ class JEventProcessor_danarest : public jana::JEventProcessor
 		jerror_t evnt(JEventLoop *loop, uint64_t eventnumber); ///< Called every event.
 		jerror_t erun(void); ///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);	///< Called after last event of last event source has been processed.
+
+ private:
+		bool is_mc;
 };
 
 #endif // _JEventProcessor_danarest_

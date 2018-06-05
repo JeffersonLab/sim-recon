@@ -1,6 +1,9 @@
+
+
 void CDC_gains(int EXIT_EARLY=0) {
 
   // set EXIT_EARLY to 1 to fit the sum histograms only, 0 for the individual straw gains
+
 
   // Fits histograms from CDC_amp plugin to estimate CDC gains
   // writes digi_scales/ascale to cdc_new_ascale.txt
@@ -31,40 +34,28 @@ void CDC_gains(int EXIT_EARLY=0) {
 
   // NSJ 18 Nov 2016
 
+  // Updated in 2018 to use hits within the first 100ns only.  This avoids the gain loss at later drift times which is probably caused by oxygen in the chamber.
+
+  // NSJ 24 Apr 2018
 
 
-  // reference values
 
-  const float IDEALMPV=32.385; //mpv for tracked hits with restricted z,theta from low pressure run 11621
+  // reference values  
+
+  //  const float IDEALMPV=32.385; //mpv for tracked hits with restricted z,theta from low pressure run 11621
+
+  //  const float IDEALMPV=37.9649; //mpv for tracked hits ***at 0-100ns*** with restricted z,theta from low pressure run 11621
+
+
+  const float IDEALMPV=37.9649; //mpv for tracked hits ***at 0-100ns*** with restricted z,theta from low pressure run 11621
+
+
   const float ASCALE=0.176;   //ascale for tracked ztheta hits from 011621
 
-  const int USEGROUP=2; // use group 2 (attsum) to calc gain consts
 
-  // fit limits
-  const int AL0=26; //amp fit lower limit asum (untracked hits histo)
-  const int AL1=20; //amp fit lower limit atsum
-  const int AL2=20; //amp fit lower limit attsum
-  const int AH=400; //amp fit upper limit landau
-  const int AH0=60; //amp fit upper limit gaussian
 
-  const int MINCOUNTS=5000; //counts required to fit histogram
-  
+  const bool REBIN_HISTOS=kFALSE;
 
-  gStyle->SetOptFit(1);
-  gStyle->SetFuncWidth(1);
-
-  TF1 *f = new TF1("f","landau");
-  f->SetLineColor(6);
-
-  TF1 *g = new TF1("g","gaus");
-  g->SetLineColor(434);
-  g->SetRange(AL0,AH0);
-
-  int a_fitstat,q_fitstat;
-
-  float newascale = 0;
-
-  float thismpv = 0;
 
   // get histograms
    
@@ -74,36 +65,80 @@ void CDC_gains(int EXIT_EARLY=0) {
   fmain->cd();
 
 
-  TH1I *asum = (TH1I*)fmain->Get("asum");
-  TH1I *atsum = (TH1I*)fmain->Get("atsum");
-  TH1I *attsum = (TH1I*)fmain->Get("attsum");
+  TH1I *attsum = (TH1I*)fmain->Get("attsum_100");
+  if (!attsum) printf("Cannot find histogram attsum_100\n");
+  if (!attsum) return;
+
+  // get untracked amplitude histo to find readout range
+
+  TH1I *asum_all= (TH1I*)fmain->Get("asum");
+  if (!asum_all) printf("Cannot find histogram asum\n");
+  if (!asum_all) return;
+
+  // find amplitude range 
+  int SCALE_UP = 1;
+  double highcounts = asum_all->FindLastBinAbove(0);
+  if (highcounts > 512) SCALE_UP = 8;  // this is full range 0-4095
+
+  if (SCALE_UP==1) cout << "Amp range 0 to 511" << endl;
+  if (SCALE_UP==8) cout << "Amp range 0 to 4095" << endl;
+
+  // fit range constants
+
+  int AL;
+  int ANL;
+  int AH;
+
+  int INCREMENT_FITSTART;
+
+
+  if (SCALE_UP==1) { 
+
+    AL = 20; // lower limit attsum 
+
+    ANL=14; // lower limit attsum indiv straw fits
+
+    AH=400; //amp fit upper limit landau
+
+    INCREMENT_FITSTART=1;
+
+  } else {
+
+    AL = 130; // lower limit attsum 
+
+    ANL=110; // lower limit attsum indiv straw fits
+
+    AH=3000; //amp fit upper limit landau
+
+    INCREMENT_FITSTART=8;
+ 
+ }
+
+  const int MINCOUNTS=1000; //counts required to fit histogram
+  
+
+  gStyle->SetOptFit(1);
+  gStyle->SetFuncWidth(1);
+
+  TF1 *f = new TF1("f","landau");
+  f->SetLineColor(6);
+
+  int a_fitstat,q_fitstat;
+
+  float newascale = 0;
+
+  float thismpv = 0;
 
 
   new TCanvas;
-  printf("\nasum fit, all hits:\n");
-  a_fitstat = asum->Fit(g,"R");
-  if (a_fitstat) printf("Bad fit to asum\n\n");
+  printf("\nattsum fit, tracked hits at 0-100ns, restricted z and theta:\n");
+  f->SetRange(AL,AH);
+  a_fitstat = attsum->Fit(f,"RW");
 
-  new TCanvas;
-  printf("\natsum fit, tracked hits:\n");
-  f->SetRange(AL1,AH);
-  a_fitstat = atsum->Fit(f,"R");
-  if (a_fitstat) printf("Bad fit to asum\n\n");
-
-  if (USEGROUP==1 && !a_fitstat) {
+  if (!a_fitstat) {
     thismpv = f->GetParameter(1);
-    newascale = ASCALE*IDEALMPV/thismpv;
-    printf("\nnew digi_scales/ascale should be %.3f\n\n",newascale);
-  } 
-
-  new TCanvas;
-  printf("\nattsum fit, tracked hits, restricted z and theta:\n");
-  f->SetRange(AL2,AH);
-  a_fitstat = attsum->Fit(f,"R");
-
-  if (USEGROUP==2 && !a_fitstat) {
-    thismpv = f->GetParameter(1);
-    newascale = ASCALE*IDEALMPV/thismpv;
+    printf("\n This mpv: %.3f  ideal mpv: %.3f\n",thismpv,IDEALMPV*SCALE_UP);
+    newascale = ASCALE*IDEALMPV*SCALE_UP/thismpv;
     printf("\nnew digi_scales/ascale should be %.3f\n\n",newascale);
   }
 
@@ -116,27 +151,17 @@ void CDC_gains(int EXIT_EARLY=0) {
   fclose(outfile);
 
 
-  TH1D *qsum = (TH1D*)fmain->Get("qsum");
-  TH1D *qtsum = (TH1D*)fmain->Get("qtsum");
-  TH1D *qttsum = (TH1D*)fmain->Get("qttsum");
-
-
   TFile *hfile = new TFile("cdc_amphistos.root","RECREATE");
 
-  asum->Write();
-  atsum->Write();
+  hfile->cd();
   attsum->Write();
-
-  qsum->Write();
-  qtsum->Write();
-  qttsum->Write();
 
   if (EXIT_EARLY==1) hfile->Write();
   if (EXIT_EARLY==1) hfile->Close();
   if (EXIT_EARLY==1) return;
 
 
-  TTree *atstats = new TTree("atstats","fit stats for tracked hits");
+
   TTree *attstats = new TTree("attstats","fit stats for tracked hits with restricted z and theta");
 
   int n,ring;  //straw number (1-3522), ring number (1-28)
@@ -149,16 +174,7 @@ void CDC_gains(int EXIT_EARLY=0) {
   double a_sig;
   double a_chisq;
 
-
-  atstats->Branch("n",&n,"n/I");
-  atstats->Branch("hits",&a_n,"hits/I");
-  atstats->Branch("mean",&a_mean,"mean/D");
-  atstats->Branch("c",&a_c,"c/D");
-  atstats->Branch("mpv",&a_mpv,"mpv/D");
-  atstats->Branch("mpverr",&a_mpverr,"mpverr/D");
-  atstats->Branch("sig",&a_sig,"sig/D");
-  atstats->Branch("chisq",&a_chisq,"chisq/D");
-  atstats->Branch("fitstat",&a_fitstat,"fitstat/I");
+  int fitlowerlimit;
 
   attstats->Branch("n",&n,"n/I");
   attstats->Branch("hits",&a_n,"hits/I");
@@ -169,16 +185,17 @@ void CDC_gains(int EXIT_EARLY=0) {
   attstats->Branch("sig",&a_sig,"sig/D");
   attstats->Branch("chisq",&a_chisq,"chisq/D");
   attstats->Branch("fitstat",&a_fitstat,"fitstat/I");
+  attstats->Branch("fitlowerlimit",&fitlowerlimit,"fitlowerlimit/I");
 
-  int i,igroup;  
+  int i;  
 
   TH1D *ahisto;
   TH2I *anhisto;
   char htitle[300];
 
-  int fitlowerlimit;
+
   int badfit, nofit; //counters
-  int bincont, lastbin, nbins; // to flag low-gain preamp channels
+  int bincont, lastbin, nbins, lastbintocheck; // to flag low-gain preamp channels
 
   float wiregain;
 
@@ -192,35 +209,27 @@ void CDC_gains(int EXIT_EARLY=0) {
 
   new TCanvas;
   
-  for (igroup=1; igroup<3; igroup++) {   //untracked individual straws are not fittable for inner rings
-
-    printf("\n-----------  igroup %i -----------\n\n",igroup);
-
     hmain->cd();
 
-    //if (igroup==0) gDirectory->mkdir("all")->cd();
-    if (igroup==1) gDirectory->mkdir("tracked")->cd();
-    if (igroup==2) gDirectory->mkdir("theta")->cd();
+    gDirectory->mkdir("theta")->cd();
 
     TDirectory *hsub = gDirectory;
 
     fmain->cd();
 
-    //if (igroup==0) anhisto = (TH2I*)fmain->Get("an");
-    if (igroup==1) anhisto = (TH2I*)fmain->Get("atn");
-    if (igroup==2) anhisto = (TH2I*)fmain->Get("attn");
+    anhisto = (TH2I*)fmain->Get("attn_100");
 
-    //if (igroup==0) fitlowerlimit = AL0;
-    if (igroup==1) fitlowerlimit = AL1;
-    if (igroup==2) fitlowerlimit = AL2;
-    
-    f->SetRange(fitlowerlimit,AH);
 
     badfit = 0;
     nofit = 0;
 
 
     for (i=1; i<3523; i++) {   
+      //      for (i=1; i<10; i++) {   
+ 
+      fitlowerlimit = ANL;
+    
+      f->SetRange(fitlowerlimit,AH);
 
       a_c = 0;
       a_mpv = 0;
@@ -233,18 +242,29 @@ void CDC_gains(int EXIT_EARLY=0) {
 
       ahisto = anhisto->ProjectionY(Form("a[%i]",i),i+1,i+1);  //straw 1 is in bin 2
 
-      //if (igroup==0) sprintf(htitle,"Amplitude, straw %i; amplitude-pedestal",i);
-      if (igroup==1) sprintf(htitle,"Amplitude, tracked hits, straw %i; amplitude-pedestal",i);
-      if (igroup==2) sprintf(htitle,"Amplitude, tracked hits, z=50 to 80 cm, theta=85 to 95 degrees, straw %i; amplitude-pedestal",i);
+      if (REBIN_HISTOS) ahisto->Rebin(4);
+
+
+      sprintf(htitle,"Amplitude, tracked hits, z=50 to 80 cm, theta=85 to 95 degrees, straw %i; amplitude-pedestal",i);
 
       ahisto->SetTitle(htitle);
 
       a_n = ahisto->GetEntries();
       a_mean = ahisto->GetMean();
+
+      //      cout << "fitting straw " << i << endl;
  
       a_fitstat = -1;
       if (a_n > MINCOUNTS) {
-        a_fitstat = ahisto->Fit(f,"RQ");  //landau   LL is for low stats
+        a_fitstat = ahisto->Fit(f,"QW","",fitlowerlimit,AH);  //landau   LL is for low stats
+      }
+
+
+      // if fit did not converge, increase lower limit 
+
+      while (a_fitstat==4 && fitlowerlimit<200) {
+        fitlowerlimit += INCREMENT_FITSTART; 
+        a_fitstat = ahisto->Fit(f,"W","",fitlowerlimit,AH);  
       }
 
       if (a_fitstat==0) { 
@@ -256,43 +276,35 @@ void CDC_gains(int EXIT_EARLY=0) {
 
         if (f->GetNDF()>0) a_chisq  = f->GetChisquare()/f->GetNDF();
 
+      } else if (a_fitstat==4){
+	  printf("straw %i unconverged fit \n",i);
+
       } else if (a_fitstat>0){
         printf("straw %i fitstatus %i fit MPV %f\n",i,a_fitstat,f->GetParameter(1));
+
       } else if (a_fitstat<0){
         printf("straw %i not enough counts \n",i);
         nofit++;
-      } else if (a_fitstat==4){
-        printf("straw %i unconverged fit \n",i);
+
       }
+
+    
+
 
       if (a_fitstat>0) badfit++;
     
-      // flag low-gain preamp channels
-      if (a_n > MINCOUNTS) {    // sum last 10 bins before amp histo usually ends 
-        nbins = ahisto->GetNbinsX();
-        bincont = 0;
-        for (int j=nbins-50; j < nbins; j++) bincont += ahisto->GetBinContent(j);
-        if (bincont==0) {
-          lastbin = nbins-1;
-          while (ahisto->GetBinContent(lastbin)==0) lastbin--;
-        }
-      }
     
       if (a_mpv<0) printf("straw %i fit MPV %f\n",i,a_mpv);
       if (a_mpv>0 && a_mpv<fitlowerlimit) printf("straw %i MPV %f below fit lower limit\n",i,a_mpv);
       if (a_mpv>0 && a_mean>3.3*a_mpv) printf("straw %i mean %f MPV %f\n",i,a_mean,a_mpv);
-      if (bincont==0 && a_n>MINCOUNTS) printf("straw %i no amplitudes above %i\n",i,lastbin*(int)ahisto->GetBinWidth(0));
 
 
-      //if (igroup==0) astats->Fill();
-      if (igroup==1) atstats->Fill();
-      if (igroup==2) attstats->Fill();
+      attstats->Fill();
 
-      if (igroup==USEGROUP) {
-        wiregain=0;
-        if (a_mpv>0) wiregain = thismpv/a_mpv;
-        fprintf(outfile,"%.3f\n",wiregain);
-      }
+      wiregain=0;
+      if (a_mpv>0) wiregain = thismpv/a_mpv;
+      fprintf(outfile,"%.3f\n",wiregain);
+
 
       hsub->cd();
 
@@ -303,10 +315,13 @@ void CDC_gains(int EXIT_EARLY=0) {
     printf("\nfitstatus 4 count: %i \n",badfit);
     printf("no fit count: %i \n",nofit);
 
-  }
+
 
   fclose(outfile);
 
-  hfile->Write();
+  hfile->cd();
+
+  attstats->Write();
+
 
 }

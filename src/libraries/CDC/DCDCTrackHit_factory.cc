@@ -153,7 +153,7 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 		if(tcorr < cdc_drift_table_min){
 			index = 0;
 		}else if (tcorr >= cdc_drift_table_max){
-			index = cdc_drift_table.size()-1;
+		  index = cdc_drift_table.size()-2;
 		}else{
 			index=locate(cdc_drift_table,tcorr);
 		}

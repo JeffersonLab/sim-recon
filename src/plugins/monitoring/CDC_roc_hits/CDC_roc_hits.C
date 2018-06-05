@@ -55,7 +55,7 @@
       TPaletteAxis *pal = (TPaletteAxis*)hh->GetListOfFunctions()->FindObject("palette");
       pal->SetX2NDC(0.94);
       pal->SetLabelSize(0.03);
-      gPad->SetLogz();
+      //      gPad->SetLogz();
       gPad->Modified();
 
 

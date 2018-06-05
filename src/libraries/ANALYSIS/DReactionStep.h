@@ -8,14 +8,20 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <functional>
+#include <numeric>
 
 #include "particleType.h"
 
 using namespace std;
 
 //--------------------------------------------------------------------------------------
-// Apple compiler does not currently support std::accumulate so define it here if needed
-#ifdef __APPLE__
+// At one point, the Apple compiler did not support std::accumulate so the block of code
+// below was added. Recent versions of Xcode include a compiler that does support this
+// so the code below is now disabled. If you are compiling on Mac OS X with an older
+// compiler that complains that accumulate is not defined, then you'll need to comment
+// out the next line and uncomment the one following it.   5/16/2018  DL
+#if 0
+//#ifdef __APPLE__
 namespace std{
 template <class InputIterator, class T>
    T accumulate (InputIterator first, InputIterator last, T init)
