@@ -57,7 +57,7 @@ class DTrackTimeBased:public DTrackingData{
 		double ddx_FDC;
 		unsigned int dNumHitsUsedFordEdx_FDC;
 		double ddEdx_CDC,ddEdx_CDC_amp;
-		double ddx_CDC;
+		double ddx_CDC,ddx_CDC_amp;
 		unsigned int dNumHitsUsedFordEdx_CDC;
 
 		// Hit CDC Rings & FDC Planes
