@@ -1053,7 +1053,17 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          tra->ddEdx_FDC = diter->getDEdxFDC();
          tra->ddEdx_CDC = diter->getDEdxCDC();
          tra->ddx_FDC = diter->getDxFDC();
-         tra->ddx_CDC = diter->getDxCDC();
+         tra->ddx_CDC = diter->getDxCDC();  
+	 const hddm_r::CDCAmpdEdxList &el2 = diter->getCDCAmpdEdxs();
+	 hddm_r::CDCAmpdEdxList::iterator diter2 = el2.begin();
+	 if (diter2 != el2.end()){
+	   tra->ddx_CDC_amp= diter2->getDxCDCAmp();
+	   tra->ddEdx_CDC_amp = diter2->getDEdxCDCAmp();
+	 }
+	 else{
+	   tra->ddx_CDC_amp=tra->ddx_CDC;
+	   tra->ddEdx_CDC_amp=tra->ddEdx_CDC;
+	 }
       }
       else {
          tra->dNumHitsUsedFordEdx_FDC = 0;
@@ -1061,7 +1071,9 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          tra->ddEdx_FDC = 0.0;
          tra->ddEdx_CDC = 0.0;
          tra->ddx_FDC = 0.0;
-         tra->ddx_CDC = 0.0;
+         tra->ddx_CDC = 0.0; 
+	 tra->ddEdx_CDC_amp = 0.0;
+         tra->ddx_CDC_amp = 0.0;
       }
 
       data.push_back(tra);

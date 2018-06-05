@@ -60,7 +60,9 @@
       <dEdxDC minOccurs="0"
               NsampleFDC="int" dxFDC="float" dEdxFDC="float"
               NsampleCDC="int" dxCDC="float" dEdxCDC="float"
-              lunit="cm" dEdx_unit="GeV/cm"/>
+              lunit="cm" dEdx_unit="GeV/cm">
+	<CDCAmpdEdx dxCDCAmp="float" dEdxCDCAmp="float" minOccurs="0"/>
+      </dEdxDC>
     </chargedTrack>
     <startHit maxOccurs="unbounded" minOccurs="0" jtag="string"
               sector="int" t="float" dE="float"

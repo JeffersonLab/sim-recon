@@ -560,6 +560,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
                     double q_from_pulse_height=5.0e-4*(upeaks[i].q_from_pulse_height
                           +vpeaks[j].q_from_pulse_height);
                     if (q_from_pulse_height<CHARGE_THRESHOLD) continue;
+		    double dE_amp=charge_to_energy*q_from_pulse_height;
 
                     if (DEBUG_HISTS){
                        qv_vs_qu->Fill(upeaks[i].q,vpeaks[j].q);
@@ -596,6 +597,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
                     newPseu->AddAssociatedObject(u[upeaks[i].cluster]);
 
                     newPseu->dE = dE;
+		    newPseu->dE_amp = dE_amp;
                     newPseu->q = q_from_pulse_height;
 
                     // It can occur (although rarely) that newPseu->wire is NULL

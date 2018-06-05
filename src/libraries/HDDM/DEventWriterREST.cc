@@ -364,6 +364,10 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			elo().setDxCDC(tracks[i]->ddx_CDC);
 			elo().setDEdxFDC(tracks[i]->ddEdx_FDC);
 			elo().setDEdxCDC(tracks[i]->ddEdx_CDC);
+			hddm_r::CDCAmpdEdxList elo2 = elo().addCDCAmpdEdxs(1);
+			elo2().setDxCDCAmp(tracks[i]->ddx_CDC_amp);
+			elo2().setDEdxCDCAmp(tracks[i]->ddEdx_CDC_amp);
+
 		}
 	}
 
