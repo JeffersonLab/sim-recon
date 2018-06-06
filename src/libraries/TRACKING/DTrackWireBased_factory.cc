@@ -65,6 +65,11 @@ static unsigned int count_common_members(vector<T> &a, vector<T> &b)
    return n;
 }
 
+bool DTrackWireBased_cmp(DTrackWireBased *a,DTrackWireBased *b){
+  if (a->candidateid==b->candidateid) return a->mass()<b->mass();
+  return a->candidateid<b->candidateid;
+}
+
 //------------------
 // init
 //------------------
@@ -447,6 +452,9 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
    // Filter out duplicate tracks
    FilterDuplicates();
 
+   // Add any missing hypotheses
+   InsertMissingHypotheses();
+
    // Set CDC ring & FDC plane hit patterns
    for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
    {
@@ -650,4 +658,200 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       default:
          break;
    }
+}
+
+// If the fit failed for certain hypotheses, fill in the gaps using data from
+// successful fits for each candidate.
+bool DTrackWireBased_factory::InsertMissingHypotheses(void){
+  if (_data.size()==0) return false;
+  
+  // Make sure the tracks are ordered by candidate id
+  sort(_data.begin(),_data.end(),DTrackWireBased_cmp);
+  
+  JObject::oid_t old_id=_data[0]->candidateid;
+  bool got_pi=false,got_k=false,got_prot=false;
+  double q=_data[0]->charge();
+  bool flipped_charge=false;
+  vector<DTrackWireBased*>myhypotheses;
+  vector<DTrackWireBased*>tracks_to_add;
+  for (size_t i=0;i<_data.size();i++){
+    double mass=_data[i]->mass();
+      
+    if (_data[i]->candidateid!=old_id){
+      int num_hyp=myhypotheses.size();
+      if ((q<0 && num_hyp!=mNumHypMinus)||(q>0 && num_hyp!=mNumHypPlus)
+	  || flipped_charge){
+	if (q>0 && got_prot==false){
+	  AddMissingTrackHypothesis(tracks_to_add,
+				      myhypotheses[myhypotheses.size()-1],
+				    ParticleMass(Proton),q); 
+	}
+	if (got_pi==false){
+	  AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
+				    ParticleMass(PiPlus),q);
+	  if (flipped_charge) 
+	    myhypotheses.push_back(tracks_to_add[tracks_to_add.size()-1]);
+	}
+	if (got_k==false){
+	  AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
+				    ParticleMass(KPlus),q);
+	  if (flipped_charge) 
+	    myhypotheses.push_back(tracks_to_add[tracks_to_add.size()-1]);
+	}
+	if (flipped_charge){
+	  for (size_t j=0;j<myhypotheses.size();j++){
+	    AddMissingTrackHypothesis(tracks_to_add,myhypotheses[j],
+				      myhypotheses[j]->mass(),
+				      -1.*myhypotheses[j]->charge());
+	  }
+	}
+      }
+      
+      // Clear the myhypotheses vector for the next track
+      myhypotheses.clear();
+      // Reset flags and charge 
+      q=_data[i]->charge();	
+      flipped_charge=false;
+      got_pi=false,got_k=false,got_prot=false;
+      
+      // Check for particular masses
+      if (mass<0.2) got_pi=true;
+      else if (mass<0.6) got_k=true;
+      else if (q>0) got_prot=true;
+      
+      // Add the data to the myhypotheses vector
+      myhypotheses.push_back(_data[i]);
+    }
+    else{
+      myhypotheses.push_back(_data[i]);
+      
+      // Check for particular masses
+      if (mass<0.2) got_pi=true;
+	else if (mass<0.6) got_k=true;
+	else if (q>0) got_prot=true;
+      
+      // Check if the sign of the charge has flipped
+      if (_data[i]->charge()!=q) flipped_charge=true;
+    }
+    
+    old_id=_data[i]->candidateid;
+  }
+  // Deal with last track candidate	
+  int num_hyp=myhypotheses.size();
+  if ((q<0 && num_hyp!=mNumHypMinus)||(q>0 && num_hyp!=mNumHypPlus)
+      || flipped_charge){
+    if (q>0 && got_prot==false){
+      AddMissingTrackHypothesis(tracks_to_add,
+				myhypotheses[myhypotheses.size()-1],
+				ParticleMass(Proton),q);	
+    }
+    if (got_pi==false){
+      AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
+				ParticleMass(PiPlus),q);
+      if (flipped_charge) 
+	myhypotheses.push_back(tracks_to_add[tracks_to_add.size()-1]);
+    }
+    if (got_k==false){
+      AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
+				ParticleMass(KPlus),q);
+      if (flipped_charge) 
+	myhypotheses.push_back(tracks_to_add[tracks_to_add.size()-1]);
+    }
+    if (flipped_charge){
+      for (size_t j=0;j<myhypotheses.size();j++){
+	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[j],
+				  myhypotheses[j]->mass(),
+				  -1.*myhypotheses[j]->charge());
+      }
+    }
+  }
+    
+  // Add the new list of tracks to the output list
+  if (tracks_to_add.size()>0){
+    for (size_t i=0;i<tracks_to_add.size();i++){ 
+      _data.push_back(tracks_to_add[i]);
+    }
+    // Make sure the tracks are ordered by candidate id
+    sort(_data.begin(),_data.end(),DTrackWireBased_cmp);
+  }
+
+  return true;
+}
+
+// Create a track with a mass hypothesis that was not present in the list of 
+// fitted tracks from an existing fitted track.
+void DTrackWireBased_factory::AddMissingTrackHypothesis(vector<DTrackWireBased*>&tracks_to_add,
+				      const DTrackWireBased *src_track,
+							double my_mass,
+							double q){
+  // Create a new wire-based track object
+  DTrackWireBased *wirebased_track = new DTrackWireBased();
+  *static_cast<DTrackingData*>(wirebased_track) = *static_cast<const DTrackingData*>(src_track);
+
+  // Copy over DKinematicData part from the result of a successful fit
+  wirebased_track->setPID(IDTrack(q, my_mass));
+  wirebased_track->chisq = src_track->chisq;
+  wirebased_track->Ndof = src_track->Ndof;
+  wirebased_track->pulls = src_track->pulls;
+  wirebased_track->extrapolations = src_track->extrapolations;
+  wirebased_track->candidateid=src_track->candidateid;
+  wirebased_track->FOM=src_track->FOM;
+  wirebased_track->IsSmoothed=src_track->IsSmoothed;
+  wirebased_track->dCDCRings=src_track->dCDCRings;
+  wirebased_track->dFDCPlanes=src_track->dFDCPlanes;
+
+  // (Partially) compensate for the difference in energy loss between the 
+  // source track and a particle of mass my_mass 
+  DVector3 position,momentum;
+  if (wirebased_track->extrapolations.at(SYS_CDC).size()>0){
+    unsigned int index=wirebased_track->extrapolations.at(SYS_CDC).size()-1;
+    position=wirebased_track->extrapolations[SYS_CDC][index].position;
+    momentum=wirebased_track->extrapolations[SYS_CDC][index].momentum;
+  }
+  else if (wirebased_track->extrapolations.at(SYS_FDC).size()>0){
+    unsigned int index=wirebased_track->extrapolations.at(SYS_FDC).size()-1;
+    position=wirebased_track->extrapolations[SYS_FDC][index].position;
+    momentum=wirebased_track->extrapolations[SYS_FDC][index].momentum;
+  }
+  CorrectForELoss(position,momentum,q,my_mass);
+   
+  wirebased_track->setMomentum(momentum);
+  wirebased_track->setPosition(position);
+
+  // Get the hits used in the fit and add them as associated objects 
+  vector<const DCDCTrackHit *>cdchits;
+  src_track->GetT(cdchits);
+  vector<const DFDCPseudo *>fdchits;
+  src_track->GetT(fdchits);
+  for(unsigned int m=0; m<fdchits.size(); m++)
+    wirebased_track->AddAssociatedObject(fdchits[m]); 
+  for(unsigned int m=0; m<cdchits.size(); m++)
+    wirebased_track->AddAssociatedObject(cdchits[m]);
+   
+  tracks_to_add.push_back(wirebased_track);
+}
+
+void DTrackWireBased_factory::CorrectForELoss(DVector3 &position,DVector3 &momentum,double q,double my_mass){  
+  // Make sure there are enough DReferenceTrajectory objects
+  unsigned int locNumInitialReferenceTrajectories = rtv.size();
+  while(rtv.size()<=num_used_rts){
+    //printf("Adding %d\n",rtv.size());
+    rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+  }
+  DReferenceTrajectory *rt = rtv[num_used_rts];
+  if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
+    rt->Reset();
+  rt->SetDGeometry(geom);
+  rt->q = q;
+  rt->SetMass(my_mass);
+  rt->SetPLossDirection(DReferenceTrajectory::kBackward);
+  DVector3 last_pos,last_mom;
+  DVector3 origin(0.,0.,65.);
+  DVector3 dir(0.,0.,1.);
+  rt->FastSwim(position,momentum,last_pos,last_mom,rt->q,origin,dir,200.);   
+  position=last_pos;
+  momentum=last_mom;   
+    
+  // Increment the number of used reference trajectories
+  num_used_rts++;
 }
