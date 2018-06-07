@@ -15,6 +15,7 @@ using namespace std;
 // Sort by column
 bool SortByCol(const DTAGMHit* a, const DTAGMHit* b)
 {
+        if (a->column == b->column) return a->t < b->t;
 	return a->column < b->column;
 }
 
