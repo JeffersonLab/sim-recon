@@ -79,7 +79,12 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 					       double my_mass,double q);
 		bool InsertMissingHypotheses(void);
 		void CorrectForELoss(DVector3 &position,DVector3 &momentum,
-				     double q, double mass);
+				     double q, double mass); 
+		void AddMissingTrackHypotheses(unsigned int mass_bits,
+					       vector<DTrackWireBased*>&tracks_to_add,
+					       vector<DTrackWireBased *>&hypotheses,
+					       double q,bool flipped_charge);
+
  
 		const DGeometry *geom;
 
