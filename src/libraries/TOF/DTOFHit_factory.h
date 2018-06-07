@@ -51,7 +51,7 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
   double TimeWidthCut;
 
   // ADC to Energy conversion for individual PMT channels
-  double adc2E[176]; // 4*44 channels
+  vector<double> adc2E;
 
   // PARAMETERS:
   double DELTA_T_ADC_TDC_MAX;

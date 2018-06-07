@@ -221,6 +221,8 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     if(eventLoop->GetCalib("TOF/adc2E", raw_adc2E))
       jout << "Error loading /TOF/adc2E !" << endl;
 
+    // make sure we have one entry per channel
+	adc2E.resize(TOF_NUM_PLANES*TOF_NUM_BARS*2);
     for (unsigned int n=0; n<raw_adc2E.size(); n++){
       adc2E[n] = raw_adc2E[n];
     }
