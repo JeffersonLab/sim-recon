@@ -51,6 +51,7 @@ void MakeAmpToolsFlat::Loop(Int_t foption)
    // foption=1: First output has weights (positive and negative)
    // foption=2: Second output has in-time only (weight=1)
    // foption=3: Third output has out-time only (weight=negative 1/nbunches)
+   // foption=4: Third output has in-time only (weight=1 - out-time*(1/nbunches)/in-time)
 
    if (foption == 1){ 
      outFile = new TFile("AmpToolsInputTree.root", "RECREATE");
@@ -60,6 +61,9 @@ void MakeAmpToolsFlat::Loop(Int_t foption)
      }
    else if (foption == 3) {
      outFile = new TFile("AmpToolsInputTreeOutTime.root", "RECREATE");
+     }
+   else if (foption == 4) {
+     outFile = new TFile("AmpToolsInputTreeInTimeW.root", "RECREATE");
      }
    else {
      cout << "*** Loop, illegal foption=" << foption << endl;
@@ -105,7 +109,26 @@ void MakeAmpToolsFlat::Loop(Int_t foption)
 
    Long64_t nentries = fChain->GetEntriesFast();
 
+   int NumIntime = 0;
+   int NumOuttime = 0;
+
+   // loop over entries to count ratio of NumOuttime/NumIntime
+
    Long64_t nbytes = 0, nb = 0;
+   for (Long64_t jentry=0; jentry<nentries;jentry++) {
+      Long64_t ientry = LoadTree(jentry);
+      if (ientry < 0) break;
+      nb = fChain->GetEntry(jentry);
+      if (AccWeight > 0) NumIntime++; 
+      if (AccWeight < 0) NumOuttime++;
+   }
+
+   int Nbunches=4;
+   double signal_frac = (NumIntime - (1./Nbunches)*NumOuttime) / NumIntime;
+   cout << "Signal_frac=" << signal_frac << endl;
+
+
+   nbytes = 0, nb = 0;
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
       Long64_t ientry = LoadTree(jentry);
       if (ientry < 0) break;
@@ -122,11 +145,11 @@ void MakeAmpToolsFlat::Loop(Int_t foption)
       nbytes += nb;
       // if (Cut(ientry) < 0) continue;
         
-      cout<< "jentry=" << jentry << " px=" << beam_p4_kin->Px()<< " py=" << beam_p4_kin->Py()<< " pz=" << beam_p4_kin->Pz()<< " E=" << beam_p4_kin->E()<< endl; 
+      /*cout<< "jentry=" << jentry << " px=" << beam_p4_kin->Px()<< " py=" << beam_p4_kin->Py()<< " pz=" << beam_p4_kin->Pz()<< " E=" << beam_p4_kin->E()<< endl; 
       cout<< "jentry=" << jentry << " weight=" << AccWeight << endl; 
       cout<< "jentry=" << jentry << " px=" << pip_p4_kin->Px()<< " py=" << pip_p4_kin->Py()<< " pz=" << pip_p4_kin->Pz()<< " E=" << pip_p4_kin->E()<< endl; 
       cout<< "jentry=" << jentry << " px=" << pim_p4_kin->Px()<< " py=" << pim_p4_kin->Py()<< " pz=" << pim_p4_kin->Pz()<< " E=" << pim_p4_kin->E()<< endl; 
-      cout<< "jentry=" << jentry << " px=" << misspb_p4_kin->Px()<< " py=" << misspb_p4_kin->Py()<< " pz=" << misspb_p4_kin->Pz()<< " E=" << misspb_p4_kin->E()<< endl << endl;
+      cout<< "jentry=" << jentry << " px=" << misspb_p4_kin->Px()<< " py=" << misspb_p4_kin->Py()<< " pz=" << misspb_p4_kin->Pz()<< " E=" << misspb_p4_kin->E()<< endl << endl;*/
 
    m_e[0] = pip_p4_kin->E();
    m_px[0] = pip_p4_kin->Px();
@@ -166,6 +189,12 @@ void MakeAmpToolsFlat::Loop(Int_t foption)
      if (AccWeight < 0) {
        m_weight = abs(AccWeight);            // make all weights positve
        m_OutTree->Fill();   // out of time
+     }
+   }
+   else if (foption == 4) {
+     if (AccWeight > 0) {
+       m_weight = signal_frac;
+       m_OutTree->Fill();   // in time, weight is fraction of signal
      }
    }
    else {
