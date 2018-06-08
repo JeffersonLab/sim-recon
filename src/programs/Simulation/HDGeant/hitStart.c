@@ -163,28 +163,28 @@ void hitStartCntr (float xin[4], float xout[4],
       printf("ERROR LOADING SC_BENDNOSE_ATTENUATION_C from START_COUNTER/attenuation_factor");
 
     // Propagation time correction constants for straight section
-    int sc_straight_propagation_a = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_STRAIGHT_PROPAGATION_A, "SC_STRAIGHT_PROPAGATION_A");
+    int sc_straight_propagation_a = GetColumn("START_COUNTER/propagation_time_corr", &NCHANNELS, SC_STRAIGHT_PROPAGATION_A, "a");
     if (sc_straight_propagation_a) 
-      printf("ERROR LOADING SC_STRAIGHT_PROPAGATION_A from START_COUNTER/propagation_speed");
-    int sc_straight_propagation_b = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_STRAIGHT_PROPAGATION_B, "SC_STRAIGHT_PROPAGATION_B");
+      printf("ERROR LOADING SC_STRAIGHT_PROPAGATION_A from START_COUNTER/propagation_time_corr");
+    int sc_straight_propagation_b = GetColumn("START_COUNTER/propagation_time_corr", &NCHANNELS, SC_STRAIGHT_PROPAGATION_B, "b");
     if (sc_straight_propagation_b) 
-      printf("ERROR LOADING SC_STRAIGHT_PROPAGATION_B from START_COUNTER/propagation_speed");
+      printf("ERROR LOADING SC_STRAIGHT_PROPAGATION_B from START_COUNTER/propagation_time_corr");
 
     // Propagation time correction constants for bend section
-    int sc_bend_propagation_a = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_BEND_PROPAGATION_A, "SC_BEND_PROPAGATION_A");
+    int sc_bend_propagation_a = GetColumn("START_COUNTER/propagation_time_corr", &NCHANNELS, SC_BEND_PROPAGATION_A, "c");
     if (sc_bend_propagation_a) 
-      printf("ERROR LOADING SC_BEND_PROPAGATION_A from START_COUNTER/propagation_speed");
-    int sc_bend_propagation_b = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_BEND_PROPAGATION_B, "SC_BEND_PROPAGATION_B");
+      printf("ERROR LOADING SC_BEND_PROPAGATION_A from START_COUNTER/propagation_time_corr");
+    int sc_bend_propagation_b = GetColumn("START_COUNTER/propagation_time_corr", &NCHANNELS, SC_BEND_PROPAGATION_B, "d");
     if (sc_bend_propagation_b) 
-      printf("ERROR LOADING SC_BEND_PROPAGATION_B from START_COUNTER/propagation_speed");
+      printf("ERROR LOADING SC_BEND_PROPAGATION_B from START_COUNTER/propagation_time_corr");
 
     // Propagation time correction constants for nose section
-    int sc_nose_propagation_a = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_NOSE_PROPAGATION_A, "SC_NOSE_PROPAGATION_A");
+    int sc_nose_propagation_a = GetColumn("START_COUNTER/propagation_time_corr", &NCHANNELS, SC_NOSE_PROPAGATION_A, "e");
     if (sc_nose_propagation_a) 
-      printf("ERROR LOADING SC_NOSE_PROPAGATION_A from START_COUNTER/propagation_speed");
-    int sc_nose_propagation_b = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_NOSE_PROPAGATION_B, "SC_NOSE_PROPAGATION_B");
+      printf("ERROR LOADING SC_NOSE_PROPAGATION_A from START_COUNTER/propagation_time_corr");
+    int sc_nose_propagation_b = GetColumn("START_COUNTER/propagation_time_corr", &NCHANNELS, SC_NOSE_PROPAGATION_B, "f");
     if (sc_nose_propagation_b) 
-      printf("ERROR LOADING SC_NOSE_PROPAGATION_B from START_COUNTER/propagation_speed");
+      printf("ERROR LOADING SC_NOSE_PROPAGATION_B from START_COUNTER/propagation_time_corr");
 
     initialized = 1;
    }
