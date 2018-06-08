@@ -262,7 +262,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
   // Initialize the stepper
   DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
   double s=0,doca=1000.,old_doca=1000.,dP_dx=0.;
-  double mass=GetMass();
+  //  double mass=GetMass();
   while (s<smax){
     // Save old value of doca
     old_doca=doca;
@@ -446,7 +446,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
       DVector3 pos, mom;
       stepper.GetPosMom(pos, mom);
       double ptot = mom.Mag() - dP; // correct for energy loss
-      if (ptot<0) {Nswim_steps++; break;}
+      if (ptot<0.005) {Nswim_steps++; break;}
       mom.SetMag(ptot);
       stepper.SetStartingParams(q, &pos, &mom);
     }
@@ -718,10 +718,10 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			  cout<<"N: " << Nswim_steps <<" x " << pos.x() <<" y " <<pos.y() <<" z " << pos.z() <<" r " << pos.Perp()<< " s " << s  << " p " << ptot << endl;
 			}
 			*/
-			if(ptot<0.0)ranged_out=true;
+			if(ptot<0.005)ranged_out=true;
 			if(dP<0.0 && ploss_direction==kForward)ranged_out=true;
 			if(dP>0.0 && ploss_direction==kBackward)ranged_out=true;
-			if(mom.Mag()==0.0)ranged_out=true;
+			//if(mom.Mag()==0.0)ranged_out=true;
 			if(ranged_out){
 				Nswim_steps++; // This will at least allow for very low momentum particles to have 1 swim step
 				break;
