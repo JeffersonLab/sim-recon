@@ -88,7 +88,8 @@ jerror_t DTrackWireBased_factory::init(void)
    gPARMS->SetDefaultParameter("TRKFIT:SKIP_MASS_HYPOTHESES_WIRE_BASED",
          SKIP_MASS_HYPOTHESES_WIRE_BASED);
 
-
+   mNumHypPlus=1;
+   mNumHypMinus=1;
    if(!SKIP_MASS_HYPOTHESES_WIRE_BASED)
    {
       vector<int> hypotheses;
@@ -145,6 +146,8 @@ jerror_t DTrackWireBased_factory::init(void)
                jout << endl;
                });
       }
+      mNumHypPlus=mass_hypotheses_positive.size();
+      mNumHypMinus=mass_hypotheses_negative.size();
    }
 
    return NOERROR;
@@ -620,6 +623,11 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       }
    }
 
+   // if the fit returns chisq=-1, something went terribly wrong... 
+   if (fitter->GetChisq()<0){
+     status=DTrackFitter::kFitFailed;
+   }
+
    // Check the status of the fit
    switch(status){
       case DTrackFitter::kFitNotDone:
@@ -671,24 +679,20 @@ bool DTrackWireBased_factory::InsertMissingHypotheses(void){
   JObject::oid_t old_id=_data[0]->candidateid;
   unsigned int mass_bits=0;
   double q=_data[0]->charge();
-  bool flipped_charge=false;
   vector<DTrackWireBased*>myhypotheses;
   vector<DTrackWireBased*>tracks_to_add;
   for (size_t i=0;i<_data.size();i++){
     if (_data[i]->candidateid!=old_id){
       int num_hyp=myhypotheses.size();
-      if ((q<0 && num_hyp!=mNumHypMinus)||(q>0 && num_hyp!=mNumHypPlus)
-	  || flipped_charge){
-	_DBG_<< "Adding hypotheses" << endl;
-	AddMissingTrackHypotheses(mass_bits,tracks_to_add,myhypotheses,q,
-				  flipped_charge);
+      if ((q<0 && num_hyp!=mNumHypMinus)||(q>0 && num_hyp!=mNumHypPlus)){ 
+	AddMissingTrackHypotheses(mass_bits,tracks_to_add,myhypotheses,q);
       }
       
       // Clear the myhypotheses vector for the next track
       myhypotheses.clear();
-      // Reset flags and charge 
+      // Reset charge 
       q=_data[i]->charge();	
-      flipped_charge=false;
+   
       // Set the bit for this mass hypothesis
       mass_bits = 1<<_data[i]->PID();
 
@@ -700,20 +704,14 @@ bool DTrackWireBased_factory::InsertMissingHypotheses(void){
       
       // Set the bit for this mass hypothesis
       mass_bits |= 1<< _data[i]->PID();
-      
-      // Check if the sign of the charge has flipped
-      if (_data[i]->charge()!=q) flipped_charge=true;
     }
     
     old_id=_data[i]->candidateid;
   }
   // Deal with last track candidate	
   int num_hyp=myhypotheses.size();
-  if ((q<0 && num_hyp!=mNumHypMinus)||(q>0 && num_hyp!=mNumHypPlus)
-      || flipped_charge){ 
-    _DBG_<< "Adding hypotheses" << endl;
-    AddMissingTrackHypotheses(mass_bits,tracks_to_add,myhypotheses,q,
-				  flipped_charge);
+  if ((q<0 && num_hyp!=mNumHypMinus)||(q>0 && num_hyp!=mNumHypPlus)){
+    AddMissingTrackHypotheses(mass_bits,tracks_to_add,myhypotheses,q);
   }
     
   // Add the new list of tracks to the output list
@@ -816,25 +814,12 @@ void DTrackWireBased_factory::CorrectForELoss(DVector3 &position,DVector3 &momen
 void DTrackWireBased_factory::AddMissingTrackHypotheses(unsigned int mass_bits,
 							vector<DTrackWireBased*>&tracks_to_add,
 							vector<DTrackWireBased *>&myhypotheses,
-							double q,
-							bool flipped_charge){ 
+							double q){ 
   Particle_t negative_particles[3]={KMinus,PiMinus,Electron};
   Particle_t positive_particles[3]={KPlus,PiPlus,Positron};
 
   unsigned int last_index=myhypotheses.size()-1;
   if (q>0){
-    if (flipped_charge){
-      if ((mass_bits & (1<<AntiProton))==0){
-	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[last_index],
-				  ParticleMass(Proton),-1.);  
-      } 	
-      for (int i=0;i<3;i++){
-	if ((mass_bits & (1<<negative_particles[i]))==0){
-	  AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
-				    ParticleMass(negative_particles[i]),-1.);  
-	} 
-      }
-    }
     if ((mass_bits & (1<<Proton))==0){
       AddMissingTrackHypothesis(tracks_to_add,myhypotheses[last_index],
 				ParticleMass(Proton),+1.);  
@@ -842,7 +827,7 @@ void DTrackWireBased_factory::AddMissingTrackHypotheses(unsigned int mass_bits,
     for (int i=0;i<3;i++){
       if ((mass_bits & (1<<positive_particles[i]))==0){
 	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
-				  ParticleMass(positive_particles[i]),+1.);  
+				  ParticleMass(positive_particles[i]),+1.); 
       } 
     }    
   }
@@ -856,18 +841,6 @@ void DTrackWireBased_factory::AddMissingTrackHypotheses(unsigned int mass_bits,
 	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
 				  ParticleMass(negative_particles[i]),-1.);  
       } 
-    }
-    if (flipped_charge){
-      if ((mass_bits & (1<<Proton))==0){
-	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[last_index],
-				  ParticleMass(Proton),+1.);  
-      } 
-      for (int i=0;i<3;i++){
-	if ((mass_bits & (1<<positive_particles[i]))==0){
-	  AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
-				    ParticleMass(positive_particles[i]),+1.);  
-	} 
-      }	
     }
   }
 } 

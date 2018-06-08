@@ -83,7 +83,7 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		void AddMissingTrackHypotheses(unsigned int mass_bits,
 					       vector<DTrackWireBased*>&tracks_to_add,
 					       vector<DTrackWireBased *>&hypotheses,
-					       double q,bool flipped_charge);
+					       double q);
 
  
 		const DGeometry *geom;
