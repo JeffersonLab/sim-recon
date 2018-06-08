@@ -138,7 +138,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     float cosPhi = cos( (**clItr).phi() );
     float sinPhi = sin( (**clItr).phi() );
     float rho = (**clItr).rho();
-	if (VERBOSE>2) printf("cluster:   E=%f  th=%f phi=%f rho=%f   t=%f\n",
+	if (VERBOSE>2) printf("%4lu cluster:   E=%10.6f  th=%10.6f phi=%10.6f rho=%10.6f   t=%10.6f\n",eventnumber,
 						  (**clItr).E(),(**clItr).theta()/3.14159265*180,(**clItr).phi()/3.14159265*180,(**clItr).rho(),(**clItr).t());
 
     DBCALShower* shower = new DBCALShower();
@@ -173,13 +173,13 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	// Get covariance matrix and uncertainties
 	FillCovarianceMatrix(shower);
 	if (VERBOSE>2) {
-		printf("shower:    E=%f   x=%f   y=%f   z=%f   t=%f\n",
+		printf("shower:    E=%10.6f   x=%10.6f   y=%10.6f   z=%10.6f   t=%10.6f\n",
 			   shower->E,shower->x,shower->y,shower->z,shower->t);
-		printf("shower:   dE=%f  dx=%f  dy=%f  dz=%f  dt=%f\n",
+		printf("shower:   dE=%10.6f  dx=%10.6f  dy=%10.6f  dz=%10.6f  dt=%10.6f\n",
 			   shower->EErr(),shower->xErr(),shower->yErr(),shower->zErr(),shower->tErr());
-		printf("shower:   Ex=%f  Ey=%f  Ez=%f  Et=%f  xy=%f\n",
+		printf("shower:   Ex=%10.6f  Ey=%10.6f  Ez=%10.6f  Et=%10.6f  xy=%10.6f\n",
 			   shower->EXcorr(),shower->EYcorr(),shower->EZcorr(),shower->ETcorr(),shower->XYcorr());
-		printf("shower:   xz=%f  xt=%f  yz=%f  yt=%f  zt=%f\n",
+		printf("shower:   xz=%10.6f  xt=%10.6f  yz=%10.6f  yt=%10.6f  zt=%10.6f\n\n",
 			   shower->XZcorr(),shower->XTcorr(),shower->YZcorr(),shower->YTcorr(),shower->ZTcorr());
 	}
 
@@ -207,7 +207,7 @@ DBCALShower_factory_IU::FillCovarianceMatrix(DBCALShower *shower){
 
 	float shower_E = shower->E;
 	float shower_r = sqrt(shower->x*shower->x + shower->y*shower->y);
-	float shower_theta = atan2(shower_r,shower->z);
+	float shower_theta = atan2(shower_r,shower->z-m_zTarget);
 	float thlookup = shower_theta/3.14159265*180;
 	float Elookup = shower_E;
 
@@ -216,7 +216,8 @@ DBCALShower_factory_IU::FillCovarianceMatrix(DBCALShower *shower){
 	if (Elookup>maxElookup) Elookup=maxElookup-0.0001; // move below edge, on edge doesn't work.
 	if (thlookup<minthlookup) thlookup=minthlookup;
 	if (thlookup>maxthlookup) thlookup=maxthlookup-0.0001;
-	if (VERBOSE>3) printf("(%f,%F)    limits (%f,%f)  (%f,%f)\n",Elookup,thlookup,minElookup,maxElookup,minthlookup,maxthlookup);
+	if (VERBOSE>3) printf("lookup (E,theta)=(%f,%F)    limits (%f,%f)  (%f,%f)\n",
+                          Elookup,thlookup,minElookup,maxElookup,minthlookup,maxthlookup);
 
 	DMatrixDSym ErphiztCovariance(5);
 	for (int i=0; i<5; i++) {
