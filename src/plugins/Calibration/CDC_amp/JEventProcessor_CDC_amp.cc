@@ -229,7 +229,7 @@ jerror_t JEventProcessor_CDC_amp::evnt(JEventLoop *loop, uint64_t eventnumber)
   float scaledped;
   double charge;
 
-  int used[3522] = {0};
+  int used[3523] = {0};
 
   ULong64_t eventnum;
 

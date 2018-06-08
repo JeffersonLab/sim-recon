@@ -17,7 +17,7 @@ using namespace std;
 ROOTDataReaderWithTCut::ROOTDataReaderWithTCut( const vector< string >& args ):
    UserDataReader< ROOTDataReaderWithTCut >( args ),
    m_eventCounter( 0 ),
-   m_useWeight( true )
+   m_useWeight( false )
 {
    assert( args.size() == 4 || args.size() == 3 || args.size() == 1 );
 
@@ -48,10 +48,16 @@ ROOTDataReaderWithTCut::ROOTDataReaderWithTCut( const vector< string >& args ):
    m_inTree->SetBranchAddress( "Px_Beam", &m_pxBeam );
    m_inTree->SetBranchAddress( "Py_Beam", &m_pyBeam );
    m_inTree->SetBranchAddress( "Pz_Beam", &m_pzBeam );
-   if(m_inTree->GetBranch("Weight") != NULL)
-      m_inTree->SetBranchAddress( "Weight", &m_weight );
-   else
-      m_useWeight=false;
+
+   if(m_inTree->GetBranch("Weight") != NULL){
+
+     m_useWeight = true;
+     m_inTree->SetBranchAddress( "Weight", &m_weight );
+   }
+   else{
+     
+     m_useWeight=false;
+   }
 
    m_RangeSpecified = false;
    if( args.size() == 4 || args.size() == 3){

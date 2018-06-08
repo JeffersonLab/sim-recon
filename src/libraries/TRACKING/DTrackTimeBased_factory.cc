@@ -905,15 +905,18 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 	timebased_track->AddAssociatedObject(mycdchits[m]);
 
       // dEdx
-      double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC;
+      double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdEdx_CDC_amp;
+      double locdx_CDC_amp,locdx_CDC;
       unsigned int locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC;
-      pid_algorithm->CalcDCdEdx(timebased_track, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
+      pid_algorithm->CalcDCdEdx(timebased_track, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdEdx_CDC_amp, locdx_CDC, locdx_CDC_amp,locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
   
       timebased_track->ddEdx_FDC = locdEdx_FDC;
       timebased_track->ddx_FDC = locdx_FDC;
       timebased_track->dNumHitsUsedFordEdx_FDC = locNumHitsUsedFordEdx_FDC;
-      timebased_track->ddEdx_CDC = locdEdx_CDC;
-      timebased_track->ddx_CDC = locdx_CDC;
+      timebased_track->ddEdx_CDC = locdEdx_CDC; 
+      timebased_track->ddEdx_CDC_amp = locdEdx_CDC_amp;
+      timebased_track->ddx_CDC = locdx_CDC; 
+      timebased_track->ddx_CDC_amp = locdx_CDC_amp;
       timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
       
       timebased_track->AddAssociatedObject(track);
@@ -986,15 +989,18 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 	timebased_track->AddAssociatedObject(fdchits[m]);
       
       // dEdx
-      double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC;
+      double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdEdx_CDC_amp;
+      double locdx_CDC,locdx_CDC_amp;
       unsigned int locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC;
-      pid_algorithm->CalcDCdEdx(timebased_track, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
+      pid_algorithm->CalcDCdEdx(timebased_track, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdEdx_CDC_amp,locdx_CDC,locdx_CDC_amp, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
       
       timebased_track->ddEdx_FDC = locdEdx_FDC;
       timebased_track->ddx_FDC = locdx_FDC;
       timebased_track->dNumHitsUsedFordEdx_FDC = locNumHitsUsedFordEdx_FDC;
       timebased_track->ddEdx_CDC = locdEdx_CDC;
+      timebased_track->ddEdx_CDC_amp= locdEdx_CDC_amp;
       timebased_track->ddx_CDC = locdx_CDC;
+      timebased_track->ddx_CDC_amp= locdx_CDC_amp;
       timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
       
       // Add DTrack object as associate object
@@ -1059,15 +1065,18 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   timebased_track->AddAssociatedObject(wire_based_track[0]);
 
   // dEdx
-  double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC;
+  double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdEdx_CDC_amp;
+  double locdx_CDC,locdx_CDC_amp;
   unsigned int locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC;
-  pid_algorithm->CalcDCdEdx(timebased_track, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
+  pid_algorithm->CalcDCdEdx(timebased_track, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdEdx_CDC_amp,locdx_CDC,locdx_CDC_amp, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
   
   timebased_track->ddEdx_FDC = locdEdx_FDC;
   timebased_track->ddx_FDC = locdx_FDC;
   timebased_track->dNumHitsUsedFordEdx_FDC = locNumHitsUsedFordEdx_FDC;
   timebased_track->ddEdx_CDC = locdEdx_CDC;
+  timebased_track->ddEdx_CDC_amp = locdEdx_CDC_amp;
   timebased_track->ddx_CDC = locdx_CDC;
+  timebased_track->ddx_CDC_amp = locdx_CDC_amp;
   timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
    
   tracks_to_add.push_back(timebased_track);

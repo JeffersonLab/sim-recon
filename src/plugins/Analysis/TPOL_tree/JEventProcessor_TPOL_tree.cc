@@ -81,33 +81,33 @@ jerror_t JEventProcessor_TPOL_tree::init(void)
     dTreeInterface = DTreeInterface::Create_DTreeInterface("TPOL_tree","tree_TPOL.root");
     DTreeBranchRegister locTreeBranchRegister;
 
-    locTreeBranchRegister.Register_Single<UInt_t>("nadc");
+    locTreeBranchRegister.Register_Single<UShort_t>("nadc");
     locTreeBranchRegister.Register_Single<ULong64_t>("eventnum");
     locTreeBranchRegister.Register_Single<Bool_t>("isFiducial");
-    locTreeBranchRegister.Register_FundamentalArray<ULong64_t>("rocid","nadc",NSECTORS);
-    locTreeBranchRegister.Register_FundamentalArray<ULong64_t>("slot","nadc",NSECTORS);
-    locTreeBranchRegister.Register_FundamentalArray<ULong64_t>("channel","nadc",NSECTORS);
-    locTreeBranchRegister.Register_FundamentalArray<ULong64_t>("itrigger","nadc",NSECTORS);
+    locTreeBranchRegister.Register_FundamentalArray<UInt_t>("rocid","nadc",NSECTORS);
+    locTreeBranchRegister.Register_FundamentalArray<UInt_t>("slot","nadc",NSECTORS);
+    locTreeBranchRegister.Register_FundamentalArray<UInt_t>("channel","nadc",NSECTORS);
+    locTreeBranchRegister.Register_FundamentalArray<UInt_t>("itrigger","nadc",NSECTORS);
     locTreeBranchRegister.Register_FundamentalArray<ULong64_t>("w_integral","nadc",NSECTORS);
     locTreeBranchRegister.Register_FundamentalArray<ULong64_t>("w_max","nadc",NSECTORS);
     locTreeBranchRegister.Register_FundamentalArray<ULong64_t>("w_min","nadc",NSECTORS);
     locTreeBranchRegister.Register_FundamentalArray<ULong64_t>("w_samp1","nadc",NSECTORS);
-    locTreeBranchRegister.Register_FundamentalArray<ULong64_t>("sector","nadc",NSECTORS);
+    locTreeBranchRegister.Register_FundamentalArray<UInt_t>("sector","nadc",NSECTORS);
     locTreeBranchRegister.Register_FundamentalArray<Double_t>("phi","nadc",NSECTORS);
     locTreeBranchRegister.Register_Single<ULong64_t>("ntpol");
-    locTreeBranchRegister.Register_FundamentalArray<UInt_t>("waveform","ntpol",NSECTORS*150);
+    locTreeBranchRegister.Register_FundamentalArray<UShort_t>("waveform","ntpol",NSECTORS*150);
     locTreeBranchRegister.Register_Single<Double_t>("PSenergy_lhit");
     locTreeBranchRegister.Register_Single<Double_t>("PSenergy_rhit");
     locTreeBranchRegister.Register_Single<Double_t>("PSCtime_lhit");
     locTreeBranchRegister.Register_Single<Double_t>("PSCtime_rhit");
     locTreeBranchRegister.Register_Single<Double_t>("PStime_lhit");
     locTreeBranchRegister.Register_Single<Double_t>("PStime_rhit");
-    locTreeBranchRegister.Register_Single<ULong64_t>("ntagh");
+    locTreeBranchRegister.Register_Single<UShort_t>("ntagh");
     locTreeBranchRegister.Register_FundamentalArray<Bool_t>("TAGH_DBeam","ntagh",locNumTAGHhits);
     locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGHenergy","ntagh",locNumTAGHhits);
     locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGHtime","ntagh",locNumTAGHhits);
     locTreeBranchRegister.Register_FundamentalArray<UInt_t>("TAGHcounter","ntagh",locNumTAGHhits);
-    locTreeBranchRegister.Register_Single<ULong64_t>("ntagm");
+    locTreeBranchRegister.Register_Single<UShort_t>("ntagm");
     locTreeBranchRegister.Register_FundamentalArray<Bool_t>("TAGM_DBeam","ntagm",locNumTAGMhits);
     locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGMenergy","ntagm",locNumTAGMhits);
     locTreeBranchRegister.Register_FundamentalArray<Double_t>("TAGMtime","ntagm",locNumTAGMhits);
@@ -262,7 +262,11 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 			beamPhotons[j]->GetSingle(tagh);
 			if (!tagh) continue;
 			if (!tagh->has_TDC || !tagh->has_fADC) continue;
-			if (std::isnan(tagh->t) || std::isnan(tagh->E)) continue;
+			if (std::isnan(tagh->t) || std::isnan(tagh->E)) 
+			{
+				jerr<<"Found TAGH with NAN."<<endl;
+				continue;
+			}
 			if (fabs(E_pair-tagh->E) > EdiffMax || fabs(t_lhit-tagh->t) > tdiffMax) continue;
 			if (tagh->t != tag->t || tagh->E != tag->E || tagh->counter_id != tag->counter_id) continue;
 			same++;
@@ -294,7 +298,11 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
                         if (!tagm) continue;
                         if (!tagm->has_TDC || !tagm->has_fADC) continue;
 			if (tagm->row != 0) continue;
-			if (std::isnan(tagm->t) || std::isnan(tagm->E)) continue;
+			if (std::isnan(tagm->t) || std::isnan(tagm->E)) 
+			{
+				jerr<<"Found TAGM with NAN."<<endl;
+				continue;
+			}
                         if (fabs(E_pair-tagm->E) > EdiffMax || fabs(t_lhit-tagm->t) > tdiffMax) continue;
 			if (tagm->t != tag->t || tagm->E != tag->E || tagm->column != tag->column) continue;
                         same++;
@@ -333,8 +341,8 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
             }
 	    if (mtag_Check != mtag_DBeam) jerr<<"TAGM: "<<mtag_DBeam<<" , "<<mtag_Check<<endl;
 
-	    dTreeFillData.Fill_Single<UInt_t>("ntagh",htag);
-	    dTreeFillData.Fill_Single<UInt_t>("ntagm",mtag);
+	    dTreeFillData.Fill_Single<UShort_t>("ntagh",htag);
+	    dTreeFillData.Fill_Single<UShort_t>("ntagm",mtag);
 
 	    // Loop over windowraws to collect TPOL hits
 	    // No cuts are applied to the TPOL hits
@@ -360,7 +368,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 		unsigned int w_min = 0;
 		unsigned int w_samp1 = 0;
                 for (uint16_t c_samp=0; c_samp<nsamples; c_samp++) {
-		    dTreeFillData.Fill_Array<ULong64_t>("waveform",samplesvector[c_samp],ntpol);
+		    dTreeFillData.Fill_Array<UShort_t>("waveform",samplesvector[c_samp],ntpol);
 		    ntpol++;
                     if (c_samp==0) {  // use first sample for initialization
                         w_integral = samplesvector[0];
@@ -377,21 +385,21 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
                 unsigned int sector = GetSector(slot,channel);
                 double phi = GetPhi(sector);
 	
-		dTreeFillData.Fill_Array<ULong64_t>("rocid",rocid,hit);
-		dTreeFillData.Fill_Array<ULong64_t>("slot",slot,hit);
-		dTreeFillData.Fill_Array<ULong64_t>("channel",channel,hit);
-		dTreeFillData.Fill_Array<ULong64_t>("itrigger",itrigger,hit);
+		dTreeFillData.Fill_Array<UInt_t>("rocid",rocid,hit);
+		dTreeFillData.Fill_Array<UInt_t>("slot",slot,hit);
+		dTreeFillData.Fill_Array<UInt_t>("channel",channel,hit);
+		dTreeFillData.Fill_Array<UInt_t>("itrigger",itrigger,hit);
 		dTreeFillData.Fill_Array<ULong64_t>("w_integral",w_integral,hit);
 		dTreeFillData.Fill_Array<ULong64_t>("w_max",w_max,hit);
 		dTreeFillData.Fill_Array<ULong64_t>("w_min",w_min,hit);
 		dTreeFillData.Fill_Array<ULong64_t>("w_samp1",w_samp1,hit);
-		dTreeFillData.Fill_Array<ULong64_t>("sector",sector,hit);
+		dTreeFillData.Fill_Array<UInt_t>("sector",sector,hit);
 		dTreeFillData.Fill_Array<ULong64_t>("phi",phi,hit);
 		hit++;
             }
             unsigned int nadc = hit;
             if (nadc>NSECTORS) jerr << "TPOL_tree plugin error: nadc exceeds nmax(" << NSECTORS << ")." << endl;
-            dTreeFillData.Fill_Single<ULong64_t>("nadc",nadc);
+            dTreeFillData.Fill_Single<UShort_t>("nadc",nadc);
 	    dTreeFillData.Fill_Single<ULong64_t>("ntpol",ntpol);
 	    dTreeInterface->Fill(dTreeFillData);
         }
