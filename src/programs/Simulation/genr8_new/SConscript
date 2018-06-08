@@ -1,0 +1,14 @@
+
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+env.AppendUnique(LIBS='m')
+sbms.AddROOT(env)
+
+sbms.executable(env)
+
+
