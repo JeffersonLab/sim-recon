@@ -1088,7 +1088,6 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
     if (fitter->GetChisq()<0) status=DTrackFitter::kFitFailed;
 
     if (status==DTrackFitter::kFitSuccess){
-      _DBG_ << "Refit worked!!!" << endl;
       timebased_track->chisq = fitter->GetChisq();
       timebased_track->Ndof = fitter->GetNdof();
       timebased_track->pulls = std::move(fitter->GetPulls());  
@@ -1184,7 +1183,6 @@ bool DTrackTimeBased_factory::InsertMissingHypotheses(JEventLoop *loop){
       int num_hyp=myhypotheses.size();
       if ((q<0 && num_hyp!=mNumHypMinus)||(q>0 && num_hyp!=mNumHypPlus)
 	  || flipped_charge){
-	_DBG_<< "Adding hypotheses" << endl;
 	AddMissingTrackHypotheses(mass_bits,tracks_to_add,myhypotheses,q,
 				  flipped_charge,loop);
       }
@@ -1216,7 +1214,6 @@ bool DTrackTimeBased_factory::InsertMissingHypotheses(JEventLoop *loop){
   int num_hyp=myhypotheses.size();
   if ((q<0 && num_hyp!=mNumHypMinus)||(q>0 && num_hyp!=mNumHypPlus)
       || flipped_charge){
-    _DBG_<< "Adding hypotheses" << endl;
     AddMissingTrackHypotheses(mass_bits,tracks_to_add,myhypotheses,q,
 			      flipped_charge,loop);
   }
