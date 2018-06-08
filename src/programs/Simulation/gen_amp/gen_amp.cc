@@ -19,6 +19,7 @@
 #include "AMPTOOLS_AMPS/TwoPSHelicity.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
 #include "AMPTOOLS_AMPS/BreitWigner3body.h"
+#include "AMPTOOLS_AMPS/ThreePiAnglesSchilling.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
 #include "AMPTOOLS_MCGEN/GammaPToNPartP.h"
@@ -55,7 +56,7 @@ int main( int argc, char* argv[] ){
 	double beamHighE  = 12.0;
 	
 	int runNum = 9001;
-	int seed = 0;
+	unsigned int seed = 0;
 
 	double slope = 6.0;
 
@@ -192,6 +193,7 @@ int main( int argc, char* argv[] ){
 	AmpToolsInterface::registerAmplitude( TwoPSHelicity() );
 	AmpToolsInterface::registerAmplitude( BreitWigner() );
 	AmpToolsInterface::registerAmplitude( BreitWigner3body() );
+	AmpToolsInterface::registerAmplitude( ThreePiAnglesSchilling() );
 	AmpToolsInterface ati( cfgInfo, AmpToolsInterface::kMCGeneration );
 	
 	ProductionMechanism::Type type =
