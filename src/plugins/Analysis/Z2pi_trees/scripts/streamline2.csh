@@ -12,8 +12,9 @@ unset base
 unset maxev
 
 if( $#argv == 0 ) then
-    set run = "031002"
-    set base = "sw1pw1000_TAG40"
+    set run = "031001"
+    set base = "sw1pw1000_TAG10"
+#    set base = "TEST"
     set maxev = 1000000
 else if ( $#argv == 1) then
     set run = $1
@@ -62,6 +63,8 @@ set savebase = $base
 # mv AmpToolsInputTreeInTime.root treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}_amptools_InTime.root
 # root -b -q treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}.root 'call_MakeAmpToolsFlat.C(3)'
 # mv AmpToolsInputTreeOutTime.root treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}_amptools_OutTime.root
+# root -b -q treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}.root 'call_MakeAmpToolsFlat.C(4)'
+# mv AmpToolsInputTreeInTimeW.root treeFlat_DSelector_Z2pi_trees_${base}_signal_${maxev}_amptools_InTimeW.root
 
 # Now repeat for flat distribution. Also need the generated flat distributions.
 set base = "sw1pw1000_NOTAG"
@@ -85,11 +88,11 @@ set base = "sw1pw1000_NOTAG"
 # mv treeFlat_DSelector_Z2pi_trees.root treeFlat_DSelector_Z2pi_trees_${base}_flat_${maxev}.root
 # root -l -q  plot_Z2pi_trees.C\(\"DSelector_Z2pi_trees_${base}_flat_${maxev}\"\)
 #No longer needed: tree_to_amptools tree_DSelector_Z2pi_trees_${base}_flat_${maxev}.root pippimmisspb208_Tree
-# root -b -q treeFlat_DSelector_Z2pi_trees_${base}_flat_${maxev}.root 'call_MakeAmpToolsFlat.C'
+# root -b -q treeFlat_DSelector_Z2pi_trees_${base}_flat_${maxev}.root 'call_MakeAmpToolsFlat.C(1)'
 # mv AmpToolsInputTree.root treeFlat_DSelector_Z2pi_trees_${base}_flat_${maxev}_amptools.root
 
 # set base = ${savebase}
-set tagfit = "W"
+set tagfit = "File"
 set base = ${savebase}_${tagfit}
 
 fit -c fit_2pi_primakoff_${tagfit}_${maxev}.cfg  >! twopi_primakoff_DSelect_${base}_${maxev}.list
