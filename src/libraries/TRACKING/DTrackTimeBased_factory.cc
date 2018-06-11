@@ -408,7 +408,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   FilterDuplicates();
 
   // Fill in track data for missing hypotheses 
-  InsertMissingHypotheses();
+  InsertMissingHypotheses(loop);
 
   // Set MC Hit-matching information
   for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
@@ -1028,7 +1028,10 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>&tracks_to_add,
 				      const DTrackTimeBased *src_track,
 							double my_mass,
-							double q){
+							double q,
+							JEventLoop *loop){
+ 
+  
   // Create a new time-based track object
   DTrackTimeBased *timebased_track = new DTrackTimeBased();
   *static_cast<DTrackingData*>(timebased_track) = *static_cast<const DTrackingData*>(src_track);
@@ -1044,26 +1047,104 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   timebased_track->FOM=src_track->FOM;
   timebased_track->cdc_hit_usage=src_track->cdc_hit_usage;
   timebased_track->fdc_hit_usage=src_track->fdc_hit_usage;
-  
   // Add list of start times
   timebased_track->start_times.assign(src_track->start_times.begin(),  
 				      src_track->start_times.end());
-
-  // Get the hits used in the fit and add them as associated objects 
-  vector<const DCDCTrackHit *>cdchits;
-  src_track->GetT(cdchits);
-  vector<const DFDCPseudo *>fdchits;
-  src_track->GetT(fdchits);
-  for(unsigned int m=0; m<fdchits.size(); m++)
-    timebased_track->AddAssociatedObject(fdchits[m]); 
-  for(unsigned int m=0; m<cdchits.size(); m++)
-    timebased_track->AddAssociatedObject(cdchits[m]);
-  
   // Add DTrack object as associate object
   vector<const DTrackWireBased*>wire_based_track;
   src_track->GetT(wire_based_track);
   timebased_track->AddAssociatedObject(wire_based_track[0]);
 
+  // (Partially) compensate for the difference in energy loss between the 
+  // source track and a particle of mass my_mass 
+  DVector3 position,momentum;
+  if (timebased_track->extrapolations.at(SYS_CDC).size()>0){
+    unsigned int index=timebased_track->extrapolations.at(SYS_CDC).size()-1;
+    position=timebased_track->extrapolations[SYS_CDC][index].position;
+    momentum=timebased_track->extrapolations[SYS_CDC][index].momentum;
+  }
+  else if (timebased_track->extrapolations.at(SYS_FDC).size()>0){
+    unsigned int index=timebased_track->extrapolations.at(SYS_FDC).size()-1;
+    position=timebased_track->extrapolations[SYS_FDC][index].position;
+    momentum=timebased_track->extrapolations[SYS_FDC][index].momentum;
+  }
+
+  DTrackFitter::fit_status_t status=DTrackFitter::kFitNotDone;
+  if (momentum.Mag()>0.){
+    CorrectForELoss(position,momentum,q,my_mass);  
+    timebased_track->setMomentum(momentum);
+    timebased_track->setPosition(position);
+
+    // Redo the fit with the new position and momentum as initial guesses
+    fitter->Reset();
+    fitter->SetFitType(DTrackFitter::kTimeBased);    
+    status = fitter->FindHitsAndFitTrack(*timebased_track,
+					 timebased_track->extrapolations,loop, 
+					 my_mass,timebased_track->Ndof+5,
+					 timebased_track->t0(),
+					 timebased_track->t0_detector());
+    // if the fit returns chisq=-1, something went terribly wrong.  Do not 
+    // update the parameters for the track...
+    if (fitter->GetChisq()<0) status=DTrackFitter::kFitFailed;
+
+    if (status==DTrackFitter::kFitSuccess){
+      timebased_track->chisq = fitter->GetChisq();
+      timebased_track->Ndof = fitter->GetNdof();
+      timebased_track->pulls = std::move(fitter->GetPulls());  
+      timebased_track->extrapolations=std::move(fitter->GetExtrapolations());
+      timebased_track->IsSmoothed = fitter->GetIsSmoothed();  
+      *static_cast<DTrackingData*>(timebased_track) = fitter->GetFitParameters();
+
+      // Add hits used as associated objects
+      const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
+      const vector<const DFDCPseudo*> &fdchits = fitter->GetFDCFitHits();
+      
+      unsigned int num_fdc_potential=fitter->GetNumPotentialFDCHits();
+      unsigned int num_cdc_potential=fitter->GetNumPotentialCDCHits();
+
+      DTrackTimeBased::hit_usage_t temp;
+      temp.inner_layer=0;
+      temp.outer_layer=0;
+      temp.total_hits=num_cdc_potential;
+      if (cdchits.size()>0){
+	temp.inner_layer=cdchits[0]->wire->ring;
+	temp.outer_layer=cdchits[cdchits.size()-1]->wire->ring;
+      }
+      timebased_track->cdc_hit_usage=temp;
+
+      // Reset the structure
+      temp.inner_layer=0;
+      temp.outer_layer=0;
+      temp.total_hits=num_fdc_potential; 
+      if (fdchits.size()>0){
+	temp.inner_layer=fdchits[0]->wire->layer;
+	temp.outer_layer=fdchits[fdchits.size()-1]->wire->layer;
+      }
+      timebased_track->fdc_hit_usage=temp;
+      
+      for(unsigned int m=0; m<cdchits.size(); m++)
+	timebased_track->AddAssociatedObject(cdchits[m]);
+      for(unsigned int m=0; m<fdchits.size(); m++)
+	timebased_track->AddAssociatedObject(fdchits[m]);
+      
+      // Compute the figure-of-merit based on tracking
+      timebased_track->FOM = TMath::Prob(timebased_track->chisq, timebased_track->Ndof);
+      
+    }
+  }
+
+  if (status!=DTrackFitter::kFitSuccess){
+    // Get the hits used in the fit and add them as associated objects 
+    vector<const DCDCTrackHit *>cdchits;
+    src_track->GetT(cdchits);
+    vector<const DFDCPseudo *>fdchits;
+    src_track->GetT(fdchits);
+    for(unsigned int m=0; m<fdchits.size(); m++)
+      timebased_track->AddAssociatedObject(fdchits[m]); 
+    for(unsigned int m=0; m<cdchits.size(); m++)
+      timebased_track->AddAssociatedObject(cdchits[m]);
+  }
+ 
   // dEdx
   double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdEdx_CDC_amp;
   double locdx_CDC,locdx_CDC_amp;
@@ -1085,49 +1166,25 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
 
 // If the fit failed for certain hypotheses, fill in the gaps using data from
 // successful fits for each candidate.
-bool DTrackTimeBased_factory::InsertMissingHypotheses(void){
+bool DTrackTimeBased_factory::InsertMissingHypotheses(JEventLoop *loop){
   if (_data.size()==0) return false;
   
   // Make sure the tracks are ordered by candidate id
   sort(_data.begin(),_data.end(),DTrackTimeBased_cmp);
-  
+ 
   JObject::oid_t old_id=_data[0]->candidateid;
-  bool got_pi=false,got_k=false,got_prot=false;
+  unsigned int mass_bits=0;
   double q=_data[0]->charge();
   bool flipped_charge=false;
   vector<DTrackTimeBased*>myhypotheses;
   vector<DTrackTimeBased*>tracks_to_add;
   for (size_t i=0;i<_data.size();i++){
-    double mass=_data[i]->mass();
-      
     if (_data[i]->candidateid!=old_id){
       int num_hyp=myhypotheses.size();
       if ((q<0 && num_hyp!=mNumHypMinus)||(q>0 && num_hyp!=mNumHypPlus)
 	  || flipped_charge){
-	if (q>0 && got_prot==false){
-	  AddMissingTrackHypothesis(tracks_to_add,
-				      myhypotheses[myhypotheses.size()-1],
-				    ParticleMass(Proton),q); 
-	}
-	if (got_pi==false){
-	  AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
-				    ParticleMass(PiPlus),q);
-	  if (flipped_charge) 
-	    myhypotheses.push_back(tracks_to_add[tracks_to_add.size()-1]);
-	}
-	if (got_k==false){
-	  AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
-				    ParticleMass(KPlus),q);
-	  if (flipped_charge) 
-	    myhypotheses.push_back(tracks_to_add[tracks_to_add.size()-1]);
-	}
-	if (flipped_charge){
-	  for (size_t j=0;j<myhypotheses.size();j++){
-	    AddMissingTrackHypothesis(tracks_to_add,myhypotheses[j],
-				      myhypotheses[j]->mass(),
-				      -1.*myhypotheses[j]->charge());
-	  }
-	}
+	AddMissingTrackHypotheses(mass_bits,tracks_to_add,myhypotheses,q,
+				  flipped_charge,loop);
       }
       
       // Clear the myhypotheses vector for the next track
@@ -1135,23 +1192,17 @@ bool DTrackTimeBased_factory::InsertMissingHypotheses(void){
       // Reset flags and charge 
       q=_data[i]->charge();	
       flipped_charge=false;
-      got_pi=false,got_k=false,got_prot=false;
-      
-      // Check for particular masses
-      if (mass<0.2) got_pi=true;
-      else if (mass<0.6) got_k=true;
-      else if (q>0) got_prot=true;
+      // Set the bit for this mass hypothesis
+      mass_bits = 1<<_data[i]->PID();
       
       // Add the data to the myhypotheses vector
       myhypotheses.push_back(_data[i]);
     }
     else{
       myhypotheses.push_back(_data[i]);
-      
-      // Check for particular masses
-      if (mass<0.2) got_pi=true;
-	else if (mass<0.6) got_k=true;
-	else if (q>0) got_prot=true;
+
+      // Set the bit for this mass hypothesis
+      mass_bits |= 1<< _data[i]->PID();
       
       // Check if the sign of the charge has flipped
       if (_data[i]->charge()!=q) flipped_charge=true;
@@ -1163,30 +1214,8 @@ bool DTrackTimeBased_factory::InsertMissingHypotheses(void){
   int num_hyp=myhypotheses.size();
   if ((q<0 && num_hyp!=mNumHypMinus)||(q>0 && num_hyp!=mNumHypPlus)
       || flipped_charge){
-    if (q>0 && got_prot==false){
-      AddMissingTrackHypothesis(tracks_to_add,
-				myhypotheses[myhypotheses.size()-1],
-				ParticleMass(Proton),q);	
-    }
-    if (got_pi==false){
-      AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
-				ParticleMass(PiPlus),q);
-      if (flipped_charge) 
-	myhypotheses.push_back(tracks_to_add[tracks_to_add.size()-1]);
-    }
-    if (got_k==false){
-      AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
-				ParticleMass(KPlus),q);
-      if (flipped_charge) 
-	myhypotheses.push_back(tracks_to_add[tracks_to_add.size()-1]);
-    }
-    if (flipped_charge){
-      for (size_t j=0;j<myhypotheses.size();j++){
-	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[j],
-				  myhypotheses[j]->mass(),
-				  -1.*myhypotheses[j]->charge());
-      }
-    }
+    AddMissingTrackHypotheses(mass_bits,tracks_to_add,myhypotheses,q,
+			      flipped_charge,loop);
   }
     
   // Add the new list of tracks to the output list
@@ -1201,3 +1230,85 @@ bool DTrackTimeBased_factory::InsertMissingHypotheses(void){
 
   return true;
 }
+
+// Use the FastSwim method in DReferenceTrajectory to propagate back to the 
+// POCA to the beam line, adding a bit of energy at each step that would have 
+// been lost had the particle emerged from the target.
+void DTrackTimeBased_factory::CorrectForELoss(DVector3 &position,DVector3 &momentum,double q,double my_mass){  
+  DReferenceTrajectory::swim_step_t dummy_step;
+  DReferenceTrajectory rt(fitter->GetDMagneticFieldMap(),q,&dummy_step);
+  rt.SetDGeometry(geom);
+  rt.SetMass(my_mass);
+  rt.SetPLossDirection(DReferenceTrajectory::kBackward);
+  DVector3 last_pos,last_mom;
+  DVector3 origin(0.,0.,65.);
+  DVector3 dir(0.,0.,1.);
+  rt.FastSwim(position,momentum,last_pos,last_mom,q,origin,dir,300.);   
+  position=last_pos;
+  momentum=last_mom;   
+}
+
+// Fill in all missing hypotheses for a given track candidate
+void DTrackTimeBased_factory::AddMissingTrackHypotheses(unsigned int mass_bits,
+							vector<DTrackTimeBased*>&tracks_to_add,
+							vector<DTrackTimeBased *>&myhypotheses,
+							double q,
+							bool flipped_charge,
+							JEventLoop *loop){ 
+  Particle_t negative_particles[3]={KMinus,PiMinus,Electron};
+  Particle_t positive_particles[3]={KPlus,PiPlus,Positron};
+
+  unsigned int last_index=myhypotheses.size()-1;
+  if (q>0){
+    if (flipped_charge){
+      if ((mass_bits & (1<<AntiProton))==0){
+	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[last_index],
+				  ParticleMass(Proton),-1.,loop);  
+      } 	
+      for (int i=0;i<3;i++){
+	if ((mass_bits & (1<<negative_particles[i]))==0){
+	  AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
+				    ParticleMass(negative_particles[i]),
+				    -1.,loop);  
+	} 
+      }
+    }
+    if ((mass_bits & (1<<Proton))==0){
+      AddMissingTrackHypothesis(tracks_to_add,myhypotheses[last_index],
+				ParticleMass(Proton),+1.,loop);  
+    } 
+    for (int i=0;i<3;i++){
+      if ((mass_bits & (1<<positive_particles[i]))==0){
+	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
+				  ParticleMass(positive_particles[i]),
+				  +1.,loop);  
+      } 
+    }    
+  }
+  else{
+    if ((mass_bits & (1<<AntiProton))==0){
+      AddMissingTrackHypothesis(tracks_to_add,myhypotheses[last_index],
+				ParticleMass(Proton),-1.,loop);  
+    } 	
+    for (int i=0;i<3;i++){
+      if ((mass_bits & (1<<negative_particles[i]))==0){
+	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
+				  ParticleMass(negative_particles[i]),
+				  -1.,loop);  
+      } 
+    }
+    if (flipped_charge){
+      if ((mass_bits & (1<<Proton))==0){
+	AddMissingTrackHypothesis(tracks_to_add,myhypotheses[last_index],
+				  ParticleMass(Proton),+1.,loop);  
+      } 
+      for (int i=0;i<3;i++){
+	if ((mass_bits & (1<<positive_particles[i]))==0){
+	  AddMissingTrackHypothesis(tracks_to_add,myhypotheses[0],
+				    ParticleMass(positive_particles[i]),
+				    +1.,loop);  
+	} 
+      }	
+    }
+  }
+} 
