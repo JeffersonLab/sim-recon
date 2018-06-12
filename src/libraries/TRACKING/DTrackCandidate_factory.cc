@@ -286,25 +286,32 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     const DTrackCandidate *srccan = cdctrackcandidates[i];
     DVector3 mom=srccan->momentum();
     DVector3 pos=srccan->position();
-    double theta=mom.Theta();
-       
+    
     // Propagate track to CDC endplate
     bool isForward=false;
-    if (theta<M_PI_2 && fdctrackcandidates.size()>0){     
-      // First do a quick projection using a helical model to see if it is 
-      // worth adding this cdc candidate to the list of forward-going tracks
-      // that could pass into the FDC...
-      ProjectHelixToZ(cdc_endplate.z(),srccan->charge(),mom,pos);
-      if (pos.Perp()<48.5){
-	// do an actual swim to the cdc endplate
-	mom=srccan->momentum();
-	pos=srccan->position();
-	stepper->SetCharge(srccan->charge());
-	stepper->SwimToPlane(pos,mom,cdc_endplate,norm,NULL);
+    if (fdctrackcandidates.size()>0){
+      // Check for candidates that appear to go backwards but are actually 
+      //going forwards...
+      if (mom.Theta()>M_PI_2 && !sc_pos.empty()){
+	TryToFlipDirection(schits,mom,pos);
+      }
+      if (mom.Theta()<M_PI_2){
+	// First do a quick projection using a helical model to see if it is 
+	// worth adding this cdc candidate to the list of forward-going tracks
+	// that could pass into the FDC...
+	ProjectHelixToZ(cdc_endplate.z(),srccan->charge(),mom,pos);
+	
 	if (pos.Perp()<48.5){
-	  cdc_endplate_projections.push_back(pos);
-	  cdc_forward_ids.push_back(i);   
-	  isForward=true;
+	  // do an actual swim to the cdc endplate
+	  mom=srccan->momentum();
+	  pos=srccan->position();
+	  stepper->SetCharge(srccan->charge());
+	  stepper->SwimToPlane(pos,mom,cdc_endplate,norm,NULL);
+	  if (pos.Perp()<48.5){
+	    cdc_endplate_projections.push_back(pos);
+	    cdc_forward_ids.push_back(i);   
+	    isForward=true;
+	  }
 	}
       }
     }
@@ -316,7 +323,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   // Variables for candidate number accounting
   int num_forward_cdc_cands_remaining=cdc_forward_ids.size();
   int num_fdc_cands_remaining=fdctrackcandidates.size();
- 
+
   // Loop through the list of FDC candidates looking for matches between the
   // CDC and the FDC in the transition region.
   if (num_forward_cdc_cands_remaining>0){
@@ -440,7 +447,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       trackcandidates.push_back(can);
     }	
   }
-  
+
   for (unsigned int j=0;j<cdc_backward_ids.size();j++){	  
     const DTrackCandidate *cdccan = cdctrackcandidates[cdc_backward_ids[j]]; 
 
@@ -456,39 +463,11 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       DVector3 mom=cdccan->momentum();
       DVector3 pos=cdccan->position();
 
-      // Use information from the start counter to refine some candidates that 
-      // seem to be pointing backwards but are probably pointing forwards.  In
-      // these cases the circle projection intersects with a start counter
-      // paddle but the z-position at the radius r just outside the start 
-      // counter barrel region is downstream of the nose, which does not make
-      // sense for a particle that is actually heading upstream...
+      // Check for candidates that appear to go backwards but are actually 
+      //going forwards...
       if (mom.Theta()>M_PI_2 && !sc_pos.empty()){
-	double zsc=sc_pos[0][1].z();
-	if (pos.z()>zsc){
-	  unsigned int best_sc_sector_id=0;
-	  double dphi_min=1000.;
-	  double cand_phi=pos.Phi();
-	  for (unsigned int k=0;k<schits.size();k++){
-	    unsigned int sector_id=schits[k]->sector-1;
-	    double dphi=cand_phi-sc_pos[sector_id][0].Phi();
-	    if (dphi<-M_PI) dphi+=2.*M_PI;
-	    if (dphi>M_PI) dphi-=2.*M_PI;
-
-	    if (fabs(dphi)<dphi_min){
-	      best_sc_sector_id=sector_id;
-	      dphi_min=fabs(dphi);
-	    }
-	  }
-	  if (dphi_min<0.105){  
-	    // simplest approach: just change the direction -z -> +z
-	    mom.SetMagThetaPhi(mom.Mag(),M_PI-mom.Theta(),mom.Phi());
-	    pos=sc_pos[best_sc_sector_id][1];
-	    //	    _DBG_ << " Event " << eventnumber << endl;
-	  }
-	}
-	
+	TryToFlipDirection(schits,mom,pos);
       }
-
 
       DTrackCandidate *can = new DTrackCandidate;
       can->setMomentum(mom);
@@ -3173,4 +3152,46 @@ DTrackCandidate_factory::GetPositionAndMomentum(double z,DHelicalFit &fit,
   mom.SetXYZ(px,py,pz);
 
   return NOERROR;
+}
+
+// Use information from the start counter to try to correct the momentum and
+// position for tracks seem to be pointing backwards but are probably pointing 
+// forwards.  In these cases the circle projection intersects with a start 
+// counter paddle but the z-position at the radius r just outside the start 
+// counter barrel region is downstream of the nose, which does not make
+// sense for a particle that is actually heading upstream...
+bool DTrackCandidate_factory::TryToFlipDirection(vector<const DSCHit *>&schits,
+						 DVector3 &mom,DVector3 &pos) const{
+  if (schits.size()==0) return false;
+
+  double zsc=sc_pos[0][1].z();
+  if (pos.z()>zsc){
+    unsigned int best_sc_sector_id=0;
+    double dphi_min=1000.;
+    double cand_phi=pos.Phi();
+    for (unsigned int k=0;k<schits.size();k++){
+      unsigned int sector_id=schits[k]->sector-1;
+      double dphi=cand_phi-sc_pos[sector_id][0].Phi();
+      if (dphi<-M_PI) dphi+=2.*M_PI;
+      if (dphi>M_PI) dphi-=2.*M_PI;
+      
+      if (fabs(dphi)<dphi_min){
+	best_sc_sector_id=sector_id;
+	dphi_min=fabs(dphi);
+      }
+    }
+    if (dphi_min<0.105){  
+      // simplest approach: just change the direction -z -> +z
+      mom.SetMagThetaPhi(mom.Mag(),M_PI-mom.Theta(),mom.Phi());
+      pos=sc_pos[best_sc_sector_id][1];
+      //	    _DBG_ << " Event " << eventnumber << endl;
+      if (DEBUG_LEVEL>0){
+	_DBG_ << "Changing direction of CDC candidate..." << endl;
+      }
+      return true;
+    }
+  }
+  
+
+  return false;
 }

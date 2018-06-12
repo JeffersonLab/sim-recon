@@ -129,7 +129,8 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		     const DFDCSegment *segment2);
   bool MatchMethod12(DTrackCandidate *srccan,vector<int> &forward_matches,
 		     int &num_fdc_cands_remaining);
-
+  bool TryToFlipDirection(vector<const DSCHit *>&scihits,
+			  DVector3 &mom,DVector3 &pos) const;
  
  private:
   const DMagneticFieldMap *bfield;
