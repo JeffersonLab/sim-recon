@@ -82,9 +82,8 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
   TH1F *Hcircle_fit_prob;
   vector<double>z_wires;
   double endplate_z;
-  double TARGET_Z;
-  double MAX_R_VERTEX_LIMIT;
-  double zpack[4];
+  double TARGET_Z,BEAM_VAR;
+  
   double FactorForSenseOfRotation;
   
   // Fit parameters
