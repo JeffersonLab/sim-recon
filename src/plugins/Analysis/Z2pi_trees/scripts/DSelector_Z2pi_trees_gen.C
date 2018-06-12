@@ -2,6 +2,12 @@
 
 void DSelector_Z2pi_trees::Init(TTree *locTree)
 {
+
+  // Note: this script is modified from DSelector_Z2pi_trees.C in order to generate an output file for "tagged" events.
+  //       It will eliminate events that do not have a hit in the tagger. Otherwise the event is kept.
+  //       Elton 5/9/2018
+
+
 	// USERS: IN THIS FUNCTION, ONLY MODIFY SECTIONS WITH A "USER" OR "EXAMPLE" LABEL. LEAVE THE REST ALONE.
 
 	// The Init() function is called when the selector needs to initialize a new tree or chain.
@@ -25,6 +31,21 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	Get_ComboWrappers();
 	dPreviousRunNumber = 0;
 
+
+	// EXAMPLE CUT PARAMETERS:
+	// fMinProton_dEdx = new TF1("fMinProton_dEdx", "exp(-1.*[0]*x + [1]) + [2]", 0., 10.);
+	// fMinProton_dEdx->SetParameters(4.0, 2.5, 1.25);
+	fMaxPion_dEdx = new TF1("fMaxPion_dEdx", "exp(-1.*[0]*x + [1]) + [2]", 0., 10.);
+	fMaxPion_dEdx->SetParameters(4.0, 2.0, 2.5);
+	dMinKinFitCL = 5.73303e-7; //5.73303e-7;
+	dMaxKinFitChiSq = 5.0;
+	dMinBeamEnergy = 5.5;
+	dMaxBeamEnergy = 6.0;
+	dMin2piMass = 0.2;
+	dMax2piMass = 0.6;
+	dMinMissingMassSquared = -0.1;
+	dMaxMissingMassSquared = 0.1;
+
 	/*********************************** EXAMPLE USER INITIALIZATION: ANALYSIS ACTIONS **********************************/
 
 	//ANALYSIS ACTIONS: //Executed in order if added to dAnalysisActions
@@ -47,8 +68,8 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	//dAnalysisActions.push_back(new DCutAction_MissingMassSquared(dComboWrapper, false, -0.03, 0.02));
 
 	//BEAM ENERGY
-	dAnalysisActions.push_back(new DHistogramAction_BeamEnergy(dComboWrapper, false));
-	//dAnalysisActions.push_back(new DCutAction_BeamEnergy(dComboWrapper, false, 8.4, 9.05));
+	//dAnalysisActions.push_back(new DHistogramAction_BeamEnergy(dComboWrapper, false));
+	dAnalysisActions.push_back(new DCutAction_BeamEnergy(dComboWrapper, false, dMinBeamEnergy ,dMaxBeamEnergy ));
 
 	//KINEMATICS
 	dAnalysisActions.push_back(new DHistogramAction_ParticleComboKinematics(dComboWrapper, false));
@@ -109,19 +130,6 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	dHist_pimDeltap_Measured = new TH1I("pimDeltap_Measured","; #pi^{-}: Thrown p - Measured p/ Thrown p",100,-0.2,0.2);
 
 
-	// EXAMPLE CUT PARAMETERS:
-	// fMinProton_dEdx = new TF1("fMinProton_dEdx", "exp(-1.*[0]*x + [1]) + [2]", 0., 10.);
-	// fMinProton_dEdx->SetParameters(4.0, 2.5, 1.25);
-	fMaxPion_dEdx = new TF1("fMaxPion_dEdx", "exp(-1.*[0]*x + [1]) + [2]", 0., 10.);
-	fMaxPion_dEdx->SetParameters(4.0, 2.0, 2.5);
-	dMinKinFitCL = 5.73303e-7; //5.73303e-7;
-	dMaxKinFitChiSq = 5.0;
-	dMinBeamEnergy = 5.5;
-	dMaxBeamEnergy = 6.0;
-	dMin2piMass = 0.2;
-	dMax2piMass = 0.6;
-	dMinMissingMassSquared = -0.1;
-	dMaxMissingMassSquared = 0.1;
 
 	/************************** EXAMPLE USER INITIALIZATION: CUSTOM OUTPUT BRANCHES - MAIN TREE *************************/
 
@@ -253,9 +261,9 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		Particle_t thrown_pid = dThrownWrapper->Get_PID();
 		// cout << " loc_i=" << loc_i << " thrown_pid=" << thrown_pid << endl;
                 TLorentzVector locP4_Thrown = dThrownWrapper->Get_P4();
-		if (loc_i == 0) locPb208P4_Thrown = locP4_Thrown;    // assume order of particles as PID is zero at the moment
-		if (loc_i == 1) locPiPlusP4_Thrown = locP4_Thrown;
-		if (loc_i == 2) locPiMinusP4_Thrown = locP4_Thrown;
+		if (loc_i == 2) locPb208P4_Thrown = locP4_Thrown;    // assume order of particles as PID is zero at the moment
+		if (loc_i == 0) locPiPlusP4_Thrown = locP4_Thrown;
+		if (loc_i == 1) locPiMinusP4_Thrown = locP4_Thrown;
 		
 	}
 	cout << endl << "Thrown" << endl;  
@@ -319,7 +327,7 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		//Step 0
 		TLorentzVector locBeamP4_Measured = dComboBeamWrapper->Get_P4_Measured();
 		TLorentzVector locMissingPb208P4_Measured (0,0,0,193.750748);
-		// TLorentzVector locMissingPb208P4_Measured = dMissingPb208Wrapper->Get_P4_Measured();
+		TLorentzVector locMissingPb208P4_Measured_input = dMissingPb208Wrapper->Get_P4_Measured();
 		TLorentzVector locPiPlusP4_Measured = dPiPlusWrapper->Get_P4_Measured();
 		TLorentzVector locPiMinusP4_Measured = dPiMinusWrapper->Get_P4_Measured();
 
@@ -495,9 +503,10 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 
 
 		if ( locBeamP4_Measured.Z() < 0 || locPiPlusP4_Measured.Z() < 0 || locPiMinusP4_Measured.Z() < 0 ||
-                     locPiPlusP4.Z() < 0 || locPiMinusP4.Z() < 0 ) {
+                     locPiPlusP4.Z() < 0 || locPiMinusP4.Z() < 0 || (locPiPlusP4_Measured.Z() +  locPiMinusP4_Measured.Z() + locMissingPb208P4_Measured_input.Z()) < 0 ||
+                     (locPiPlusP4.Z() +  locPiMinusP4.Z() + locMissingPb208P4.Z()) < 0  ) {
 			dComboWrapper->Set_IsComboCut(true);
-			cout << "*** Negative pz ***" << endl;
+			cout << "*** Failed Negative pz cut ***" << endl;
 			continue;
 		}
 		cout << " Passed Negative pz cut " << endl;

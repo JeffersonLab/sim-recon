@@ -128,7 +128,7 @@ int main( int argc, char* argv[] ){
     }
 
 
-    // loop over data, accMC, and genMC
+    // loop over data, accMC, and genMC and kBkgnd
     for (unsigned int iplot = 0; iplot < PlotGenerator::kNumTypes; iplot++){
       if (isum < sums.size() && iplot == PlotGenerator::kData) continue; // only plot data once
 
@@ -148,6 +148,7 @@ int main( int argc, char* argv[] ){
         if (iplot == PlotGenerator::kData) histname += "dat";
         if (iplot == PlotGenerator::kAccMC) histname += "acc";
         if (iplot == PlotGenerator::kGenMC) histname += "gen";
+        if (iplot == PlotGenerator::kBkgnd) histname += "bkgnd";
 
         if (isum < sums.size()){
           //ostringstream sdig;  sdig << (isum + 1);
@@ -175,10 +176,28 @@ int main( int argc, char* argv[] ){
     // retrieve amplitudes for output
     // ************************
 
+  // get parameter list
+
   // parameters to check
   vector< string > pars;
-  pars.push_back("Primakoff::Aplus::g1Vm0_re");
-  pars.push_back("Primakoff::Aplus::g1Vm0_im");
+  /* pars.push_back("Primakoff::Aplus::g1V00_re");
+  pars.push_back("Primakoff::Aplus::g1V00_im");
+  pars.push_back("Primakoff::Aplus::g1V11_re");
+  pars.push_back("Primakoff::Aplus::g1V11_im");
+  pars.push_back("Primakoff::Aplus::g1V10_re");
+  pars.push_back("Primakoff::Aplus::g1V10_im");
+  pars.push_back("Primakoff::Aplus::g1V1-1_re");
+  pars.push_back("Primakoff::Aplus::g1V1-1_im");*/ 
+
+  vector <string> parlist;
+  parlist = results.ampList("Primakoff");
+  for(unsigned int j=0; j<parlist.size(); j++) {
+    cout << " j=" << j << " parlist[j]=" << parlist[j] << " " << results.realProdParName(parlist[j]) << " " << results.imagProdParName(parlist[j]) << endl;
+    if (parlist[j].find("Aplus") != string::npos) {
+      pars.push_back(results.realProdParName(parlist[j]));
+      pars.push_back(results.imagProdParName(parlist[j]));
+    }
+  }
 
   // file for writing parameters (later switch to putting in ROOT file)
   ofstream outfile;
@@ -188,8 +207,10 @@ int main( int argc, char* argv[] ){
   for(unsigned int i = 0; i<pars.size(); i++) {
     double parValue = results.parValue( pars[i] );
     double parError = results.parError( pars[i] );
-    outfile << parValue << "\t" << parError << "\t";
+    int ifindg = pars[i].find("g");
+    outfile << pars[i].substr(ifindg) << "\t" << parValue << "\t" << parError << "\t";
   }
+
 
 
   // Note: For twopi_primakoff_plotter: The following computations are nonsense for amplitudes
@@ -211,8 +232,18 @@ int main( int argc, char* argv[] ){
   double P_err = sqrt(2*2*covMatrix[0][0] + covMatrix[0][0] - 2*2*covMatrix[0][0]);
 
   Sigma = Sigma_err = P = P_err = 0;
-  outfile << Sigma << "\t" << Sigma_err << "\t";
-  outfile << P << "\t" << P_err << "\t";
+  outfile << "Sigma" << "\t" << Sigma << "\t" << Sigma_err << "\t";
+  outfile  << "P" << "\t" << P << "\t" << P_err << "\t";
+
+  // output covariance matrix. Output only half since A+ and A- are constrained to be the same.
+  for (unsigned int j=0; j< covMatrix.size()/2; j++) {
+    outfile << endl;
+    for (unsigned int jj=0; jj< covMatrix.size()/2; jj++) {
+      outfile.width(20);
+      outfile << covMatrix[j][jj];
+    }
+  }
+
 
   outfile << endl;
 

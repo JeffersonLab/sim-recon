@@ -410,7 +410,6 @@ jerror_t DEventSourceREST::Extract_DRFTime(hddm_r::HDDM *record,
 			locTime -= locBeamBunchPeriod;
 		while(locTime < -0.5*locBeamBunchPeriod)
 			locTime += locBeamBunchPeriod;
-
 		DRFTime *locRFTime = new DRFTime;
 		locRFTime->dTime = locTime;
 		locRFTime->dTimeVariance = 0.0;
