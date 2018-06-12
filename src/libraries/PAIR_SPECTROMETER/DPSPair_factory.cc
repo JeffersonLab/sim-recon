@@ -389,5 +389,6 @@ jerror_t DPSPair_factory::fini(void)
 
 bool  DPSPair_factory::SortByTile(const tile &tile1, const tile &tile2)
 {
+  if(tile1.column == tile2.column) return tile1.time < tile2.time;
   return (tile1.column < tile2.column);
 }

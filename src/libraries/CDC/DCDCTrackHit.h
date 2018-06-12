@@ -38,7 +38,8 @@ class DCDCTrackHit:public JObject{
       bool is_stereo; // true if this is stereo wire
       float tdrift;				// Drift time of hit in ns
       float dist;					// Measured DOCA in cm
-      float dE; // Energy deposition in GeV
+      float dE; // Energy deposition in GeV, using integral
+      float dE_amp; // same, but using amplitude
 
       void toStrings(vector<pair<string,string> > &items)const{
          AddString(items, "ring", "%d", wire->ring);
@@ -49,6 +50,7 @@ class DCDCTrackHit:public JObject{
          AddString(items, "tdrift(ns)", "%3.1f", tdrift);
          AddString(items, "dist(cm)", "%1.3f", dist);
          AddString(items, "dE(GeV)","%3.1g",dE);
+         AddString(items, "dE_amp(GeV)","%3.1g",dE_amp);
       }
 
 };
