@@ -75,7 +75,7 @@ GammaZToXYZ::generate(){
   
   vector< TLorentzVector > allPart;
   allPart.push_back( m_beam );
-  allPart.push_back( m_beam + m_target - resonance );
+  // allPart.push_back( m_beam + m_target - resonance );
   
   TwoBodyDecayFactory decay( resonance.M(), m_childMass );
   
@@ -87,6 +87,8 @@ GammaZToXYZ::generate(){
     aPart->Boost( resonance.BoostVector() );
     allPart.push_back( *aPart );
   }
+
+  allPart.push_back( m_beam + m_target - resonance );   // Move Recoil vector to position 3 after resonance
  
   return new Kinematics( allPart, genWeight );
 }

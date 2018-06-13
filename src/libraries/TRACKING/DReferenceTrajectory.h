@@ -109,6 +109,11 @@ class DReferenceTrajectory{
 			      DVector3 &last_pos, DVector3 &last_mom,
 			      double q,double smax=2000.0,
 			      const DCoordinateSystem *wire=NULL);
+		void FastSwim(const DVector3 &pos, const DVector3 &mom, 
+			      DVector3 &last_pos, DVector3 &last_mom,double q,
+			      const DVector3 &origin,const DVector3 &dir,
+			      double smax=2000.0
+			      );
 
 		int InsertSteps(const swim_step_t *start_step, double delta_s, double step_size=0.02); 
 		jerror_t GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s=NULL,double *t=NULL,double *var_t=NULL,DetectorSystem_t detector=SYS_NULL) const;	

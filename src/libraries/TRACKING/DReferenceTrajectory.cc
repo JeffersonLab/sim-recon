@@ -246,19 +246,29 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
 				    DVector3 &last_pos,DVector3 &last_mom,
 				    double q,double smax,
 				    const DCoordinateSystem *wire){
+  const DVector3 wire_origin=wire->origin;
+  const DVector3 wire_dir=wire->udir;
+  FastSwim(pos,mom,last_pos,last_mom,q,wire_origin,wire_dir,smax);
+}
+void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
+				    DVector3 &last_pos,DVector3 &last_mom,
+				    double q,
+				    const DVector3 &origin,
+				    const DVector3 &dir,double smax){
+
   DVector3 mypos(pos);
   DVector3 mymom(mom);
 
   // Initialize the stepper
   DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
   double s=0,doca=1000.,old_doca=1000.,dP_dx=0.;
-  double mass=GetMass();
+  //  double mass=GetMass();
   while (s<smax){
     // Save old value of doca
     old_doca=doca;
 
     // Adjust step size to take smaller steps in regions of high momentum loss
-    if(mass>0. && step_size<0.0 && geom){	
+    if(geom){	
       double KrhoZ_overA=0.0;
       double rhoZ_overA=0.0;
       double LogI=0.0;
@@ -271,29 +281,31 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
 		
 	if(my_step_size>MAX_STEP_SIZE)my_step_size=MAX_STEP_SIZE; // maximum step size in cm
 	if(my_step_size<MIN_STEP_SIZE)my_step_size=MIN_STEP_SIZE; // minimum step size in cm
-
+	
+	if (ploss_direction==kBackward) my_step_size*=-1.;
 	stepper.SetStepSize(my_step_size);
       }
     }
     // Swim to next
     double ds=stepper.Step(NULL);
-    s+=ds;
-
+    s+=fabs(ds);
     stepper.GetPosMom(mypos,mymom);
-    if (mass>0 && dP_dx<0.){
-      double ptot=mymom.Mag();
-      if (ploss_direction==kForward) ptot+=dP_dx*ds;
-      else ptot-=dP_dx*ds;
-      mymom.SetMag(ptot);
-      stepper.SetStartingParams(q, &mypos, &mymom);
-    }
+
+    // Take into account energy loss
+    double ptot=mymom.Mag();
+    //    if (ploss_direction==kForward) ptot+=dP_dx*ds;
+    //else ptot-=dP_dx*ds; 
+    ptot+=dP_dx*ds;
+
+    mymom.SetMag(ptot);
+    stepper.SetStartingParams(q, &mypos, &mymom);
     
-    // Break if we have passed the wire
-    DVector3 wirepos=wire->origin;
-    if (fabs(wire->udir.z())>0.){ // for CDC wires
-      wirepos+=((mypos.z()-wire->origin.z())/wire->udir.z())*wire->udir;
+    // Break if we have passed the line to which we are trying to find the doca
+    DVector3 linepos=origin;
+    if (fabs(dir.z())>0.){
+      linepos+=((mypos.z()-origin.z())/dir.z())*dir;
     }
-    doca=(wirepos-mypos).Mag();
+    doca=(linepos-mypos).Mag();
     if (doca>old_doca) break;
 
     // Store the position and momentum for this step
@@ -434,7 +446,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
       DVector3 pos, mom;
       stepper.GetPosMom(pos, mom);
       double ptot = mom.Mag() - dP; // correct for energy loss
-      if (ptot<0) {Nswim_steps++; break;}
+      if (ptot<0.005) {Nswim_steps++; break;}
       mom.SetMag(ptot);
       stepper.SetStartingParams(q, &pos, &mom);
     }
@@ -706,10 +718,10 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			  cout<<"N: " << Nswim_steps <<" x " << pos.x() <<" y " <<pos.y() <<" z " << pos.z() <<" r " << pos.Perp()<< " s " << s  << " p " << ptot << endl;
 			}
 			*/
-			if(ptot<0.0)ranged_out=true;
+			if(ptot<0.005)ranged_out=true;
 			if(dP<0.0 && ploss_direction==kForward)ranged_out=true;
 			if(dP>0.0 && ploss_direction==kBackward)ranged_out=true;
-			if(mom.Mag()==0.0)ranged_out=true;
+			//if(mom.Mag()==0.0)ranged_out=true;
 			if(ranged_out){
 				Nswim_steps++; // This will at least allow for very low momentum particles to have 1 swim step
 				break;

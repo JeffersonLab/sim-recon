@@ -410,7 +410,6 @@ jerror_t DEventSourceREST::Extract_DRFTime(hddm_r::HDDM *record,
 			locTime -= locBeamBunchPeriod;
 		while(locTime < -0.5*locBeamBunchPeriod)
 			locTime += locBeamBunchPeriod;
-
 		DRFTime *locRFTime = new DRFTime;
 		locRFTime->dTime = locTime;
 		locRFTime->dTimeVariance = 0.0;
@@ -799,6 +798,25 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
 	  }
 	  shower->ExyztCovariance = covariance;
 
+      // MVA classifier output - this information is being calculated in DNeutralShower now!
+      //const hddm_r::FcalShowerClassificationList& locFcalShowerClassificationList = iter->getFcalShowerClassifications();
+      //hddm_r::FcalShowerClassificationList::iterator locFcalShowerClassificationIterator = locFcalShowerClassificationList.begin();
+      //if(locFcalShowerClassificationIterator != locFcalShowerClassificationList.end()) {
+	  //        shower->setClassifierOutput(locFcalShowerClassificationIterator->getClassifierOuput());
+      //}
+
+      // shower shape and other parameters.  used e.g. as input to MVA classifier
+      const hddm_r::FcalShowerPropertiesList& locFcalShowerPropertiesList = iter->getFcalShowerPropertiesList();
+      hddm_r::FcalShowerPropertiesList::iterator locFcalShowerPropertiesIterator = locFcalShowerPropertiesList.begin();
+      if(locFcalShowerPropertiesIterator != locFcalShowerPropertiesList.end()) {
+	          shower->setDocaTrack(locFcalShowerPropertiesIterator->getDocaTrack());
+	          shower->setTimeTrack(locFcalShowerPropertiesIterator->getTimeTrack());
+	          shower->setSumU(locFcalShowerPropertiesIterator->getSumU());
+	          shower->setSumV(locFcalShowerPropertiesIterator->getSumV());
+	          shower->setE1E9(locFcalShowerPropertiesIterator->getE1E9());
+	          shower->setE9E25(locFcalShowerPropertiesIterator->getE9E25());
+      }
+      
       data.push_back(shower);
    }
 
@@ -1034,7 +1052,17 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          tra->ddEdx_FDC = diter->getDEdxFDC();
          tra->ddEdx_CDC = diter->getDEdxCDC();
          tra->ddx_FDC = diter->getDxFDC();
-         tra->ddx_CDC = diter->getDxCDC();
+         tra->ddx_CDC = diter->getDxCDC();  
+	 const hddm_r::CDCAmpdEdxList &el2 = diter->getCDCAmpdEdxs();
+	 hddm_r::CDCAmpdEdxList::iterator diter2 = el2.begin();
+	 if (diter2 != el2.end()){
+	   tra->ddx_CDC_amp= diter2->getDxCDCAmp();
+	   tra->ddEdx_CDC_amp = diter2->getDEdxCDCAmp();
+	 }
+	 else{
+	   tra->ddx_CDC_amp=tra->ddx_CDC;
+	   tra->ddEdx_CDC_amp=tra->ddEdx_CDC;
+	 }
       }
       else {
          tra->dNumHitsUsedFordEdx_FDC = 0;
@@ -1042,7 +1070,9 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          tra->ddEdx_FDC = 0.0;
          tra->ddEdx_CDC = 0.0;
          tra->ddx_FDC = 0.0;
-         tra->ddx_CDC = 0.0;
+         tra->ddx_CDC = 0.0; 
+	 tra->ddEdx_CDC_amp = 0.0;
+         tra->ddx_CDC_amp = 0.0;
       }
 
       data.push_back(tra);

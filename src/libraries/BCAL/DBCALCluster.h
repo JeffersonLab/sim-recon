@@ -66,7 +66,7 @@ public:
   // these functions modify the cluster
   void addPoint( const DBCALPoint* point , int q );
   void addHit ( const DBCALUnifiedHit* hit, double hit_E_unattenuated );
-  void mergeClust( const DBCALCluster& clust );
+  void mergeClust( const DBCALCluster& clust, double point_reatten_E );
   void removePoint( const DBCALPoint* point ); 
  
   // this prints out info
@@ -82,6 +82,7 @@ private:
   vector< pair<const DBCALUnifiedHit*,double> > m_single_ended_hits; //Store single-ended hits together with their unattenuated energies
 
   float m_hit_E_unattenuated_sum; //attenuation-corrected sum of energies from single-ended hits
+  float m_point_reatten_E_sum;
   float m_E_points;
   float m_E;
   float m_E_preshower;  
