@@ -434,8 +434,17 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       can->xc=cdccan->xc;
       can->yc=cdccan->yc;
 
-      can->setMomentum(cdccan->momentum());
-      can->setPosition(cdccan->position());
+      DVector3 mom=cdccan->momentum();
+      DVector3 pos=cdccan->position();
+      
+      // Check for candidates that appear to go backwards but are actually 
+      //going forwards...
+      if (mom.Theta()>M_PI_2 && !sc_pos.empty()){
+	TryToFlipDirection(schits,mom,pos);
+      }
+
+      can->setMomentum(mom);
+      can->setPosition(pos);
       can->setPID(cdccan->PID());
       
       for (unsigned int n=0;n<cdchits.size();n++){
