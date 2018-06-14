@@ -258,28 +258,28 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
                          "BCAL SiPM Saturation; Hit Pulse_peak (counts)",nbins,-100,5000);
 
             Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Hit integral layer=1", Ehit,
-			     "BCAL SiPM Saturation; Hit integral (counts)",nbins,0, 10);
+			     "BCAL SiPM Saturation; Hit integral (GeV)",nbins,0, 10);
 	    }
 	    else if (layer == 2) {
             Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Hit pulse_peak layer=2", pulse_peak,
                          "BCAL SiPM Saturation; Hit Pulse_peak (counts)",nbins,-100,5000);
 
             Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Hit integral layer=2", Ehit,
-			     "BCAL SiPM Saturation; Hit integral (counts)",nbins,0, 10);
+			     "BCAL SiPM Saturation; Hit integral (GeV)",nbins,0, 10);
 	    }
 	    else if (layer == 3) {
             Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Hit pulse_peak layer=3", pulse_peak,
                          "BCAL SiPM Saturation; Hit Pulse_peak (counts)",nbins,-100,5000);
 
             Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Hit integral layer=3", Ehit,
-			     "BCAL SiPM Saturation; Hit integral (counts)",nbins,0, 10);
+			     "BCAL SiPM Saturation; Hit integral (GeV)",nbins,0, 10);
 	    }
 	    else if (layer == 4) {
             Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Hit pulse_peak layer=4", pulse_peak,
                          "BCAL SiPM Saturation; Hit Pulse_peak (counts)",nbins,-100,5000);
 
             Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Hit integral layer=4", Ehit,
-			     "BCAL SiPM Saturation; Hit integral (counts)",nbins,0, 10);
+			     "BCAL SiPM Saturation; Hit integral (GeV)",nbins,0, 10);
 	    }
 	    else {
 	      cout << " ***Illegal layer=" << layer << endl;
