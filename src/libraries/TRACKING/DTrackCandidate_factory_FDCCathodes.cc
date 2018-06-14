@@ -35,12 +35,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
     USE_FDC=false;
   }
 
-  // Get the position of the CDC downstream endplate from DGeometry
-  double endplate_dz,endplate_rmin,endplate_rmax;
-  dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
-  endplate_z+=endplate_dz;
-
-
   JCalibration *jcalib = dapp->GetJCalibration(runnumber);
   map<string, double> targetparms;
   if (jcalib->Get("TARGET/target_parms",targetparms)==false){
@@ -53,16 +47,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
   DEBUG_HISTS=false;
   gPARMS->SetDefaultParameter("TRKFIND:DEBUG_HISTS", DEBUG_HISTS);
 
-  APPLY_MOMENTUM_CORRECTION=false;
-  gPARMS->SetDefaultParameter("TRKFIND:APPLY_MOMENTUM_CORRECTION",APPLY_MOMENTUM_CORRECTION);
-  p_factor1=1.61*M_PI/180.;
-  p_factor2=-0.0766; 
-
   BEAM_VAR=1.;
   gPARMS->SetDefaultParameter("TRKFIND:BEAM_VAR",BEAM_VAR);
-
-  MATCHING_PHI_CUT=10.0;
-  gPARMS->SetDefaultParameter("TRKFIND:MATCHING_PHI_CUT", MATCHING_PHI_CUT);
 
   if(DEBUG_HISTS) {
     dapp->Lock();
@@ -311,12 +297,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
     DVector3 mom,pos;
     GetPositionAndMomentum(mytracks[i],pos,mom);
     
-    // Empirical correction to the momentum
-    if (APPLY_MOMENTUM_CORRECTION){
-      double p_mag=mom.Mag();
-      mom.SetMag(p_mag*(1.+p_factor1/mom.Theta()+p_factor2));
-    }
-    
     track->chisq=fit.chisq;
     track->Ndof=fit.ndof;
     track->setPID((q > 0.0) ? PiPlus : PiMinus);
@@ -349,12 +329,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
 	// Get the momentum and position at a specific z position
 	DVector3 mom, pos;
 	GetPositionAndMomentum(segment,pos,mom);
-
-	// Empirical correction to the momentum 
-	if (APPLY_MOMENTUM_CORRECTION){
-	  double p_mag=mom.Mag();
-	  mom.SetMag(p_mag*(1.+p_factor1/mom.Theta()+p_factor2));
-	}
 	
 	// Create new track, starting with the current segment
 	DTrackCandidate *track = new DTrackCandidate;
@@ -387,6 +361,7 @@ double DTrackCandidate_factory_FDCCathodes::DocaSqToHelix(const DFDCPseudo *hit)
   double sin2ks=sin(twoks);
   double cos2ks=cos(twoks);
   double one_minus_cos2ks=1.-cos2ks;
+  double one_over_twokappa=1./twokappa;
  
   double x=xs+(cosphi*sin2ks-sinphi*one_minus_cos2ks)*one_over_twokappa;
   double y=ys+(sinphi*sin2ks+cosphi*one_minus_cos2ks)*one_over_twokappa;
@@ -406,7 +381,6 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
   // Get the position and momentum at the exit of the package for the 
   // current segment
   GetPositionAndMomentum(segment);
-  double my_p=p;
   
   // Match to the next package
   double doca2_min=1e6,doca2;
@@ -463,7 +437,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
     }
   }
   if (DEBUG_HISTS){
-    match_center_dist2->Fill(my_p,circle_center_diff2_min);
+    match_center_dist2->Fill(p,circle_center_diff2_min);
   }  
   return match;
 }
@@ -484,7 +458,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(const DFDCS
   double z0=segment->z_vertex; 
   twokappa=FactorForSenseOfRotation*segment->q/segment->rc;
 
-  one_over_twokappa=1./twokappa;
   cotl=1./my_tanl;
 
   // Useful intermediate variables
@@ -693,7 +666,7 @@ bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *se
 	// Fake point at origin
 	fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	double max_r=0.;
-	for (unsigned int m=0;m<segments.size();m++){
+	for (unsigned int m=0;m<segments.size();m++){ 
 	  for (unsigned int k=0;k<segments[m]->hits.size();k++){
 	    const DFDCPseudo *hit=segments[m]->hits[k];
 	    fit.AddHit(hit);
@@ -743,12 +716,6 @@ bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *se
 	  
 	  // Get position and momentum just upstream of first hit
 	  GetPositionAndMomentum(segments,pos,mom);
-
-	  // Empirical correction to the momentum
-	  if (APPLY_MOMENTUM_CORRECTION){
-	    double p_mag=mom.Mag();
-	    mom.SetMag(p_mag*(1.+p_factor1/mom.Theta()+p_factor2));
-	  }
 	  
 	  _data[i]->chisq=fit.chisq;
 	  _data[i]->Ndof=fit.ndof;
