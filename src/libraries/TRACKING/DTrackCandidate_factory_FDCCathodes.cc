@@ -238,9 +238,14 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
     // Fake point at origin
     fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
     double max_r=0.;
-    rc=0.; // create a guess for rc and add hits
+    rc=0.,xc=0.,yc=0.,tanl=0.; //initialize helix variables
+    q=mytracks[i][0]->q;
+    // create a guess for rc and add hits
     for (unsigned int m=0;m<mytracks[i].size();m++){
       rc+=mytracks[i][m]->rc;
+      xc+=mytracks[i][m]->xc;
+      yc+=mytracks[i][m]->yc;
+      tanl+=mytracks[i][m]->tanl;
       for (unsigned int n=0;n<mytracks[i][m]->hits.size();n++){
 	const DFDCPseudo *hit=mytracks[i][m]->hits[n];
 	fit.AddHit(hit);
@@ -251,7 +256,11 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
 	}
       }
     }
-    rc/=double(mytracks[i].size());
+    double mysize=double(mytracks[i].size());
+    rc/=mysize;
+    xc/=mysize;
+    yc/=mysize;
+    tanl/=mysize;
 
     // Do the fit
     if (fit.FitTrackRiemann(rc)==NOERROR){    
