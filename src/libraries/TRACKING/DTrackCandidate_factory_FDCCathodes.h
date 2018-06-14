@@ -88,10 +88,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
   
   // Fit parameters
   double xc,yc,rc,z_vertex,q,phi0,tanl;
- 
-  // vector of fit results
-  vector<DHelicalFit>fit_results;
- 
+  
   // Parameters at the end of the segment
   double xs,ys,zs;
   double p,cosphi,sinphi,twokappa,one_over_twokappa,cotl;
