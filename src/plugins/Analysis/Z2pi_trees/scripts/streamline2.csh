@@ -45,8 +45,8 @@ set savebase = $base
 
 #Optional: hd_root -PPLUGINS=monitoring_hists,ReactionFilter -PReaction1=1_111__m111_8_9 -PNTHREADS=4  -PCOMBO:DEBUG_LEVEL=500 -PKINFIT:DEBUG_LEVEL=500 -PANALYSIS:DEBUG_LEVEL=500 -PVERTEXINFO:DEBUG_LEVEL=500 -PEVENTS_TO_KEEP=${maxev} ../../gen_2pi_primakoff_${base}/hddm/dana_rest_gen_2pi_primakoff_${base}_signal_${run}_*.hddm -o hd_root_Z2pi_trees_${base}_signal_${maxev}.root
 
-#Debug: echo "echo:" hd_root -PPLUGINS=monitoring_hists,ReactionFilter -PReaction1=1_111__m111_8_9 -PNTHREADS=4 -PEVENTS_TO_KEEP=${maxev} ../../gen_2pi_primakoff_signal/hddm/dana_rest_gen_2pi_primakoff_${run}_*.hddm -o hd_root_Z2pi_trees_${base}_signal_${maxev}.root
-#Optional: hd_root -PPLUGINS=monitoring_hists,ReactionFilter -PReaction1=1_111__m111_8_9 -PNTHREADS=4 -PEVENTS_TO_KEEP=${maxev} ../../gen_2pi_primakoff_signal/hddm/dana_rest_gen_2pi_primakoff_${run}_*.hddm -o hd_root_Z2pi_trees_${base}_signal_${maxev}.root
+# echo "echo:" hd_root -PPLUGINS=monitoring_hists,ReactionFilter -PReaction1=1_111__m111_8_9 -PNTHREADS=4 -PEVENTS_TO_KEEP=${maxev} -PKALMAN:ADD_VERTEX_POINT=1 ../hddm/dana_rest_gen_2pi_primakoff_${base}_${run}_19*.hddm -o hd_root_Z2pi_trees_${base}_signal_${maxev}_test.root
+# hd_root -PPLUGINS=monitoring_hists,ReactionFilter -PReaction1=1_111__m111_8_9 -PNTHREADS=4 -PEVENTS_TO_KEEP=1000 -PKALMAN:ADD_VERTEX_POINT=1 ../hddm/dana_rest_gen_2pi_primakoff_${base}_${run}_190.hddm -o hd_root_Z2pi_trees_${base}_signal_${maxev}_test.root 
 #
 # Use this option if root trees have already been created using MC wrapper
 # rm -f tree_pippimmisspb208.root
