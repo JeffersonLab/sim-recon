@@ -16,8 +16,8 @@
 
 using namespace std;
 
-ROOTDataReader::ROOTDataReader( const vector< string >& args ):
-UserDataReader< ROOTDataReader >( args ),
+ROOTDataReaderBootstrap::ROOTDataReaderBootstrap( const vector< string >& args ):
+UserDataReader< ROOTDataReaderBootstrap >( args ),
 m_eventCounter( 0 ),
 m_useWeight( false )
 {
@@ -78,13 +78,13 @@ m_useWeight( false )
   }
 }
 
-ROOTDataReader::~ROOTDataReader()
+ROOTDataReaderBootstrap::~ROOTDataReaderBootstrap()
 {
   if( m_inFile != NULL ) m_inFile->Close();
 }
 
 void
-ROOTDataReader::resetSource()
+ROOTDataReaderBootstrap::resetSource()
 {
   
   cout << "Resetting source " << m_inTree->GetName()
@@ -95,7 +95,7 @@ ROOTDataReader::resetSource()
 }
 
 Kinematics*
-ROOTDataReader::getEvent()
+ROOTDataReaderBootstrap::getEvent()
 {
   if( m_eventCounter++ < numEvents() ){
 
@@ -123,7 +123,7 @@ ROOTDataReader::getEvent()
 }
 
 unsigned int
-ROOTDataReader::numEvents() const
+ROOTDataReaderBootstrap::numEvents() const
 {
   return static_cast< unsigned int >( m_inTree->GetEntries() );
 }
