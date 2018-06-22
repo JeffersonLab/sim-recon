@@ -81,6 +81,7 @@ m_useWeight( false )
 ROOTDataReaderBootstrap::~ROOTDataReaderBootstrap()
 {
   if( m_inFile != NULL ) m_inFile->Close();
+  if( m_randGenerator ) delete m_randGenerator;
 }
 
 void
