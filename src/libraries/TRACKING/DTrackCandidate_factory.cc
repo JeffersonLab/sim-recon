@@ -601,38 +601,36 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
   }
 
-  // We should be left with only single-segment fdc candidates:
+  // We should be left with only single-segment fdc candidates.  We try to 
+  // connect them together using alternate fitting techniques, either by
+  // forcing the circle to originate from the target or at the other extreme
+  // not including the fake point at the origin.
   if (num_fdc_cands_remaining){
-    for (unsigned int j=0;j<forward_matches.size();j++){
-      if (num_fdc_cands_remaining==0) break;
-      if (forward_matches[j]==0){
-	const DTrackCandidate *srccan=fdctrackcandidates[j];
+    bool matched_stray_segments=MatchStraySegments(forward_matches,
+						   num_fdc_cands_remaining);
+    if (num_fdc_cands_remaining && matched_stray_segments){
+      for (unsigned int i=0;i<trackcandidates.size();i++){
+	if (num_fdc_cands_remaining==0) break;
+	
+	DTrackCandidate *can=trackcandidates[i];      
+	if (MatchMethod7(can,forward_matches,num_fdc_cands_remaining)==false){
+	  if (can->momentum().Mag()<0.5){
+	    MatchMethod12(can,forward_matches,num_fdc_cands_remaining);
+	  }
+	}
+      } 
+    }
+    if (num_fdc_cands_remaining){ 
+      // Not much we can do here -- add to the final list of candidates
+      for (unsigned int j=0;j<forward_matches.size();j++){
+	if (num_fdc_cands_remaining==0) break;
+	if (forward_matches[j]==0){
+	  const DTrackCandidate *srccan=fdctrackcandidates[j];
+	  // Get the segment data
+	  vector<const DFDCSegment *>segments;
+	  srccan->GetT(segments);
+	  const DFDCSegment *segment=segments[0];
 
-	// Get the segment data
-	vector<const DFDCSegment *>segments;
-	srccan->GetT(segments);
-	const DFDCSegment *segment=segments[0];
-  
-	// redo circle fits for segments, forcing the circles to go through (0,0)
-	if (MatchMethod9(j,srccan,segment,fdctrackcandidates,forward_matches)){
-	  if (DEBUG_LEVEL>0) _DBG_ << "Matched FDC segments using method #9" << endl;
-	  num_fdc_cands_remaining-=2;
-	}
-	// Redo circle fit assuming track is almost straight
-	else if (MatchMethod10(j,srccan,segment,fdctrackcandidates,
-			       forward_matches)){
-	  if (DEBUG_LEVEL>0)  _DBG_ << "Matched FDC segments using method #10" << endl;
-	  num_fdc_cands_remaining-=2;	  
-	}
-	// Redo circle fits without any assumption that the tracks originate
-	// from the target
-	else if (MatchMethod13(j,srccan,segment,fdctrackcandidates,
-			       forward_matches)){
-	  if (DEBUG_LEVEL>0)  _DBG_ << "Matched FDC segments using method #13" << endl;
-	  num_fdc_cands_remaining-=2;
-	}
-	else{
-	  // Not much we can do here -- add to the final list of candidates
 	  DTrackCandidate *can = new DTrackCandidate;
 	  // circle parameters
 	  can->rc=srccan->rc;
@@ -644,8 +642,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  can->setPID(srccan->PID());
 	  can->setMomentum(srccan->momentum());
 	  can->setPosition(srccan->position());
-	  for (unsigned int n=0;n<segments[0]->hits.size();n++){
-	    const DFDCPseudo *fdchit=segments[0]->hits[n];
+	  for (unsigned int n=0;n<segment->hits.size();n++){
+	    const DFDCPseudo *fdchit=segment->hits[n];
 	    can->AddAssociatedObject(fdchit);
 	  }
 	  
@@ -3369,4 +3367,49 @@ bool DTrackCandidate_factory::TryToFlipDirection(vector<const DSCHit *>&schits,
   
 
   return false;
+}
+
+// Last ditch attempt to match stray segments in the FDC to other track stubs
+// after all other matching techniques have been tried...
+bool DTrackCandidate_factory::MatchStraySegments(vector<int> &forward_matches,
+						 int &num_fdc_cands_remaining){
+  if (DEBUG_LEVEL>0){
+    _DBG_ << "Attempting to match stray FDC segments..." << endl;
+  }
+
+  bool got_new_match=false;  
+  for (unsigned int j=0;j<forward_matches.size();j++){
+    if (num_fdc_cands_remaining==0) break;
+    if (forward_matches[j]==0){
+      const DTrackCandidate *srccan=fdctrackcandidates[j];
+      
+      // Get the segment data
+      vector<const DFDCSegment *>segments;
+      srccan->GetT(segments);
+      const DFDCSegment *segment=segments[0];
+      
+      // redo circle fits for segments, forcing the circles to go through (0,0)
+      if (MatchMethod9(j,srccan,segment,fdctrackcandidates,forward_matches)){
+	if (DEBUG_LEVEL>0) _DBG_ << "Matched FDC segments using method #9" << endl;
+	num_fdc_cands_remaining-=2;
+	got_new_match=true;
+      }
+      // Redo circle fit assuming track is almost straight
+      else if (MatchMethod10(j,srccan,segment,fdctrackcandidates,
+			     forward_matches)){
+	if (DEBUG_LEVEL>0)  _DBG_ << "Matched FDC segments using method #10" << endl;
+	num_fdc_cands_remaining-=2;
+	got_new_match=true;
+      }
+      // Redo circle fits without any assumption that the tracks originate
+      // from the target
+      else if (MatchMethod13(j,srccan,segment,fdctrackcandidates,
+			     forward_matches)){
+	if (DEBUG_LEVEL>0)  _DBG_ << "Matched FDC segments using method #13" << endl;
+	num_fdc_cands_remaining-=2;
+	got_new_match=true;
+      }
+    } // not already matched
+  }
+  return got_new_match;
 }

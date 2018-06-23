@@ -135,6 +135,8 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		     vector<int> &forward_matches);
   bool TryToFlipDirection(vector<const DSCHit *>&scihits,
 			  DVector3 &mom,DVector3 &pos) const;
+  bool MatchStraySegments(vector<int> &forward_matches,
+			  int &num_fdc_cands_remaining);
  
  private:
   const DMagneticFieldMap *bfield;
