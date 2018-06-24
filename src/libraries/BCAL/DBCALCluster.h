@@ -40,12 +40,16 @@ public:
   
   float E() const { return m_E; }
   float E_preshower() const { return m_E_preshower; }
+  float E_L2() const { return m_E_L2; }
+  float E_L3() const { return m_E_L3; }
+  float E_L4() const { return m_E_L4; }
   
   // this is the time at the inner radius of BCAL assuming shower
   // particles propagte into module at the speed of light
   float t() const { return m_t; }
-  float sigT() const { return m_sig_t; }
-  
+  float sigTime() const { return m_sig_t; }
+  float rmsTime() const { return m_t_rms; } 
+ 
   // assuming a photon leaving the target, this the estimate of t0
   // (could be helpful for photon/pion discrimination)
   float t0() const; 
@@ -86,10 +90,14 @@ private:
   float m_E_points;
   float m_E;
   float m_E_preshower;  
+  float m_E_L2;
+  float m_E_L3;
+  float m_E_L4;
 
   float m_t;
   float m_sig_t;
-  
+  float m_t_rms;  
+
   float m_rho;
   float m_sig_rho;
   float m_theta;

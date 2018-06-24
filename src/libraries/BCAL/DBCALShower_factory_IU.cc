@@ -145,6 +145,9 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     
     shower->E_raw = (**clItr).E();
     shower->E_preshower = (**clItr).E_preshower();
+    shower->E_L2 = (**clItr).E_L2();
+    shower->E_L3 = (**clItr).E_L3();
+    shower->E_L4 = (**clItr).E_L4();
     shower->x = rho * sinTh * cosPhi;
     shower->y = rho * sinTh * sinPhi;
     shower->z = rho * cosTh + m_zTarget;
@@ -163,6 +166,8 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     shower->sigLong = (**clItr).sigRho();
     shower->sigTrans = (**clItr).sigPhi();
     shower->sigTheta = (**clItr).sigTheta();
+//    shower->sigTime = (**clItr).sigTime();
+    shower->rmsTime = (**clItr).rmsTime();
 
     shower->N_cell = (**clItr).nCells();
     
