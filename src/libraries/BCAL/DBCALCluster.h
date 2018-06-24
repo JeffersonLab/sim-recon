@@ -47,7 +47,7 @@ public:
   // this is the time at the inner radius of BCAL assuming shower
   // particles propagte into module at the speed of light
   float t() const { return m_t; }
-  float sigTime() const { return m_sig_t; }
+  float sigT() const { return m_sig_t; }
   float rmsTime() const { return m_t_rms; } 
  
   // assuming a photon leaving the target, this the estimate of t0

@@ -166,7 +166,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     shower->sigLong = (**clItr).sigRho();
     shower->sigTrans = (**clItr).sigPhi();
     shower->sigTheta = (**clItr).sigTheta();
-//    shower->sigTime = (**clItr).sigTime();
+//    shower->sigTime = (**clItr).sigT();
     shower->rmsTime = (**clItr).rmsTime();
 
     shower->N_cell = (**clItr).nCells();
