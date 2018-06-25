@@ -2233,7 +2233,7 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
     
     // Fit the points to a circle assuming that the circle goes through the 
     // origin.
-    fit.FitCircle();
+    if (fit.FitCircle()!=NOERROR) return false;
 	  
     // Determine the tangent of the dip angle
     double tworc=2.*fit.r0;
@@ -2432,7 +2432,7 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
     const DFDCPseudo *hit=segment->hits[n];
     fit1.AddHit(hit);
   }
-  fit1.FitCircle();
+  if (fit1.FitCircle()!=NOERROR) return false;
 
    // Sense of rotation
   fit1.h=q*FactorForSenseOfRotation;
@@ -2469,7 +2469,7 @@ bool DTrackCandidate_factory::MatchMethod9(unsigned int src_index,
 	  const DFDCPseudo *hit=segments2[0]->hits[n];
 	  fit2.AddHit(hit);
 	}
-	fit2.FitCircle();
+	if (fit2.FitCircle()!=NOERROR) continue;
 	      
 	// Match using centers of circles
 	double dx=fit1.x0-fit2.x0;
@@ -3113,7 +3113,7 @@ bool DTrackCandidate_factory::MatchMethod13(unsigned int src_index,
     fit1.AddHit(hit);
   }
   
-  fit1.FitCircleRiemann(srccan->rc);
+  if (fit1.FitCircleRiemann(srccan->rc)!=NOERROR) return false;
 
   // Guess for theta and z from input candidates
   double theta=srccan->momentum().Theta();  
@@ -3121,7 +3121,7 @@ bool DTrackCandidate_factory::MatchMethod13(unsigned int src_index,
   fit1.z_vertex=srccan->position().Z();
   
   // Redo line fit
-  fit1.FitLineRiemann();
+  if (fit1.FitLineRiemann()!=NOERROR) return false;
   
   // Find the magnetic field at the first hit in the first segment
   double x=segment->hits[0]->xy.X();
@@ -3144,15 +3144,14 @@ bool DTrackCandidate_factory::MatchMethod13(unsigned int src_index,
       
       int pack2=segments2[0]->package;
       if (abs(pack1-pack2)>0){
-	// Get hits from the second segment and redo fit forcing circle 
-	// to go through (0,0)
+	// Get hits from the second segment and redo fit 
 	DHelicalFit fit2;
 	for (unsigned int n=0;n<segments2[0]->hits.size();n++){
 	  const DFDCPseudo *hit=segments2[0]->hits[n];
 	  fit2.AddHit(hit);
 	}
 	
-	fit2.FitCircleRiemann(segments2[0]->rc);
+	if (fit2.FitCircleRiemann(segments2[0]->rc)!=NOERROR) continue;
 
 	// Guess for theta and z from input candidates
 	theta=can2->momentum().Theta();  
@@ -3160,7 +3159,7 @@ bool DTrackCandidate_factory::MatchMethod13(unsigned int src_index,
 	fit2.z_vertex=srccan->position().Z();
 
 	// Redo line fit
-	fit2.FitLineRiemann();
+	if (fit2.FitLineRiemann()!=NOERROR) continue;
 		
 	// Try to match segments by swimming through the field
 	if (MatchMethod11(q,mypos,mymom,fit2,segment,segments2[0])){
