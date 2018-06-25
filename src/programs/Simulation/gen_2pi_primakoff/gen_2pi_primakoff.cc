@@ -16,6 +16,7 @@
 
 #include "AMPTOOLS_AMPS/TwoPiAngles_primakoff.h"
 #include "AMPTOOLS_AMPS/TwoPiWt_primakoff.h"
+#include "AMPTOOLS_AMPS/BreitWigner.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
 #include "AMPTOOLS_MCGEN/GammaZToXYZ.h"
@@ -49,7 +50,7 @@ int main( int argc, char* argv[] ){
 	double highMass = 0.58 ;
 	
 	double beamMaxE   = 12.0;
-	double beamPeakE  = 9.0;
+	double beamPeakE  = 6.0;
 	double beamLowE   = 0.139*2;
 	double beamHighE  = 12.0;
 	
@@ -87,7 +88,7 @@ int main( int argc, char* argv[] ){
 			else  beamMaxE = atof( argv[++i] ); }
 		if (arg == "-p"){
 			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-			else  beamPeakE = atof( argv[++i] ); }
+			else beamPeakE = atof( argv[++i] ); }
 		if (arg == "-a"){
 			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
                         else  beamLowE = atof( argv[++i] ); }
@@ -141,6 +142,7 @@ int main( int argc, char* argv[] ){
 	// setup AmpToolsInterface
 	AmpToolsInterface::registerAmplitude( TwoPiAngles_primakoff() );
 	AmpToolsInterface::registerAmplitude( TwoPiWt_primakoff() );
+	AmpToolsInterface::registerAmplitude( BreitWigner() );
 	AmpToolsInterface ati( cfgInfo, AmpToolsInterface::kMCGeneration );
 	
 	ProductionMechanism::Type type =
@@ -165,9 +167,9 @@ int main( int argc, char* argv[] ){
 	
 	vector< int > pTypes;
 	pTypes.push_back( Gamma );
-	pTypes.push_back( Pb208 );     // use lead instead of Sn116 since it is defined in particle list.
 	pTypes.push_back( PiPlus );
 	pTypes.push_back( PiMinus );
+	pTypes.push_back( Pb208 );     // use lead instead of Sn116 since it is defined in particle list.
 	
 	HDDMDataWriter* hddmOut = NULL;
 	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum );
@@ -184,6 +186,10 @@ int main( int argc, char* argv[] ){
 	intenWVsM->SetCanExtend(TH2::kYaxis);
 	TH2F* CosTheta_psi = new TH2F( "CosTheta_psi", "cos#theta vs. #psi", 180, -3.14, 3.14, 100, -1, 1);
 	
+	TH1D* h1_phi = new TH1D( "h1_phi", "#phi", 180, -PI,PI );
+	TH1D* h1_psi = new TH1D( "h1_psi", "#psi", 180, -PI,PI );
+	TH1D* h1_Phi = new TH1D( "h1_Phi", "#Phi", 180, -PI,PI );
+
 	int eventCounter = 0;
 	while( eventCounter < nEvents ){
 		
@@ -213,8 +219,8 @@ int main( int argc, char* argv[] ){
 		for( int i = 0; i < batchSize; ++i ){
 			
 			Kinematics* evt = ati.kinematics( i );
-			TLorentzVector resonance( evt->particle( 2 ) + 
-                                  evt->particle( 3 ) );
+			TLorentzVector resonance( evt->particle( 1 ) + 
+                                  evt->particle( 2 ) );
 			
 			double genWeight = evt->weight();
 			
@@ -239,57 +245,60 @@ int main( int argc, char* argv[] ){
 					
 					// calculate angular variables
 					TLorentzVector beam = evt->particle ( 0 );
-					TLorentzVector recoil = evt->particle ( 1 );
-					TLorentzVector p1 = evt->particle ( 2 );
-			
+					TLorentzVector recoil = evt->particle ( 3 );
+					TLorentzVector p1 = evt->particle ( 1 );
+					TLorentzVector p2 = evt->particle ( 2 );
+
+					// cout << endl << " gen_2pi_primakoff particles " << " Mbeam=" << beam.M() << " Mrecoil=" << recoil.M() << " Mp1=" << p1.M() << endl;
+					// beam.Print(); recoil.Print(); p1.Print(); p2.Print(); resonance.Print();
+			     
+					Double_t phipol=0;    // hardwire angle of photon polarization in lab.
+					TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
 					TLorentzRotation resonanceBoost( -resonance.BoostVector() );
 					
 					TLorentzVector beam_res = resonanceBoost * beam;
 					TLorentzVector recoil_res = resonanceBoost * recoil;
 					TLorentzVector p1_res = resonanceBoost * p1;
 
-                                        double phipol=0;     // need to get this angle from configuration file.
-                                        TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
-	
-					// production plane is defined by the pi+ (neglect recoil)
-					TVector3 zlab(0.,0.,1.0);     // z axis in lab
-					TVector3 y = (p1.Vect().Cross(zlab)).Unit();    // perpendicular to decay plane. ensure that y is perpendicular to z
-					TVector3 eps_perp = eps.Cross(zlab).Unit();         // perpendicular to plane defined by eps
-					GDouble Phi_pip = atan2(y.Dot(eps),y.Dot(eps_perp));  // use this calculation to preserve sign of angle
-					// Phi_pip = Phi_pip > 0? Phi_pip : Phi_pip + 3.14159;                     // make angle between eps and decay plane a positive number. This is psi of vector-meson production in forward kinematics.
-					// redefine to normal to the production plane
-                                        y = (beam.Vect().Unit().Cross(-recoil.Vect().Unit())).Unit();
+					// choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is defined as missing P4
+					TVector3 y = (beam.Vect().Unit().Cross(-recoil.Vect().Unit())).Unit();   
+					TVector3 z = -1. * recoil_res.Vect().Unit();
+					TVector3 x = y.Cross(z).Unit();
+					TVector3 angles( (p1_res.Vect()).Dot(x),
+							 (p1_res.Vect()).Dot(y),
+							 (p1_res.Vect()).Dot(z) );
 
-                                        // choose helicity frame: z-axis opposite recoil in rho rest frame
-                                        TVector3 z = -1. * recoil_res.Vect().Unit();
-                                        TVector3 x = y.Cross(z).Unit();
-                                        TVector3 angles( (p1_res.Vect()).Dot(x),
-                                                         (p1_res.Vect()).Dot(y),
-                                                         (p1_res.Vect()).Dot(z) );
+					GDouble CosTheta = angles.CosTheta();
+					GDouble phi = angles.Phi();
+					// GDouble sinSqTheta = sin(angles.Theta())*sin(angles.Theta());
+					// GDouble sin2Theta = sin(2.*angles.Theta());
 
-                                        double cosTheta = angles.CosTheta();
+					GDouble Phi = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
+
+					GDouble psi = Phi - phi;               // define angle difference 
+					if(psi < -1*PI) psi += 2*PI;
+					if  (psi > PI) psi -= 2*PI;
+
                                         // double phi = angles.Phi();
 
-					// GDouble Phi_prod = atan2(y.Dot(eps), beam.Vect().Unit().Dot(eps.Cross(y)));
-					// Phi_prod = Phi_prod > 0? Phi_prod : Phi_prod + 3.14159;
-					// GDouble Phi = Phi_prod;              // retain angle between hadronic plane and polarization, although random for Primakoff
-                                        GDouble psi = Phi_pip;               // in the limit of forward scattering (Primakoff), Phi_pip is the angle between pip and the polarization
-                                        if(psi < -1*PI) psi += 2*PI;
-                                        if(psi > PI) psi -= 2*PI;
-
 					/*cout << endl << " gen_2pi_primakoff " << endl;
-					cout << " p1="; p1.Vect().Print();
-					cout << " p1_res="; p1_res.Vect().Print();
                                         cout << " Phi=" << Phi << endl;
 					cout << " phi= " << phi << endl;
 					cout << " psi=" << psi << endl;*/
-					
-					CosTheta_psi->Fill( psi, cosTheta);
+
+					h1_phi->Fill(phi);
+					h1_psi->Fill(psi);
+					h1_Phi->Fill(Phi);
+					CosTheta_psi->Fill( psi, CosTheta);
 					
 					// we want to save events with weight 1
 					evt->setWeight( 1.0 );
+					float vx = 0;
+					float vy = 0;
+					float vz = 1;   // vertex for CCP experiment
 					
-					if( hddmOut ) hddmOut->writeEvent( *evt, pTypes );
+					if( hddmOut ) hddmOut->writeEvent( *evt, pTypes, vx, vy, vz);
+					// note that there is no provision currently for vertex output in root file
 					rootOut.writeEvent( *evt );
 					++eventCounter;
 				}
@@ -301,7 +310,7 @@ int main( int argc, char* argv[] ){
 				
 				intenW->Fill( weightedInten );
 				intenWVsM->Fill( resonance.M(), weightedInten );
-				TLorentzVector recoil = evt->particle ( 1 );
+				TLorentzVector recoil = evt->particle ( 3 );
 				
 				++eventCounter;
 			}
@@ -317,6 +326,9 @@ int main( int argc, char* argv[] ){
 	intenW->Write();
 	intenWVsM->Write();
 	CosTheta_psi->Write();
+	h1_phi->Write();
+	h1_psi->Write();
+	h1_Phi->Write();
 	diagOut->Close();
 	
 	if( hddmOut ) delete hddmOut;

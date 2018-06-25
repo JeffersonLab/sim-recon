@@ -1,6 +1,6 @@
-#include "DSelector_Z2pi_trees.h"
+#include "DSelector_Z2pi_trees2.h"
 
-void DSelector_Z2pi_trees::Init(TTree *locTree)
+void DSelector_Z2pi_trees2::Init(TTree *locTree)
 {
 	// USERS: IN THIS FUNCTION, ONLY MODIFY SECTIONS WITH A "USER" OR "EXAMPLE" LABEL. LEAVE THE REST ALONE.
 
@@ -11,8 +11,8 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	//USERS: SET OUTPUT FILE NAME //can be overriden by user in PROOF
 	dOutputFileName = "DSelector_Z2pi_trees.root"; //"" for none
 	dOutputTreeFileName = "tree_DSelector_Z2pi_trees.root"; //"" for none
-	dFlatTreeFileName = ""; //output flat tree (one combo per tree entry), "" for none
-	dFlatTreeName = ""; //if blank, default name will be chosen
+	dFlatTreeFileName = "treeFlat_DSelector_Z2pi_trees.root"; //output flat tree (one combo per tree entry), "" for none
+	dFlatTreeName = "pippimmisspb208_TreeFlat"; //if blank, default name will be chosen
 
 	//Because this function gets called for each TTree in the TChain, we must be careful:
 		//We need to re-initialize the tree interface & branch wrappers, but don't want to recreate histograms
@@ -34,7 +34,7 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	dAnalysisActions.push_back(new DHistogramAction_ParticleID(dComboWrapper, false));//false: use measured data
 	dAnalysisActions.push_back(new DHistogramAction_ParticleID(dComboWrapper, true, "KinFit")); //true: use kinfit data;
 	//below: value: +/- N ns, Unknown: All PIDs, SYS_NULL: all timing systems
-	//dAnalysisActions.push_back(new DCutAction_PIDDeltaT(dComboWrapper, false, 0.5, KPlus, SYS_BCAL));
+	// dAnalysisActions.push_back(new DCutAction_PIDDeltaT(dComboWrapper, false, 0.5, KPlus, SYS_BCAL));
 
 	//MASSES
 	//dAnalysisActions.push_back(new DHistogramAction_InvariantMass(dComboWrapper, false, Lambda, 1000, 1.0, 1.2, "Lambda"));
@@ -59,6 +59,7 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 
 	/******************************** EXAMPLE USER INITIALIZATION: STAND-ALONE HISTOGRAMS *******************************/
 
+	//EXAMPLE MANUAL HISTOGRAMS:
 	dHist_MissingMassSquared = new TH1I("MissingMassSquared", ";Missing Mass Squared (GeV/c^{2})^{2}", 600, -0.24, 0.24);
 	dHist_BeamEnergy = new TH1I("BeamEnergy", ";Beam Energy (GeV)", 600, 0.0, 12.0);
 	// dHist_pMomentumMeasured = new TH1I("pMomentumMeasured", ";p Momentum Measured (GeV)", 100, 0.0, 2);
@@ -102,11 +103,14 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	dHist_phidiff = new TH1I("phidiff", ";phi Kin - Gen (degrees)", 100,-50,50);
 	dHist_psidiff = new TH1I("psidiff", ";psi Kin - Gen (degrees)", 100,-50,50);
 
+
+
 	dHist_pipDeltap = new TH1I("pipDeltap","; #pi^{+}: Thrown p - KinFit p/Thrown p",100,-0.2,0.2);
 	dHist_pimDeltap = new TH1I("pimDeltap","; #pi^{-}: Thrown p - KinFit p/ Thrown p",100,-0.2,0.2);
 
 	dHist_pipDeltap_Measured = new TH1I("pipDeltap_Measured","; #pi^{+}: Thrown p - Measured p/Thrown p",100,-0.2,0.2);
 	dHist_pimDeltap_Measured = new TH1I("pimDeltap_Measured","; #pi^{-}: Thrown p - Measured p/ Thrown p",100,-0.2,0.2);
+	dHist_TaggerAccidentals = new TH1I("dHist_TaggerAccidentals", "Vertex time - RF (ns)", 400,-20,20);
 
 
 	// EXAMPLE CUT PARAMETERS:
@@ -149,6 +153,7 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	dFlatTreeInterface->Create_Branch_NoSplitTObject<TLorentzVector>("flat_my_p4");
 	dFlatTreeInterface->Create_Branch_ClonesArray<TLorentzVector>("flat_my_p4_array");
 	*/
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("AccWeight"); //fundamental = char, int, float, double, etc.
 
 	/************************************* ADVANCED EXAMPLE: CHOOSE BRANCHES TO READ ************************************/
 
@@ -162,7 +167,7 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	//dTreeInterface->Register_GetEntryBranch("Proton__P4"); //manually set the branches you want
 }
 
-Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
+Bool_t DSelector_Z2pi_trees2::Process(Long64_t locEntry)
 {
 	// The Process() function is called for each entry in the tree. The entry argument
 	// specifies which entry in the currently loaded tree is to be processed.
@@ -232,7 +237,6 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		dTreeInterface->Fill_Fundamental<Int_t>("my_int_array", 3*loc_i, loc_i); //2nd argument = value, 3rd = array index
 	*/
 
-
 	/******************************************* LOOP OVER THROWN DATA (OPTIONAL) ***************************************/
 
 
@@ -253,9 +257,9 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		Particle_t thrown_pid = dThrownWrapper->Get_PID();
 		// cout << " loc_i=" << loc_i << " thrown_pid=" << thrown_pid << endl;
                 TLorentzVector locP4_Thrown = dThrownWrapper->Get_P4();
-		if (loc_i == 0) locPb208P4_Thrown = locP4_Thrown;    // assume order of particles as PID is zero at the moment
-		if (loc_i == 1) locPiPlusP4_Thrown = locP4_Thrown;
-		if (loc_i == 2) locPiMinusP4_Thrown = locP4_Thrown;
+		if (loc_i == 2) locPb208P4_Thrown = locP4_Thrown;    // Assume recoil is index 3
+		if (loc_i == 0) locPiPlusP4_Thrown = locP4_Thrown;
+		if (loc_i == 1) locPiMinusP4_Thrown = locP4_Thrown;
 		
 	}
 	cout << endl << "Thrown" << endl;  
@@ -265,13 +269,12 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 	cout << " locPiMinusP4="; locPiMinusP4_Thrown.Print(); 
 	TLorentzVector loc2piP4_Thrown = locPiPlusP4_Thrown + locPiMinusP4_Thrown;
 	double tgen = (dThrownBeam->Get_P4() - locPiPlusP4_Thrown - locPiMinusP4_Thrown).M2();    // use beam and 2pi momenta
-	
-
-
 
 	/************************************************* LOOP OVER COMBOS *************************************************/
 
+
 	//Loop over combos
+	cout << " Number of combos=" << Get_NumCombos() << endl;
 	for(UInt_t loc_i = 0; loc_i < Get_NumCombos(); ++loc_i)
 	{
 		//Set branch array indices for combo and all combo particles
@@ -304,7 +307,8 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		locMissingP4 -= locPiPlusP4 + locPiMinusP4; 
 		TLorentzVector loc2piP4 = locPiPlusP4 + locPiMinusP4;
 
-		cout << "Kin Fit" << endl; 
+
+		cout << endl << "Kin Fit jcombo=" << loc_i << endl; 
 		cout << " locBeamP4="; locBeamP4.Print();
 		cout << " locMissingPb208P4="; locMissingPb208P4.Print();
 		cout << " locPiPlusP4="; locPiPlusP4.Print();
@@ -319,9 +323,15 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		//Step 0
 		TLorentzVector locBeamP4_Measured = dComboBeamWrapper->Get_P4_Measured();
 		TLorentzVector locMissingPb208P4_Measured (0,0,0,193.750748);
-		// TLorentzVector locMissingPb208P4_Measured = dMissingPb208Wrapper->Get_P4_Measured();
+		// TLorentzVector locMissingPb208P4_Measured_input = dMissingPb208Wrapper->Get_P4_Measured();
 		TLorentzVector locPiPlusP4_Measured = dPiPlusWrapper->Get_P4_Measured();
 		TLorentzVector locPiMinusP4_Measured = dPiMinusWrapper->Get_P4_Measured();
+
+		/********************************************* COMBINE FOUR-MOMENTUM ********************************************/
+
+		// DO YOUR STUFF HERE
+
+		// Combine 4-vectors
 
 		TLorentzVector locMissingP4_Measured = locBeamP4_Measured;    // Ignore target mass/recoil
 		locMissingP4_Measured -= locPiPlusP4_Measured + locPiMinusP4_Measured; 
@@ -336,11 +346,6 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		cout << " locMissingP4_Measured="; locMissingP4_Measured.Print();
 		cout << " loc2piP4_Measured="; loc2piP4_Measured.Print();
 
-		/********************************************* COMBINE FOUR-MOMENTUM ********************************************/
-
-		// DO YOUR STUFF HERE
-
-		// Combine 4-vectors
 
 		/******************************************** EXECUTE ANALYSIS ACTIONS *******************************************/
 
@@ -362,6 +367,10 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		dTreeInterface->Fill_TObject<TLorentzVector>("my_p4_array", locMyComboP4, loc_i);
 		*/
 
+		/**************************************** EXAMPLE: HISTOGRAM BEAM ENERGY *****************************************/
+
+		//Histogram beam energy (if haven't already)
+
 		/**************************************** EXAMPLE: PID CUT ACTION ************************************************/
 
 
@@ -381,8 +390,6 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		}
 
 		cout << " Passed CDC dE/dX cut " << endl;
-
-
 
 		/************************************ EXAMPLE: SELECTION CUTS AND HISTOGRAMS  ************************************/
 
@@ -413,11 +420,10 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 
 		cout << " Passed Missing mass cut " << endl;
 
-
 		// kinematic fit CL cut
-		dHist_KinFitChiSq->Fill(dComboWrapper->Get_ChiSq_KinFit()/dComboWrapper->Get_NDF_KinFit());
-		dHist_KinFitCL->Fill(dComboWrapper->Get_ConfidenceLevel_KinFit());
-		if(dComboWrapper->Get_ConfidenceLevel_KinFit() <= dMinKinFitCL) {
+		dHist_KinFitChiSq->Fill(dComboWrapper->Get_ChiSq_KinFit("")/dComboWrapper->Get_NDF_KinFit(""));
+		dHist_KinFitCL->Fill(dComboWrapper->Get_ConfidenceLevel_KinFit(""));
+		if(dComboWrapper->Get_ConfidenceLevel_KinFit("") <= dMinKinFitCL) {
 			dComboWrapper->Set_IsComboCut(true);
 			continue;
 		}
@@ -491,13 +497,13 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		cout << "Ebeam Thrown P4.E=" << dThrownBeam->Get_P4().E()  << " Kinfit P4.E=" << locBeamP4.E() << " P4 Measured =" << locBeamP4_Measured.E() << endl;
 		// cout << "Proton Thrown P4.E=" << locPb208P4_Thrown.E() << " Kinfit P4.E=" << locProtonP4.E() << " P4 Measured =" << locProtonP4_Measured.E() << " CL=" << dComboWrapper->Get_ConfidenceLevel_KinFit() << endl;
 		cout << "PiPlus Thrown P4.E=" << locPiPlusP4_Thrown.E() << " Kinfit P4.E=" << locPiPlusP4.E() << " P4 Measured =" << locPiPlusP4_Measured.E() << endl;
-		cout << "PiMinus Thrown P4.E=" << locPiMinusP4_Thrown.E() << " Kinfit P4.E=" << locPiMinusP4.E() << " P4 Measured =" << locPiMinusP4_Measured.E() << endl << endl;
+		cout << "PiMinus Thrown P4.E=" << locPiMinusP4_Thrown.E() << " Kinfit P4.E=" << locPiMinusP4.E() << " P4 Measured =" << locPiMinusP4_Measured.E() << endl;
 
 
 		if ( locBeamP4_Measured.Z() < 0 || locPiPlusP4_Measured.Z() < 0 || locPiMinusP4_Measured.Z() < 0 ||
-                     locPiPlusP4.Z() < 0 || locPiMinusP4.Z() < 0 ) {
+                     locPiPlusP4.Z() < 0 || locPiMinusP4.Z() < 0 || locMissingPb208P4.Z() < 0   ) {
 			dComboWrapper->Set_IsComboCut(true);
-			cout << "*** Negative pz ***" << endl;
+			cout << "*** Failed Negative pz cut ***" << endl;
 			continue;
 		}
 		cout << " Passed Negative pz cut " << endl;
@@ -572,6 +578,7 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		p1_res = resonanceBoost3 * locPiPlusP4_Measured;
 		p2_res = resonanceBoost3 * locPiMinusP4_Measured;
 
+
                 // choose helicity frame: z-axis opposite recoil target in rho rest frame. Note that for Primakoff recoil is missing P4, including target.
 	        y = (locBeamP4_Measured.Vect().Unit().Cross(-locMissingPb208P4_Measured.Vect().Unit())).Unit();
 	
@@ -596,11 +603,18 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		double Delta_phimeas = phimeas - phigen;
 		double Delta_Phimeas = Phimeas - Phigen;
 
+
 		map<Particle_t, set<Int_t> > locUsedThisCombo_Angles;
 		locUsedThisCombo_Angles[Unknown].insert(locBeamID); //beam
 		// locUsedThisCombo_Angles[Proton].insert(locProtonTrackID);
 		locUsedThisCombo_Angles[PiPlus].insert(locPiPlusTrackID);
 		locUsedThisCombo_Angles[PiMinus].insert(locPiMinusTrackID);
+
+
+		// calculate accidental subtraction weight based on time difference 
+		AccWeight = 0.; // weight to accidentally subtracted histgorams
+
+
 		if(locUsedSoFar_Angles.find(locUsedThisCombo_Angles) == locUsedSoFar_Angles.end())
 		{
 			dHist_tgen->Fill(fabs(tgen));
@@ -635,10 +649,34 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 			dHist_psidiff->Fill((psikin-psigen)*180./3.14159);
 			// dHist_psikin->Fill(psikin*180./3.14159);
 			locUsedSoFar_Angles.insert(locUsedThisCombo_Angles);
+
 		}
 
-		/****************************************** FILL FLAT TREE (IF DESIRED) ******************************************/
+		/******************************************** ACCIDENTAL SUBRACTION INFO *******************************************/
+		
+		// measured tagger time for combo
+		TLorentzVector locBeam_X4_Measured = dComboBeamWrapper->Get_X4_Measured(); 
 
+		// measured RF time for combo
+		double locRFTime = dComboWrapper->Get_RFTime_Measured(); 
+
+
+		// time difference between tagger and RF (corrected for production vertex position relative to target center)
+		double locBeamDeltaT = locBeam_X4_Measured.T() - (locRFTime + (locBeam_X4_Measured.Z() - dTargetCenter.Z())/29.9792458); 
+
+		if(fabs(locBeamDeltaT) < 0.5*4.008) { // prompt signal recieves a weight of 1
+			AccWeight = 1.;
+		}
+                else { // accidentals recieve a weight of 1/# RF bunches included in TTree (4 in this case)
+			AccWeight = -1./4.;
+		}
+
+		cout << " Tagger Accidentals: dTargetCenter=" <<  dTargetCenter.Z() << " locRFTime=" << locRFTime << " locBeamDeltaT=" << locBeamDeltaT << " AccWeight=" << AccWeight << endl;
+		cout << " locBeam_X4_Measured="; locBeam_X4_Measured.Print();
+		dHist_TaggerAccidentals->Fill(locBeamDeltaT);
+
+
+		/****************************************** FILL FLAT TREE (IF DESIRED) ******************************************/
 
 		/*
 		//FILL ANY CUSTOM BRANCHES FIRST!!
@@ -655,9 +693,11 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 			dFlatTreeInterface->Fill_TObject<TLorentzVector>("flat_my_p4_array", locMyComboP4_Flat, loc_j);
 		}
 		*/
+		dFlatTreeInterface->Fill_Fundamental<Double_t>("AccWeight", AccWeight);
 
 		//FILL FLAT TREE
-		//Fill_FlatTree(); //for the active combo
+		dComboWrapper->Set_ComboIndex(loc_i);  // Combo succeeded
+		Fill_FlatTree(); //for the active combo
 	} // end of combo loop
 
 	//FILL HISTOGRAMS: Num combos / events surviving actions
@@ -718,16 +758,31 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		if(dComboWrapper->Get_IsComboCut())
 			continue;
 		locIsEventCut = false; // At least one combo succeeded
+
+
+		TLorentzVector locBeamP4 = dComboBeamWrapper->Get_P4();
+		TLorentzVector locMissingPb208P4 = dMissingPb208Wrapper->Get_P4();
+		TLorentzVector locPiPlusP4 = dPiPlusWrapper->Get_P4();
+		TLorentzVector locPiMinusP4 = dPiMinusWrapper->Get_P4();
+
+
+		if (locBeamP4.Z() < 0 || locMissingPb208P4.Z() < 0 || locPiPlusP4.Z() < 0 || locPiMinusP4.Z() < 0 ) {
+		  cout << endl << "Output: Negative Z momenta" << endl;
+		  locBeamP4.Print(); locMissingPb208P4.Print(); locPiPlusP4.Print(); locPiMinusP4.Print();}
+
+
 		break;
 	}
 	if(!locIsEventCut && dOutputTreeFileName != "")
+
+
 		Fill_OutputTree();
 
 
 	return kTRUE;
 }
 
-void DSelector_Z2pi_trees::Finalize(void)
+void DSelector_Z2pi_trees2::Finalize(void)
 {
 	//Save anything to output here that you do not want to be in the default DSelector output ROOT file.
 

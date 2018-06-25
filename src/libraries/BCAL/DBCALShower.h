@@ -17,6 +17,9 @@ class DBCALShower:public JObject{
     float E;
     float E_raw;
     float E_preshower;
+    float E_L2;
+    float E_L3;
+    float E_L4;
     float x;
     float y;
     float z;
@@ -24,6 +27,8 @@ class DBCALShower:public JObject{
     float sigLong;
     float sigTrans;
     float sigTheta;
+//    float sigTime;
+    float rmsTime;
     int N_cell;
     int Q;
 	TMatrixFSym ExyztCovariance;
@@ -83,6 +88,9 @@ class DBCALShower:public JObject{
 			AddString(items, "r", "%5.1f", sqrt(x*x+y*y));
 			AddString(items, "phi", "%5.3f",atan2(y,x));
 			AddString(items, "E_preshower", "%5.3f", E_preshower);
+                        AddString(items, "E_L2", "%5.3f", E_L2);
+                        AddString(items, "E_L3", "%5.3f", E_L3);
+                        AddString(items, "E_L4", "%5.3f", E_L4);
 			AddString(items, "N_cell", "%d", N_cell);
 			AddString(items, "Q", "%d", Q);
 			AddString(items, "dE", "%5.3f", EErr());
@@ -103,6 +111,8 @@ class DBCALShower:public JObject{
 			AddString(items, "sigLong", "%5.3f", sigLong);
 			AddString(items, "sigTrans", "%5.3f", sigTrans);
 			AddString(items, "sigTheta", "%5.3f", sigTheta);
+//                        AddString(items, "sigTime", "%5.3f", sigTime);
+                        AddString(items, "rmsTime", "%5.3f", rmsTime);
 	}
 };
 

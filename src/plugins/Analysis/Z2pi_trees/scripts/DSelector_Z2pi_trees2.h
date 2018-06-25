@@ -1,5 +1,5 @@
-#ifndef DSelector_Z2pi_trees_h
-#define DSelector_Z2pi_trees_h
+#ifndef DSelector_Z2pi_trees2_h
+#define DSelector_Z2pi_trees2_h
 
 #include <iostream>
 
@@ -12,12 +12,12 @@
 #include "TLorentzVector.h"
 #include "TLorentzRotation.h"
 
-class DSelector_Z2pi_trees : public DSelector
+class DSelector_Z2pi_trees2 : public DSelector
 {
 	public:
 
-		DSelector_Z2pi_trees(TTree* locTree = NULL) : DSelector(locTree){}
-		virtual ~DSelector_Z2pi_trees(){}
+		DSelector_Z2pi_trees2(TTree* locTree = NULL) : DSelector(locTree){}
+		virtual ~DSelector_Z2pi_trees2(){}
 
 		void Init(TTree *tree);
 		Bool_t Process(Long64_t entry);
@@ -72,6 +72,8 @@ class DSelector_Z2pi_trees : public DSelector
 		TH2I* dHist_Delta_Phi;
 		TH2I* dHist_Delta_phimeas;
 		TH2I* dHist_Delta_Phimeas;
+
+
 		TH1I* dHist_Phigen;
 		TH1I* dHist_phigen;
 		TH1I* dHist_Phikin;
@@ -89,6 +91,7 @@ class DSelector_Z2pi_trees : public DSelector
 		TH1I* dHist_pDeltap_Measured;
 		TH1I* dHist_pipDeltap_Measured;
 		TH1I* dHist_pimDeltap_Measured;
+		TH1I* dHist_TaggerAccidentals;
 
 		// Cut parameters
 		TF1* fMinProton_dEdx;
@@ -101,18 +104,20 @@ class DSelector_Z2pi_trees : public DSelector
 		Double_t dMax2piMass;
 		Double_t dMinMissingMassSquared;
 		Double_t dMaxMissingMassSquared;
+		
+		Double_t AccWeight;    // used to store weights due to accidental tagger subtraction
 
-	ClassDef(DSelector_Z2pi_trees, 0);
+	ClassDef(DSelector_Z2pi_trees2, 0);
 };
 
-void DSelector_Z2pi_trees::Get_ComboWrappers(void)
+void DSelector_Z2pi_trees2::Get_ComboWrappers(void)
 {
 	//Step 0
 	dStep0Wrapper = dComboWrapper->Get_ParticleComboStep(0);
 	dComboBeamWrapper = static_cast<DBeamParticle*>(dStep0Wrapper->Get_InitialParticle());
-	dMissingPb208Wrapper = dStep0Wrapper->Get_FinalParticle(0);
-	dPiPlusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(1));
-	dPiMinusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(2));
+	dPiPlusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(0));
+	dPiMinusWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(1));
+	dMissingPb208Wrapper = dStep0Wrapper->Get_FinalParticle(2);
 }
 
-#endif // DSelector_Z2pi_trees_h
+#endif // DSelector_Z2pi_trees2_h
