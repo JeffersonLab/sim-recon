@@ -190,6 +190,7 @@ DBCALCluster::makeFromPoints(){
   double sum_sin_phi=0;
   double sum_cos_phi=0;
   charge = 0; 
+  float t_mean = 0.;
 
   for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
        pt != m_points.end();
@@ -203,6 +204,9 @@ DBCALCluster::makeFromPoints(){
     if( E == m_E_points || ( (**pt).layer()==1 && charge == 0 ) ) charge = new_point_q;
     	
     if ((**pt).layer() == 1) m_E_preshower += E;
+    if ((**pt).layer() == 2) m_E_L2 += E;
+    if ((**pt).layer() == 3) m_E_L3 += E;
+    if ((**pt).layer() == 4) m_E_L4 += E;
 
     double wt1, wt2;
     if ( ( m_point_reatten_E_sum == 0 && ( (**pt).layer() != 4 || average_layer4 ) ) ) {
@@ -223,6 +227,7 @@ DBCALCluster::makeFromPoints(){
 
     m_t += (**pt).tInnerRadius() * wt2;
     m_sig_t += (**pt).tInnerRadius() * (**pt).tInnerRadius() * wt2;
+    t_mean += (**pt).t();
 
     m_theta += (**pt).theta() * wt2;
     m_sig_theta += (**pt).theta() * (**pt).theta() * wt2;
@@ -246,6 +251,9 @@ DBCALCluster::makeFromPoints(){
   m_sig_t -= ( m_t * m_t );
   m_sig_t = sqrt( m_sig_t );
   m_sig_t /= sqrt(n_eff2); 
+ 
+  t_mean /= n;
+
   m_theta /= sum_wt2;
   /*m_sig_theta /= sum_wt2;
   m_sig_theta -= ( m_theta * m_theta );
@@ -263,6 +271,9 @@ DBCALCluster::makeFromPoints(){
   if( m_phi < 0 ) m_phi += 2*TMath::Pi();
   // calculate the RMS of phi
   m_sig_phi=0;
+
+  float t_quad_sum = 0.;
+
   for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
        pt != m_points.end();
        ++pt ){
@@ -283,7 +294,11 @@ DBCALCluster::makeFromPoints(){
     deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
     m_sig_phi += deltaPhi * deltaPhi * wt1;
 
+    float t = (**pt).t();
+    t_quad_sum += (t-t_mean)*(t-t_mean);
+
   }
+  m_t_rms = sqrt(t_quad_sum/(n+1.));
   m_sig_phi /= sum_wt1;
   m_sig_phi = sqrt( fabs(m_sig_phi) );
   //this should be division, by sqrt(n_eff1), but this works better
@@ -359,8 +374,13 @@ DBCALCluster::toStrings( vector< pair < string, string > > &items) const {
   AddString(items, "t", "%5.2f", m_t );
   AddString(items, "E", "%5.2f", m_E );
   AddString(items, "E_preshower", "%5.2f", m_E_preshower );
+  AddString(items, "E_L2", "%5.2f", m_E_L2 );
+  AddString(items, "E_L3", "%5.2f", m_E_L3 );
+  AddString(items, "E_L4", "%5.2f", m_E_L4 );
   AddString(items, "N_cell", "%i", m_points.size() );
   AddString(items, "charge", "%i", charge );
+  AddString(items, "t_rms", "%5.2f", m_t_rms );  
+
 }
 
 
@@ -369,9 +389,13 @@ DBCALCluster::clear(){
  
   m_E = 0;
   m_E_points = 0; 
-  m_E_preshower = 0; 
+  m_E_preshower = 0;
+  m_E_L2 = 0;
+  m_E_L3 = 0;
+  m_E_L4 = 0; 
   m_t = 0;
   m_sig_t = 0;
+  m_t_rms = 0;
   
   m_theta = 0;
   m_sig_theta = 0;
