@@ -42,6 +42,7 @@
       <width minOccurs="0" maxOccurs="1" sigLong="float" sigTrans="float" sigTheta="float"/>
 	   <bcalCluster maxOccurs="1" minOccurs="0" ncell="int"/>
 	   <bcalCorrelations maxOccurs="1" minOccurs="0" Excorr="float" Eycorr="float" Etcorr="float" txcorr="float" tycorr="float"/>
+	   <bcalLayers minOccurs="0" maxOccurs="1" E_L2="float" E_L3="float" E_L4="float" rmsTime="float"/>
     </bcalShower>
     <chargedTrack minOccurs="0" maxOccurs="unbounded" jtag="string"
                 ptype="Particle_t" candidateId="int">
