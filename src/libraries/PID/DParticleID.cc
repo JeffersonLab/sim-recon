@@ -368,7 +368,7 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
       }
             
       // Cut late drift time hits where the energy deposition is degraded
-      double dt=cdchits[i]->tdrift-tflight-t0;
+      double dt=cdchits[i]->tdrift; //-tflight-t0;
       if (dt>CDC_TIME_CUT_FOR_DEDX) continue;
 
       // Create the dE,dx pair from the position and momentum using a helical approximation for the path 
