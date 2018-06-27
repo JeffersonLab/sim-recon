@@ -920,6 +920,23 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 				shower->N_cell = locBcalClusterIterator->getNcell();
 		}
 
+		const hddm_r::BcalLayersList& locBcalLayersList = iter->getBcalLayerses();
+		hddm_r::BcalLayersList::iterator locBcalLayersIterator = locBcalLayersList.begin();
+		if(locBcalLayersIterator == locBcalLayersList.end()) {
+		        shower->E_L2 = 0.;
+		        shower->E_L3 = 0.;
+		        shower->E_L4 = 0.;
+			shower->rmsTime = -1;
+		}
+		else //should only be 1
+		{
+			for(; locBcalLayersIterator != locBcalLayersList.end(); ++locBcalLayersIterator)
+				shower->rmsTime = locBcalLayersIterator->getRmsTime();
+				shower->E_L2 = locBcalLayersIterator->getE_L2();
+				shower->E_L3 = locBcalLayersIterator->getE_L3();
+				shower->E_L4 = locBcalLayersIterator->getE_L4();
+		}
+
       data.push_back(shower);
    }
 
