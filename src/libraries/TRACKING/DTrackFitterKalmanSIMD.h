@@ -28,11 +28,6 @@
 #define BIG 1.0e8
 #define EPS2 1.e-4
 #define EPS3 1.e-2
-#define BEAM_RADIUS  0.1 
-#define MAX_ITER 25
-#define MAX_CHI2 1e16
-#define CDC_BACKWARD_STEP_SIZE 0.5
-#define NUM_ITER 10
 #define Z_MIN -100.
 #define Z_MAX 370.0
 #define R_MAX 65.0
@@ -45,10 +40,7 @@
 // divisions by the speed of light
 #define TIME_UNIT_CONVERSION 3.33564095198152014e-02
 #define ONE_OVER_C TIME_UNIT_CONVERSION
-#define CDC_DRIFT_SPEED 55e-4
-#define VAR_S 0.09
 #define Q_OVER_PT_MAX 100. // 10 MeV/c
-#define MAX_PATH_LENGTH 500.
 #define TAN_MAX 10.
 
 
@@ -56,7 +48,6 @@
 
 #define DELTA_R 1.0 // distance in r to extend the trajectory beyond the last point
 
-#define CDC_VARIANCE 0.0001
 #define FDC_CATHODE_VARIANCE 0.000225
 #define FDC_ANODE_VARIANCE 0.000225
 
@@ -64,10 +55,6 @@
 #define ONE_SIXTH  0.16666666666666667
 #define TWO_THIRDS 0.66666666666666667
 
-#define CHISQ_DIFF_CUT 20.
-#define MAX_DEDX 40.
-#define MIN_ITER 2
-#define MIN_CDC_ITER 0
 #define MIN_FDC_HITS 2 
 #define MIN_CDC_HITS 2 
 
@@ -76,8 +63,6 @@
 #define DE_PER_STEP 0.001 // in GeV
 #define BFIELD_FRAC 0.0001
 #define MIN_STEP_SIZE 0.1 // in cm
-#define CDC_INTERNAL_STEP_SIZE 0.15 // in cm
-#define FDC_INTERNAL_STEP_SIZE 0.5 // in cm
 
 #define ELECTRON_MASS 0.000511 // GeV
 
@@ -447,10 +432,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double m_ratio_sq; // .. and its square
   double two_m_e; // twice the electron mass
   double m_e_sq; // square of electron mass
-
-  // minimum drift time 
-  double mMinDriftTime;
-  unsigned int mMinDriftID;
   
   // Lorentz deflection parameters
   double LORENTZ_NR_PAR1,LORENTZ_NR_PAR2,LORENTZ_NZ_PAR1,LORENTZ_NZ_PAR2;
