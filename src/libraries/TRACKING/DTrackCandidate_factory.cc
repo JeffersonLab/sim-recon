@@ -689,7 +689,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     vector<const DCDCTrackHit *>mycdchits;
     candidate->GetT(mycdchits);
     
-    if (mycdchits.size()>=6 || myfdchits.size()>=3){
+    if (mycdchits.size()>=3 || myfdchits.size()>=3){
       _data.push_back(candidate);
     }
     else delete candidate;
@@ -2630,8 +2630,7 @@ bool DTrackCandidate_factory::MatchMethod10(unsigned int src_index,
 	    
       int pack2=segments2[0]->package;
       if (abs(pack1-pack2)>0){
-	// Get hits from the second segment and redo fit forcing circle 
-	// to go through (0,0)
+	// Get hits from the second segment and redo fit
 	DHelicalFit fit2;
 	for (unsigned int n=0;n<segments2[0]->hits.size();n++){
 	  const DFDCPseudo *hit=segments2[0]->hits[n];
@@ -3335,6 +3334,9 @@ DTrackCandidate_factory::GetPositionAndMomentum(double z,DHelicalFit &fit,
 bool DTrackCandidate_factory::TryToFlipDirection(vector<const DSCHit *>&schits,
 						 DVector3 &mom,DVector3 &pos) const{
   if (schits.size()==0) return false;
+  if (DEBUG_LEVEL>0){
+    _DBG_ << "Attempting to flip direction of track..." << endl;
+  }
 
   double zsc=sc_pos[0][1].z();
   if (pos.z()>zsc){
