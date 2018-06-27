@@ -282,6 +282,12 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		//N_cell
 		hddm_r::BcalClusterList bcalcluster = bcal().addBcalClusters(1);
 		bcalcluster().setNcell(bcalshowers[i]->N_cell);
+
+		hddm_r::BcalLayersList bcallayerdata = bcal().addBcalLayerses(1);
+		bcallayerdata().setE_L2(bcalshowers[i]->E_L2);
+		bcallayerdata().setE_L3(bcalshowers[i]->E_L3);
+		bcallayerdata().setE_L4(bcalshowers[i]->E_L4);
+		bcallayerdata().setRmsTime(bcalshowers[i]->rmsTime);
 	}
 
 	// push any DTOFPoint objects to the output record
