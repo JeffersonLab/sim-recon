@@ -25,7 +25,7 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
  public:
   DFCALShower_factory();
   ~DFCALShower_factory(){};
-  jerror_t LoadCovarianceLookupTables();
+  jerror_t LoadCovarianceLookupTables(JEventLoop *eventLoop);
   jerror_t FillCovarianceMatrix(DFCALShower* shower);
 	
  private:
