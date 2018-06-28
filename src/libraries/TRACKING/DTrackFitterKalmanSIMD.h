@@ -43,7 +43,7 @@
 #define Q_OVER_PT_MAX 100. // 10 MeV/c
 #define TAN_MAX 10.
 
-
+#define MAX_CHI2 1e6
 #define MINIMUM_HIT_FRACTION 0.5
 
 #define DELTA_R 1.0 // distance in r to extend the trajectory beyond the last point
