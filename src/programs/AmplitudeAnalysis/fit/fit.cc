@@ -9,6 +9,7 @@
 #include <map>
 
 #include "AMPTOOLS_DATAIO/ROOTDataReader.h"
+#include "AMPTOOLS_DATAIO/ROOTDataReaderBootstrap.h"
 #include "AMPTOOLS_DATAIO/ROOTDataReaderWithTCut.h"
 #include "AMPTOOLS_AMPS/TwoPSAngles.h"
 #include "AMPTOOLS_AMPS/TwoPSHelicity.h"
@@ -89,6 +90,7 @@ int main( int argc, char* argv[] ){
   AmpToolsInterface::registerAmplitude( Uniform() );
   
   AmpToolsInterface::registerDataReader( ROOTDataReader() );
+  AmpToolsInterface::registerDataReader( ROOTDataReaderBootstrap() );
   AmpToolsInterface::registerDataReader( ROOTDataReaderWithTCut() );
   
   AmpToolsInterface ati( cfgInfo );

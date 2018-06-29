@@ -48,7 +48,7 @@ m_useWeight( false )
   cout << "   Random Seed:  " << seed << endl << endl;
   
   // default to tree name of "kin" if none is provided
-  if( args.size() == 1 ){
+  if( args.size() == 2 ){
     
     m_inTree = dynamic_cast<TTree*>( m_inFile->Get( "kin" ) );
   }
