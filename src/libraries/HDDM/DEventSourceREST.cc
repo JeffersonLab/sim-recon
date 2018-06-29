@@ -36,6 +36,17 @@ DEventSourceREST::DEventSourceREST(const char* source_name)
       // One might want to throw an exception or report an error here.
       fin = NULL;
    }
+   
+   // any other initialization which needs to happen
+   dFCALShowerFactory = nullptr;
+   
+   USE_CCDB_BCAL_COVARIANCE = false;
+   gPARMS->SetDefaultParameter("REST:USE_CCDB_BCAL_COVARIANCE", USE_CCDB_BCAL_COVARIANCE, 
+   		"Load REST BCAL Shower covariance matrices from CCDB instead of the file.");
+   USE_CCDB_FCAL_COVARIANCE = false;
+   gPARMS->SetDefaultParameter("REST:USE_CCDB_FCAL_COVARIANCE", USE_CCDB_FCAL_COVARIANCE, 
+   		"Load REST BFAL Shower covariance matrices from CCDB instead of the file.");
+
 }
 
 //----------------
@@ -229,6 +240,21 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
 			dBeamBunchPeriodMap[locRunNumber] = locBeamBunchPeriod;
 		}
 		UnlockRead();
+		
+		// do multiple things to limit the number of locks
+		// make sure that we have a handle to the FCAL shower factory
+		if(USE_CCDB_FCAL_COVARIANCE && dFCALShowerFactory==nullptr) {
+			dFCALShowerFactory = static_cast<DFCALShower_factory*>(locEventLoop->GetFactory("DFCALShower"));
+			if(dFCALShowerFactory==nullptr)
+				throw JException("Couldn't find DFCALShower_factory???");
+			dBCALShowerFactory = static_cast<DBCALShower_factory_IU*>(locEventLoop->GetFactory("DBCALShower", "IU"));
+			if(dBCALShowerFactory==nullptr)
+				throw JException("Couldn't find DBCALShower_factory???");
+				
+			dBCALShowerFactory->LoadCovarianceLookupTables(locEventLoop);
+			dFCALShowerFactory->LoadCovarianceLookupTables(locEventLoop);
+		}
+
 	}
 
    if (dataClassName =="DMCReaction") {
@@ -774,30 +800,33 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
       shower->setEnergy(iter->getE());
       shower->setTime(iter->getT());
 
-      TMatrixFSym covariance(5);
-	  covariance(0,0) = iter->getEerr()*iter->getEerr();
-	  covariance(1,1) = iter->getXerr()*iter->getXerr();
-	  covariance(2,2) = iter->getYerr()*iter->getYerr();
-	  covariance(3,3) = iter->getZerr()*iter->getZerr();
-	  covariance(4,4) = iter->getTerr()*iter->getTerr();
-	  covariance(1,2) = covariance(2,1) = iter->getXycorr()*iter->getXerr()*iter->getYerr();
-	  covariance(1,3) = covariance(3,1) = iter->getXzcorr()*iter->getXerr()*iter->getZerr();
-	  covariance(2,3) = covariance(3,2) = iter->getYzcorr()*iter->getYerr()*iter->getZerr();
-	  covariance(0,3) = covariance(3,0) = iter->getEzcorr()*iter->getEerr()*iter->getZerr();
-	  covariance(3,4) = covariance(4,3) = iter->getTzcorr()*iter->getTerr()*iter->getZerr();
+	  if(USE_CCDB_FCAL_COVARIANCE) {
+	  	 dFCALShowerFactory->FillCovarianceMatrix(shower);
+	  } else {
+      	 TMatrixFSym covariance(5);
+	  	 covariance(0,0) = iter->getEerr()*iter->getEerr();
+	  	 covariance(1,1) = iter->getXerr()*iter->getXerr();
+	  	 covariance(2,2) = iter->getYerr()*iter->getYerr();
+	  	 covariance(3,3) = iter->getZerr()*iter->getZerr();
+	  	 covariance(4,4) = iter->getTerr()*iter->getTerr();
+	  	 covariance(1,2) = covariance(2,1) = iter->getXycorr()*iter->getXerr()*iter->getYerr();
+	  	 covariance(1,3) = covariance(3,1) = iter->getXzcorr()*iter->getXerr()*iter->getZerr();
+	  	 covariance(2,3) = covariance(3,2) = iter->getYzcorr()*iter->getYerr()*iter->getZerr();
+	  	 covariance(0,3) = covariance(3,0) = iter->getEzcorr()*iter->getEerr()*iter->getZerr();
+	  	 covariance(3,4) = covariance(4,3) = iter->getTzcorr()*iter->getTerr()*iter->getZerr();
 
-	  // further correlations (an extension of REST format, so code is different.)
-	  const hddm_r::FcalCorrelationsList& locFcalCorrelationsList = iter->getFcalCorrelationses();
-	  hddm_r::FcalCorrelationsList::iterator locFcalCorrelationsIterator = locFcalCorrelationsList.begin();
-	  if(locFcalCorrelationsIterator != locFcalCorrelationsList.end()) {
-	  	  covariance(0,4) = covariance(4,0) = locFcalCorrelationsIterator->getEtcorr()*iter->getEerr()*iter->getTerr();
-	  	  covariance(0,1) = covariance(1,0) = locFcalCorrelationsIterator->getExcorr()*iter->getEerr()*iter->getXerr();
-	  	  covariance(0,2) = covariance(2,0) = locFcalCorrelationsIterator->getEycorr()*iter->getEerr()*iter->getYerr();
-	  	  covariance(1,4) = covariance(4,1) = locFcalCorrelationsIterator->getTxcorr()*iter->getTerr()*iter->getXerr();
-	  	  covariance(2,4) = covariance(4,2) = locFcalCorrelationsIterator->getTycorr()*iter->getTerr()*iter->getYerr();
+	  	 // further correlations (an extension of REST format, so code is different.)
+	  	 const hddm_r::FcalCorrelationsList& locFcalCorrelationsList = iter->getFcalCorrelationses();
+	  	 hddm_r::FcalCorrelationsList::iterator locFcalCorrelationsIterator = locFcalCorrelationsList.begin();
+	  	 if(locFcalCorrelationsIterator != locFcalCorrelationsList.end()) {
+	  	  	covariance(0,4) = covariance(4,0) = locFcalCorrelationsIterator->getEtcorr()*iter->getEerr()*iter->getTerr();
+	  	  	covariance(0,1) = covariance(1,0) = locFcalCorrelationsIterator->getExcorr()*iter->getEerr()*iter->getXerr();
+	  	  	covariance(0,2) = covariance(2,0) = locFcalCorrelationsIterator->getEycorr()*iter->getEerr()*iter->getYerr();
+	  	  	covariance(1,4) = covariance(4,1) = locFcalCorrelationsIterator->getTxcorr()*iter->getTerr()*iter->getXerr();
+	  	  	covariance(2,4) = covariance(4,2) = locFcalCorrelationsIterator->getTycorr()*iter->getTerr()*iter->getYerr();
+	  	 }
+	  	 shower->ExyztCovariance = covariance;
 	  }
-	  shower->ExyztCovariance = covariance;
-
       // MVA classifier output - this information is being calculated in DNeutralShower now!
       //const hddm_r::FcalShowerClassificationList& locFcalShowerClassificationList = iter->getFcalShowerClassifications();
       //hddm_r::FcalShowerClassificationList::iterator locFcalShowerClassificationIterator = locFcalShowerClassificationList.begin();
@@ -858,29 +887,34 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
       shower->y = iter->getY();
       shower->z = iter->getZ();
       shower->t = iter->getT();
-      TMatrixFSym covariance(5);
-	  covariance(0,0) = iter->getEerr()*iter->getEerr();
-	  covariance(1,1) = iter->getXerr()*iter->getXerr();
-	  covariance(2,2) = iter->getYerr()*iter->getYerr();
-	  covariance(3,3) = iter->getZerr()*iter->getZerr();
-	  covariance(4,4) = iter->getTerr()*iter->getTerr();
-	  covariance(1,2) = covariance(2,1) = iter->getXycorr()*iter->getXerr()*iter->getYerr();
-	  covariance(1,3) = covariance(3,1) = iter->getXzcorr()*iter->getXerr()*iter->getZerr();
-	  covariance(2,3) = covariance(3,2) = iter->getYzcorr()*iter->getYerr()*iter->getZerr();
-	  covariance(0,3) = covariance(3,0) = iter->getEzcorr()*iter->getEerr()*iter->getZerr();
-	  covariance(3,4) = covariance(4,3) = iter->getTzcorr()*iter->getTerr()*iter->getZerr();
 
-	  // further correlations (an extension of REST format, so code is different.)
-	  const hddm_r::BcalCorrelationsList& locBcalCorrelationsList = iter->getBcalCorrelationses();
-	  hddm_r::BcalCorrelationsList::iterator locBcalCorrelationsIterator = locBcalCorrelationsList.begin();
-	  if(locBcalCorrelationsIterator != locBcalCorrelationsList.end()) {
-		  covariance(0,4) = covariance(4,0) = locBcalCorrelationsIterator->getEtcorr()*iter->getEerr()*iter->getTerr();
-		  covariance(0,1) = covariance(1,0) = locBcalCorrelationsIterator->getExcorr()*iter->getEerr()*iter->getXerr();
-		  covariance(0,2) = covariance(2,0) = locBcalCorrelationsIterator->getEycorr()*iter->getEerr()*iter->getYerr();
-		  covariance(1,4) = covariance(4,1) = locBcalCorrelationsIterator->getTxcorr()*iter->getTerr()*iter->getXerr();
-		  covariance(2,4) = covariance(4,2) = locBcalCorrelationsIterator->getTycorr()*iter->getTerr()*iter->getYerr();
+	  if(USE_CCDB_BCAL_COVARIANCE) {
+	  	 dBCALShowerFactory->FillCovarianceMatrix(shower);
+	  } else {
+      	 TMatrixFSym covariance(5);
+	  	 covariance(0,0) = iter->getEerr()*iter->getEerr();
+	  	 covariance(1,1) = iter->getXerr()*iter->getXerr();
+	  	 covariance(2,2) = iter->getYerr()*iter->getYerr();
+	  	 covariance(3,3) = iter->getZerr()*iter->getZerr();
+	  	 covariance(4,4) = iter->getTerr()*iter->getTerr();
+	  	 covariance(1,2) = covariance(2,1) = iter->getXycorr()*iter->getXerr()*iter->getYerr();
+	  	 covariance(1,3) = covariance(3,1) = iter->getXzcorr()*iter->getXerr()*iter->getZerr();
+	  	 covariance(2,3) = covariance(3,2) = iter->getYzcorr()*iter->getYerr()*iter->getZerr();
+	  	 covariance(0,3) = covariance(3,0) = iter->getEzcorr()*iter->getEerr()*iter->getZerr();
+	  	 covariance(3,4) = covariance(4,3) = iter->getTzcorr()*iter->getTerr()*iter->getZerr();
+
+	  	 // further correlations (an extension of REST format, so code is different.)
+	  	 const hddm_r::BcalCorrelationsList& locBcalCorrelationsList = iter->getBcalCorrelationses();
+	  	 hddm_r::BcalCorrelationsList::iterator locBcalCorrelationsIterator = locBcalCorrelationsList.begin();
+	  	 if(locBcalCorrelationsIterator != locBcalCorrelationsList.end()) {
+		  	covariance(0,4) = covariance(4,0) = locBcalCorrelationsIterator->getEtcorr()*iter->getEerr()*iter->getTerr();
+		  	covariance(0,1) = covariance(1,0) = locBcalCorrelationsIterator->getExcorr()*iter->getEerr()*iter->getXerr();
+		  	covariance(0,2) = covariance(2,0) = locBcalCorrelationsIterator->getEycorr()*iter->getEerr()*iter->getYerr();
+		  	covariance(1,4) = covariance(4,1) = locBcalCorrelationsIterator->getTxcorr()*iter->getTerr()*iter->getXerr();
+		  	covariance(2,4) = covariance(4,2) = locBcalCorrelationsIterator->getTycorr()*iter->getTerr()*iter->getYerr();
+	  	 }
+	  	 shower->ExyztCovariance = covariance;
 	  }
-	  shower->ExyztCovariance = covariance;
 
 		// preshower
 		const hddm_r::PreshowerList& locPreShowerList = iter->getPreshowers();
