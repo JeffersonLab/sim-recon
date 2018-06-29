@@ -37,6 +37,9 @@ inline bool static DKalmanSIMDFDCHit_cmp(DKalmanSIMDFDCHit_t *a, DKalmanSIMDFDCH
     if (fabs(a->t-b->t)<EPS){
       double tsum_1=a->hit->t_u+a->hit->t_v;
       double tsum_2=b->hit->t_u+b->hit->t_v;
+      if (fabs(tsum_1-tsum_2)<EPS){
+	return (a->dE>b->dE);
+      }
       return (tsum_1<tsum_2);
     }
     return(a->t<b->t);
