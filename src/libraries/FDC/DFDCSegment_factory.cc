@@ -116,7 +116,7 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, uint64_t eventNo) {
 // the dip angle and the z position of the closest approach to the beam line.
 // Also returns predicted positions along the helical path.
 //
-jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
+jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>&points,
 					     DMatrix &CR,vector<xyz_t>&XYZ){
   unsigned int n=points.size()+1;
   vector<int>bad(n);  // Keep track of "bad" intersection points
@@ -321,7 +321,7 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
 // task of fitting points in (x,y) to a circle is transormed to the taks of
 // fitting planes in (x,y, w=x^2+y^2) space
 //
-jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
+jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>&points,
 					       DMatrix &CRPhi){
   unsigned int n=points.size()+1;
   DMatrix X(n,3);
@@ -438,11 +438,12 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
 // length versus z. Uses RiemannCircleFit and RiemannLineFit.
 //
 jerror_t 
-DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points){
+DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>&points){
   double Phi;
   unsigned int num_measured=points.size();
   unsigned int last_index=num_measured;
-  unsigned int num_points=num_measured+1;
+  unsigned int num_points=num_measured+1; 
+  Ndof=num_points-3;
   // list of points on track and corresponding covariance matrices
   vector<xyz_t>XYZ(num_points);
   DMatrix CR(num_points,num_points);
@@ -611,8 +612,7 @@ DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points){
     rotation_sense=rotation_sense_;
     rc=rc_,xc=xc_,yc=yc_,tanl=tanl_,zvertex=zvertex_,Phi1=Phi1_;
   }
-  Ndof=num_points-3;
-
+ 
   return NOERROR;
 }
 
@@ -621,7 +621,7 @@ DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points){
 //  Associate nearest neighbors within a package with track segment candidates.
 // Provide guess for (seed) track parameters
 //
-jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
+jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>&points){
   // Create a vector to store whether or not a hit has been used
   vector<bool>used(points.size());
   unsigned int total_num_used=0;
@@ -732,10 +732,13 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	  // how well the points are defined at this stage.  Use a simple circle
 	  // fit assuming the circle goes through the origin.
 	  if (rc<1.0) {
-	    CircleFit(neighbors);
-	    LineFit(neighbors);
+	    if (CircleFit(neighbors)==NOERROR){
+	      if (LineFit(neighbors)==NOERROR){	  
+		chisq=ComputeCircleChiSq(neighbors);
+	      }
+	    }
 	  }
-	  
+
 	  // Create a new segment
 	  DFDCSegment *segment = new DFDCSegment;	
 	  segment->hits=neighbors;
@@ -746,8 +749,11 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	}
 	else {
 	  // Fit assuming particle came from (x,y)=(0,0)
-	  CircleFit(neighbors);
-	  LineFit(neighbors);
+	  if (CircleFit(neighbors)==NOERROR){
+	    if (LineFit(neighbors)==NOERROR){
+	      chisq=ComputeCircleChiSq(neighbors);
+	    }
+	  }
 
 	  // Create a new segment
 	  DFDCSegment *segment = new DFDCSegment;	
@@ -803,10 +809,13 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	  // how well the points are defined at this stage.  Use a simple circle
 	  // fit assuming the circle goes through the origin.
 	  if (rc<1.0) {
-	    CircleFit(segment->hits);
-	    LineFit(segment->hits);
+	    if (CircleFit(segment->hits)==NOERROR){
+	      if (LineFit(segment->hits)==NOERROR){
+		chisq=ComputeCircleChiSq(segment->hits);
+	      }
+	    }
 	  }
-
+	    
 	  FillSegmentData(segment);
 	} 
       }
@@ -941,10 +950,28 @@ jerror_t DFDCSegment_factory::CircleFit(vector<const DFDCPseudo *>&points){
   if(fabs(denom)<1.0E-20)return UNRECOVERABLE_ERROR;
   xc = (deltax*beta-deltay*gamma)/denom;
   yc = (deltay*alpha-deltax*gamma)/denom;
-  rc = sqrt(xc*xc + yc*yc);
+  rc = sqrt(xc*xc + yc*yc); 
+  Ndof=points.size()-2;
 
   return NOERROR;
 }
+
+// Crude chi^2 calculation for circle fit that was forced to go through (0,0)
+double DFDCSegment_factory::ComputeCircleChiSq(vector<const DFDCPseudo *>&neighbors) {
+  chisq=0.;
+  Phi1=atan2(neighbors[0]->xy.Y()-yc,neighbors[0]->xy.X()-xc);
+  double z0=neighbors[0]->wire->origin.z();
+  for (unsigned int m=0;m<neighbors.size();m++){
+    double sperp=rotation_sense*(neighbors[m]->wire->origin.z()-z0)/tanl;
+    double phi_s=Phi1+sperp/rc;
+    DVector2 XY(xc+rc*cos(phi_s),yc+rc*sin(phi_s));
+    chisq+=(XY-neighbors[m]->xy).Mod2();
+    // Very crude estimate: we assumed errors of size 1. in circle fit...
+  }
+
+  return chisq;
+}
+
 
 // Put fit results into the segment 
 void DFDCSegment_factory::FillSegmentData(DFDCSegment *segment){
