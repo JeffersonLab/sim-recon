@@ -926,10 +926,6 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 	  	 shower->ExyztCovariance = covariance;
 	  }
 
-      cout << "BCAL shower covariance = " << shower->ExyztCovariance(0,0) << ", "
-           << shower->ExyztCovariance(1,1) << ", " << shower->ExyztCovariance(2,2) << ", "
-           << shower->ExyztCovariance(3,3) << ", " << shower->ExyztCovariance(4,4) << endl;
-
 		// preshower
 		const hddm_r::PreshowerList& locPreShowerList = iter->getPreshowers();
 		hddm_r::PreshowerList::iterator locPreShowerIterator = locPreShowerList.begin();
