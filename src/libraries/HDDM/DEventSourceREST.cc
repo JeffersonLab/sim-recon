@@ -38,6 +38,7 @@ DEventSourceREST::DEventSourceREST(const char* source_name)
    }
    
    // any other initialization which needs to happen
+   dBCALShowerFactory = nullptr;
    dFCALShowerFactory = nullptr;
    
    USE_CCDB_BCAL_COVARIANCE = false;
@@ -217,6 +218,9 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
 		//multiple reader threads can access this object: need lock
 	bool locNewRunNumber = false;
 	unsigned int locRunNumber = event.GetRunNumber();
+    
+    cout << "run = " << event.GetRunNumber() << "   " << event.GetEventNumber() << endl;
+
 	LockRead();
 	{
 		locNewRunNumber = (dTargetCenterZMap.find(locRunNumber) == dTargetCenterZMap.end());
@@ -243,18 +247,24 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
 		
 		// do multiple things to limit the number of locks
 		// make sure that we have a handle to the FCAL shower factory
-		if(USE_CCDB_FCAL_COVARIANCE && dFCALShowerFactory==nullptr) {
-			dFCALShowerFactory = static_cast<DFCALShower_factory*>(locEventLoop->GetFactory("DFCALShower"));
-			if(dFCALShowerFactory==nullptr)
-				throw JException("Couldn't find DFCALShower_factory???");
-			dBCALShowerFactory = static_cast<DBCALShower_factory_IU*>(locEventLoop->GetFactory("DBCALShower", "IU"));
-			if(dBCALShowerFactory==nullptr)
-				throw JException("Couldn't find DBCALShower_factory???");
-				
-			dBCALShowerFactory->LoadCovarianceLookupTables(locEventLoop);
+		if(USE_CCDB_FCAL_COVARIANCE) {
+            if(dFCALShowerFactory==nullptr) {
+                dFCALShowerFactory = static_cast<DFCALShower_factory*>(locEventLoop->GetFactory("DFCALShower"));
+                if(dFCALShowerFactory==nullptr)
+                    throw JException("Couldn't find DFCALShower_factory???");
+            }
 			dFCALShowerFactory->LoadCovarianceLookupTables(locEventLoop);
-		}
-
+        }
+        
+        // same with BCAL
+		if(USE_CCDB_BCAL_COVARIANCE) { 
+            if(dBCALShowerFactory==nullptr) {
+                dBCALShowerFactory = static_cast<DBCALShower_factory_IU*>(locEventLoop->GetFactory("DBCALShower", "IU"));
+                if(dBCALShowerFactory==nullptr)
+                    throw JException("Couldn't find DBCALShower_factory???");
+            }
+			dBCALShowerFactory->LoadCovarianceLookupTables(locEventLoop);
+		} 
 	}
 
    if (dataClassName =="DMCReaction") {
@@ -915,6 +925,10 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 	  	 }
 	  	 shower->ExyztCovariance = covariance;
 	  }
+
+      cout << "BCAL shower covariance = " << shower->ExyztCovariance(0,0) << ", "
+           << shower->ExyztCovariance(1,1) << ", " << shower->ExyztCovariance(2,2) << ", "
+           << shower->ExyztCovariance(3,3) << ", " << shower->ExyztCovariance(4,4) << endl;
 
 		// preshower
 		const hddm_r::PreshowerList& locPreShowerList = iter->getPreshowers();
