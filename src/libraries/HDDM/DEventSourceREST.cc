@@ -219,8 +219,6 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
 	bool locNewRunNumber = false;
 	unsigned int locRunNumber = event.GetRunNumber();
     
-    cout << "run = " << event.GetRunNumber() << "   " << event.GetEventNumber() << endl;
-
 	LockRead();
 	{
 		locNewRunNumber = (dTargetCenterZMap.find(locRunNumber) == dTargetCenterZMap.end());
