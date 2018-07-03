@@ -34,8 +34,17 @@ using namespace std;
 //}
 
 bool DFDCSegment_package_cmp(const DFDCPseudo* a, const DFDCPseudo* b) {
-  return a->wire->layer>b->wire->layer;
+	if(a->wire->layer == b->wire->layer) {
+    	if (fabs(a->time-b->time)<EPS){
+      		double tsum_1=a->t_u+a->t_v;
+      		double tsum_2=b->t_u+b->t_v;
+      		return (tsum_1<tsum_2);
+    	}
+    	return(a->time<b->time);
+	}
+	return a->wire->layer>b->wire->layer;
 }
+
 
 DFDCSegment_factory::DFDCSegment_factory() {
         _log = new JStreamLog(std::cout, "FDCSEGMENT >>");
@@ -102,7 +111,7 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, uint64_t eventNo) {
     
     // Find the segments in each package
     for (int j=0;j<4;j++){
-      std::sort(package[j].begin(),package[j].end(),DFDCSegment_package_cmp);
+      std::stable_sort(package[j].begin(),package[j].end(),DFDCSegment_package_cmp);
       // We need at least 3 points to define a circle, so skip if we don't 
       // have enough points.
       if (package[j].size()>2) FindSegments(package[j]);
@@ -716,7 +725,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>&points){
 	}
 	// Sort if we added another point
 	if (do_sort)
-	  std::sort(neighbors.begin(),neighbors.end(),DFDCSegment_package_cmp);
+	  std::stable_sort(neighbors.begin(),neighbors.end(),DFDCSegment_package_cmp);
     
 	// Arc lengths in helical model are referenced relative to the plane
 	// ref_plane within a segment.  For a 6 hit segment, ref_plane=2 is 
@@ -802,7 +811,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>&points){
 	} // check if hit used already
       }// loop over hits
       if (added_hits){
-	sort(segment->hits.begin(),segment->hits.end(),DFDCSegment_package_cmp);
+	stable_sort(segment->hits.begin(),segment->hits.end(),DFDCSegment_package_cmp);
 	if (RiemannHelicalFit(segment->hits)==NOERROR){
 	  // Since the cell size is 0.5 cm and the Lorentz deflection can be
 	  // mm scale, a circle radius on the order of 1 cm is at the level of 

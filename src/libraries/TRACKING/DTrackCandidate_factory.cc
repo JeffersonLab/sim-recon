@@ -2100,6 +2100,7 @@ bool DTrackCandidate_factory::MatchMethod7(DTrackCandidate *srccan,
 	  // axial straws to the list of hits to use in the circle fit
 	  vector<const DCDCTrackHit *>cdchits;
 	  srccan->GetT(cdchits);
+	  stable_sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
 	  for (unsigned int i=0;i<cdchits.size();i++){
 	    if (cdchits[i]->is_stereo==false){
 	      double cov=0.213;  //guess
