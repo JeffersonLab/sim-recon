@@ -6,13 +6,6 @@
  * The TTrees should be similar such that some of the final state particles
  * could be swapped with each other, i.e. K+, K-, p and Pi+, Pi-, p
  *
- * ===============================
- * WARNING!!!!!!!
- * This script will overwrite the primary TTree!!!
- * Make a local copy of the primary TTree and use that as input to this script.
- * WARNING!!!!!!!
- * ===============================
- *
  * Author: Alex Barnes
 */
 #include <stdio.h>
@@ -86,22 +79,14 @@ bool compareMaps( map<string, Int_t> p_map, map<string, Int_t> s_map, string sub
    // loop over the primary TTree's map of (branch name, track ID)
    for ( auto const &p_iter : p_map )
    {
-      // check if primary branch name contains the substring
-      if ( p_iter.first.find(substring) != string::npos )
-      {
-         totalParticles++;
+      totalParticles++;
 
-         // loop over the secondary TTree's map of (branch name, track ID)
-         for ( auto const &s_iter : s_map )
-         {
-            // check if secondary branch name contains the substring
-            if ( s_iter.first.find(substring) != string::npos )
-            {
-               // compare the trackIDs
-               if ( p_iter.second == s_iter.second )
-                  matchedParticles++;
-            }
-         }
+      // loop over the secondary TTree's map of (branch name, track ID)
+      for ( auto const &s_iter : s_map )
+      {
+         // compare the trackIDs
+         if ( p_iter.second == s_iter.second )
+            matchedParticles++;
       }
    }
 
@@ -148,6 +133,7 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    TTreeReaderValue<UInt_t> run(primaryReader, "RunNumber");
    TTreeReaderValue<ULong64_t> event(primaryReader, "EventNumber");
    TTreeReaderArray<Int_t> ChargedHypoID(primaryReader, "ChargedHypo__TrackID");
+   TTreeReaderArray<Int_t> ChargedHypo__PID(primaryReader, "ChargedHypo__PID");
    TTreeReaderArray<Int_t> NeutralHypoID(primaryReader, "NeutralHypo__NeutralID");
    TTreeReaderArray<Int_t> beam_ID(primaryReader, "ComboBeam__BeamIndex");
    // secondary tree
@@ -158,6 +144,7 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    TTreeReaderValue<UInt_t> secondary_run(secondaryReader, "RunNumber");
    TTreeReaderValue<ULong64_t> secondary_event(secondaryReader, "EventNumber");
    TTreeReaderArray<Int_t> secondary_ChargedHypoID(secondaryReader, "ChargedHypo__TrackID");
+   TTreeReaderArray<Int_t> secondary_ChargedHypo__PID(secondaryReader, "ChargedHypo__PID");
    TTreeReaderArray<Int_t> secondary_NeutralHypoID(primaryReader, "NeutralHypo__NeutralID");
    TTreeReaderArray<Int_t> secondary_beam_ID(secondaryReader, "ComboBeam__BeamIndex");
 
@@ -204,7 +191,7 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
    // Create branches for secondary chisq and NDF
    string branchName("ChiSq_KinFit_");
    branchName += secondaryReactionName;
-   TBranch *new_b_chisq = t_primary->Branch(branchName.c_str(), &new_chisq, (branchName + "[NumCombos]/i").c_str() );
+   TBranch *new_b_chisq = t_primary->Branch(branchName.c_str(), &new_chisq, (branchName + "[NumCombos]/F").c_str() );
    branchName = "NDF_KinFit_";
    branchName += secondaryReactionName;
    TBranch *new_b_ndf = t_primary->Branch(branchName.c_str(), &new_ndf, (branchName + "[NumCombos]/i").c_str() );
@@ -319,12 +306,15 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
             // if the reaction does not contain a certain type of final state particle, set the match to true
             // otherwise, find the correct match
             bool plusMatch = hasPlus ? compareMaps( primary_trackIDs, secondary_trackIDs, "Plus" ) : true;
+/*
             bool minusMatch = hasMinus ?  compareMaps( primary_trackIDs, secondary_trackIDs, "Minus" ) : true;
             bool protonMatch = hasProton ? compareMaps( primary_trackIDs, secondary_trackIDs, "Proton" ) : true;
             bool photonMatch = hasPhoton ? compareMaps( primary_neutralIDs, secondary_neutralIDs, "Photon" ) : true;
+*/
 
             // match final state particle IDs
-            if ( !(plusMatch && minusMatch && protonMatch && photonMatch) )
+            //if ( !(plusMatch && minusMatch && protonMatch && photonMatch) )
+            if ( !plusMatch )
                continue;
             // match beam ID
             if (beam != secondary_beam)
