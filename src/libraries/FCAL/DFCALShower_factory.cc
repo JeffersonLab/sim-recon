@@ -155,7 +155,7 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int32_t runnumber)
 	
 
 
-  jerror_t result = LoadCovarianceLookupTables();
+  jerror_t result = LoadCovarianceLookupTables(eventLoop);
   if (result!=NOERROR) return result;
 
   return NOERROR;
@@ -450,7 +450,7 @@ DFCALShower_factory::FillCovarianceMatrix(DFCALShower *shower){
 
 
 jerror_t
-DFCALShower_factory::LoadCovarianceLookupTables(){
+DFCALShower_factory::LoadCovarianceLookupTables(JEventLoop *eventLoop){
   std::thread::id this_id = std::this_thread::get_id();
   stringstream idstring;
   idstring << this_id;
