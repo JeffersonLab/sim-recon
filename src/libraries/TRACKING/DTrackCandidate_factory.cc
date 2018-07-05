@@ -1915,12 +1915,11 @@ void DTrackCandidate_factory::MatchMethod6(DTrackCandidate *can,
   DVector3 mom=can->momentum();
   double q=can->charge();
 
-  // Variables to keep track of cdc hits 
-  unsigned int num_match_cdc=0;
-  unsigned int num_axial=0;
+ // Variables to keep track of cdc hits 
+  bool got_inner_index=false;
+  unsigned int inner_index=0;
   int id_for_smallest_dr=-1;
   int old_ring=-1;
-  vector<int>matched_ids;
   double dr2_min=1e6;
   
   for (unsigned int k=0;k<used_cdc_hits.size();k++){
@@ -1929,16 +1928,15 @@ void DTrackCandidate_factory::MatchMethod6(DTrackCandidate *can,
     if (mycdchits[k]->wire->ring!=old_ring){
       if (id_for_smallest_dr>=0){
 	if (!used_cdc_hits[id_for_smallest_dr]){
-	  num_match_cdc++;
 	  num_unmatched_cdcs--;
 	  used_cdc_hits[id_for_smallest_dr]=1;
 	  
 	  can->used_cdc_indexes.push_back(id_for_smallest_dr);
 	  can->AddAssociatedObject(mycdchits[id_for_smallest_dr]);
 	  
-	  if (mycdchits[id_for_smallest_dr]->is_stereo==false){
-	    num_axial++;
-	    matched_ids.push_back(id_for_smallest_dr);
+	  if (got_inner_index==false){
+	    inner_index=id_for_smallest_dr;
+	    got_inner_index=true;
 	  }
 	}
       }
@@ -1967,26 +1965,17 @@ void DTrackCandidate_factory::MatchMethod6(DTrackCandidate *can,
   // Grab the last potential match
   if (id_for_smallest_dr>=0){
     if (!used_cdc_hits[id_for_smallest_dr]){
-      num_match_cdc++;
       num_unmatched_cdcs--;
       used_cdc_hits[id_for_smallest_dr]=1;
       
       can->used_cdc_indexes.push_back(id_for_smallest_dr);
       can->AddAssociatedObject(mycdchits[id_for_smallest_dr]);
-      
-      if (mycdchits[id_for_smallest_dr]->is_stereo==false){
-	num_axial++;
-	matched_ids.push_back(id_for_smallest_dr);
-      }
     }
   }
 
   // We found some matched hits.  Update the start position of the candidate.
-  if (num_match_cdc>0){
+  if (got_inner_index){
     const DFDCPseudo *firsthit=fdchits[0];
-    
-    int axial_id=-1;
-    if (num_axial>0) axial_id=matched_ids[0];
 
     // Compute the average Bz
     double Bz_avg=0.,denom=0.;
@@ -2010,13 +1999,21 @@ void DTrackCandidate_factory::MatchMethod6(DTrackCandidate *can,
     fit.y0=pos.y()+fit.h*fit.r0*cos(fit.phi);
     fit.tanl=tan(M_PI_2-mom.Theta());
     fit.z_vertex=0; // this will be changed later
+    if (GetPositionAndMomentum(fit,Bz_avg,mycdchits[inner_index]->wire->origin,pos,
+			       mom)==NOERROR){  
+      // Find the z-position at the new position in x and y
+      DVector2 xy0(pos.X(),pos.Y());
+      double tworc=2.*fit.r0;
+      double ratio=(firsthit->xy-xy0).Mod()/tworc;
+      double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
+      pos.SetZ(firsthit->wire->origin.z()-sperp*fit.tanl);
 
-    // Update the position and momentum of the candidate based on the most 
-    // recent fit results
-    UpdatePositionAndMomentum(can,firsthit,fit,Bz_avg,axial_id);
+      // update the track parameters
+      can->setMomentum(mom);
+      can->setPosition(pos);
   
-    if (DEBUG_LEVEL>0) _DBG_ << "... matched stray CDC hits ..." << endl;
-
+      if (DEBUG_LEVEL>0) _DBG_ << "... matched stray CDC hits ..." << endl;
+    }
   } // match at least one cdc hit
 }
 
