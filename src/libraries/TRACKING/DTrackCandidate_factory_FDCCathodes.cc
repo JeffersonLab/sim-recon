@@ -132,7 +132,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
   // abort if there are no segments
   if (segments.size()==0.) return NOERROR;
 
-  std::sort(segments.begin(), segments.end(), DTrackCandidate_segment_cmp);
+  std::stable_sort(segments.begin(), segments.end(), DTrackCandidate_segment_cmp);
 
   // Group segments by package
   vector<DFDCSegment*>packages[4];
@@ -659,7 +659,7 @@ bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *se
    
 	// Add the new segment and sort by z
 	segments.push_back(segment);
-	sort(segments.begin(),segments.end(),DTrackCandidate_segment_cmp_by_z);
+	stable_sort(segments.begin(),segments.end(),DTrackCandidate_segment_cmp_by_z);
 	
 	// Create fit object and add hits
 	DHelicalFit fit;  

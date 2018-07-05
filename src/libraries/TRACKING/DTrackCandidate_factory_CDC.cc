@@ -274,7 +274,7 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, uint64_t ev
 		cout << "final fit track circles" << endl;
 		Print_TrackCircles(locCDCTrackCircles);
 	}
-	sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByChiSqPerNDFDecreasing); //sort by circle-fit weighted chisq/ndf (largest first)
+	stable_sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByChiSqPerNDFDecreasing); //sort by circle-fit weighted chisq/ndf (largest first)
 
 	Handle_StereoAndFilter(locCDCTrackCircles, true); //true: final pass: don't need to filter any more, get improved theta-z (although will reject if bad/no theta/z)
 	if(DEBUG_LEVEL > 5)
@@ -462,7 +462,7 @@ jerror_t DTrackCandidate_factory_CDC::Get_CDCHits(JEventLoop* loop)
 
 	// Sort the individual superlayer lists by decreasing values of R
 	for(size_t i = 0; i < cdchits_by_superlayer.size(); ++i)
-		sort(cdchits_by_superlayer[i].begin(), cdchits_by_superlayer[i].end(), CDCSortByRdecreasing);
+		stable_sort(cdchits_by_superlayer[i].begin(), cdchits_by_superlayer[i].end(), CDCSortByRdecreasing);
 
 	// Filter out noise hits. All hits are initially flagged as "noise".
 		// Hits with a neighbor within MAX_HIT_DIST have their noise flags cleared.
@@ -1622,7 +1622,7 @@ bool DTrackCandidate_factory_CDC::Build_TrackCircles(vector<DCDCTrackCircle*>& l
 	Fit_Circles(locCDCTrackCircles, false, false); 
 	if(locCDCTrackCircles.empty())
 		return true;
-	sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByChiSqPerNDFDecreasing); //sort by circle-fit weighted chisq/ndf (largest first)
+	stable_sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByChiSqPerNDFDecreasing); //sort by circle-fit weighted chisq/ndf (largest first)
 
 	if(DEBUG_LEVEL > 5)
 	{
@@ -2848,7 +2848,7 @@ void DTrackCandidate_factory_CDC::Truncate_TrackCircles(vector<DCDCTrackCircle*>
 
 		//now fit the newly-truncated track circles
 		Fit_Circles(locCDCTrackCircles, true, false); //true: fit only truncated circles //false: don't add stereo intersections
-		sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByChiSqPerNDFDecreasing); //sort by fit chisq/ndf
+		stable_sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByChiSqPerNDFDecreasing); //sort by fit chisq/ndf
 		if(DEBUG_LEVEL > 5)
 		{
 			cout << "Post-SL7-turncation track circles" << endl;
@@ -3023,7 +3023,7 @@ void DTrackCandidate_factory_CDC::Truncate_TrackCircles(vector<DCDCTrackCircle*>
 
 		//now fit the newly-truncated track circles
 		Fit_Circles(locCDCTrackCircles, true, false); //true: fit only truncated circles //false: don't add stereo intersections
-		sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByChiSqPerNDFDecreasing); //sort by fit chisq/ndf
+		stable_sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByChiSqPerNDFDecreasing); //sort by fit chisq/ndf
 		if(DEBUG_LEVEL > 5)
 		{
 			cout << "Post-SL4-turncation track circles" << endl;
@@ -3527,7 +3527,7 @@ void DTrackCandidate_factory_CDC::Select_ThetaZStereoHits(const DCDCTrackCircle*
 		unsigned int locSuperLayer = locSuperLayerSeeds[loc_k]->dSuperLayer;
 		Calc_StereoHitDeltaPhis(locSuperLayer, locHitsBySuperLayer[locSuperLayer], locCDCTrackCircle, locDeltaPhis);
 	}
-	sort(locDeltaPhis.begin(), locDeltaPhis.end(), CDCSort_DeltaPhis);
+	stable_sort(locDeltaPhis.begin(), locDeltaPhis.end(), CDCSort_DeltaPhis);
 
 	if(locDeltaPhis.size() <= MIN_PRUNED_STEREO_HITS)
 	{
@@ -3849,7 +3849,7 @@ bool DTrackCandidate_factory_CDC::Find_ThetaZ_Regression(const DHelicalFit* locF
 	}
 
 	// Now, sort the entries
-	sort(intersections.begin(), intersections.end(), CDCSort_Intersections);
+	stable_sort(intersections.begin(), intersections.end(), CDCSort_Intersections);
  
 	// Compute the arc lengths between the origin in x and y and (xi,yi)
 	vector<double> arclengths(intersections.size()); 
@@ -4258,7 +4258,7 @@ void DTrackCandidate_factory_CDC::Filter_TrackCircles_Stereo(vector<DCDCTrackCir
 		return;
 
 	//sort track circles so that the ones with the best stereo chisq/ndf are first
-	sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByStereoChiSqPerNDFIncreasing);
+	stable_sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByStereoChiSqPerNDFIncreasing);
 
 	if(DEBUG_LEVEL > 5)
 	{
@@ -4308,11 +4308,11 @@ void DTrackCandidate_factory_CDC::Filter_TrackCircles_Stereo(vector<DCDCTrackCir
 		}
 		
 		if(locSeedsStrippedFlag_AnyCircle) //re-sort if fits have been re-performed
-			sort(locCDCTrackCircles.begin() + loc_i + 1, locCDCTrackCircles.end(), CDCSortByStereoChiSqPerNDFIncreasing);
+			stable_sort(locCDCTrackCircles.begin() + loc_i + 1, locCDCTrackCircles.end(), CDCSortByStereoChiSqPerNDFIncreasing);
 	}
 
 	//restore sort by circle-fit chisq/ndf (weighted)
-	sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByChiSqPerNDFDecreasing);
+	stable_sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByChiSqPerNDFDecreasing);
 
 	if(DEBUG_LEVEL > 5)
 	{
