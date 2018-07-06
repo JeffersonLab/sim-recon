@@ -10,7 +10,8 @@ subdirs.extend(['monitoring_hists'])
 subdirs.extend(['p2pi_hists','p3pi_hists','p4pi_hists','p2k_hists'])
 subdirs.extend(['p2gamma_hists','ppi0gamma_hists','p2pi0_hists'])
 subdirs.extend(['fcal_charged','TPOL_tree','mcthrown_tree'])
-subdirs.extend(['pid_dirc','lut_dirc','trackeff_hists','imaging'])
+subdirs.extend(['trackeff_hists','imaging'])
+subdirs.extend(['pid_dirc','truth_dirc', 'lut_dirc'])
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
 

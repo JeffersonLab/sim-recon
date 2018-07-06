@@ -84,8 +84,8 @@ jerror_t DEventProcessor_lut_dirc::evnt(JEventLoop *loop, uint64_t eventnumber) 
 			     mcthrowns[0]->momentum().Y(),
 			     mcthrowns[0]->momentum().Z()).Unit();
 
-    std::cout<<"dir.X() "<<dir.X() <<" "<<dir.Y() <<" "<<dir.Z() << " | "
-	     <<mom.X() <<" "<<mom.Y() <<" "<<mom.Z() <<std::endl;
+    //std::cout<<"dir.X() "<<dir.X() <<" "<<dir.Y() <<" "<<dir.Z() << " | "
+    //	     <<mom.X() <<" "<<mom.Y() <<" "<<mom.Z() <<std::endl;
     
     
     if(lutId>=0 && lutId<48)
