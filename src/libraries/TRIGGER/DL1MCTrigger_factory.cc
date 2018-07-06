@@ -36,6 +36,7 @@ jerror_t DL1MCTrigger_factory::init(void)
     hfcal_ped     = new TH1F("fcal_ped", "fcal_ped", 800, 0., 200.);
   }
 
+  BYPASS = 0; // default is to use trigger emulation
 
   // Default parameters for the main production trigger are taken from the 
   // spring run of 2017: 25 F + B > 45000
@@ -75,7 +76,8 @@ jerror_t DL1MCTrigger_factory::init(void)
   simu_gain_fcal  =  1;
   simu_gain_bcal  =  1;
 
-
+  gPARMS->SetDefaultParameter("TRIG:BYPASS", BYPASS,
+                              "Bypass trigger by hard coding physics bit");
   gPARMS->SetDefaultParameter("TRIG:FCAL_ADC_PER_MEV", FCAL_ADC_PER_MEV,
 			      "FCAL energy calibration for the Trigger");
   gPARMS->SetDefaultParameter("TRIG:FCAL_CELL_THR", FCAL_CELL_THR,
@@ -308,6 +310,12 @@ jerror_t DL1MCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumb
 // evnt
 //------------------
 jerror_t DL1MCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber){
+
+	if(BYPASS) {
+		DL1MCTrigger *trigger = new DL1MCTrigger;		
+		trigger->trig_mask = 1;
+		_data.push_back(trigger);		
+	}
 
         int l1_found = 1;  
 

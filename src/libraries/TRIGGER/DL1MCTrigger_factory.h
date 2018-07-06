@@ -149,7 +149,7 @@ class DL1MCTrigger_factory:public jana::JFactory<DL1MCTrigger>{
 		vector<fcal_signal> fcal_merged_hits;
 		vector<bcal_signal> bcal_merged_hits;
 
-
+		int    BYPASS;
 		float  FCAL_ADC_PER_MEV;
 		int    FCAL_CELL_THR;
 		int    FCAL_EN_SC;
