@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "TLorentzVector.h"
+#include "TRandom3.h"
 
 using namespace std;
 
@@ -12,7 +13,7 @@ class NBodyPhaseSpaceFactory
 	
  public:
 	
-  NBodyPhaseSpaceFactory( double parentMass, const vector<double>& childMass );
+  NBodyPhaseSpaceFactory( double parentMass, const vector<double>& childMass);
 
 
   /**

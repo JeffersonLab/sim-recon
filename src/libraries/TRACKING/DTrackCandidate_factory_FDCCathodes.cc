@@ -314,6 +314,19 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t ev
       yc=fit.y0;
       rc=fit.r0;
       q=FactorForSenseOfRotation*fit.h;
+
+      // Look for cases where the momentum is unrealistically large...
+      const DFDCPseudo *myhit=mytracks[0][0]->hits[0];
+      double Bz=fabs(bfield->GetBz(myhit->xy.X(),myhit->xy.Y(),myhit->wire->origin.z()));
+      double p=0.003*fit.r0*Bz/cos(atan(fit.tanl));
+      if (p>10.){//... try alternate circle fit 
+	fit.FitCircle();
+	rc=fit.r0;
+	xc=fit.x0;
+	yc=fit.y0;
+      }
+      
+
     }
     
     // Try to fix relatively high momentum tracks in the very forward 
@@ -733,6 +746,18 @@ bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *se
 	  xc=fit.x0;
 	  yc=fit.y0;
 	  q=FactorForSenseOfRotation*fit.h;
+	  
+	   // Look for cases where the momentum is unrealistically large...
+	  const DFDCPseudo *myhit=segments[0]->hits[0];
+	  double Bz=fabs(bfield->GetBz(myhit->xy.X(),myhit->xy.Y(),myhit->wire->origin.z()));
+	  double p=0.003*fit.r0*Bz/cos(atan(fit.tanl));
+	  if (p>10.){//... try alternate circle fit 
+	    fit.FitCircle();
+	    rc=fit.r0;
+	    xc=fit.x0;
+	    yc=fit.y0;
+	  }
+
 	  // Get position and momentum just upstream of first hit
 	  GetPositionAndMomentum(segments,pos,mom);
 

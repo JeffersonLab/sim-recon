@@ -120,5 +120,5 @@ NBodyPhaseSpaceFactory::pdk( double a, double b, double c ) const {
 double
 NBodyPhaseSpaceFactory::random( double low, double hi ) const {
 	
-  return( ( hi - low ) * drand48() + low );
+  return( ( hi - low ) * gRandom->Uniform() + low );
 }

@@ -455,10 +455,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // Lorentz deflection parameters
   double LORENTZ_NR_PAR1,LORENTZ_NR_PAR2,LORENTZ_NZ_PAR1,LORENTZ_NZ_PAR2;
   
-  // CDC material properties
-  double dKRhoZoverA_CDC,dRhoZoverA_CDC,dLnI_CDC,dChi2c_factor_CDC;
-  double dChi2a_factor_CDC,dChi2a_corr_CDC,dZ_CDC;  
-
   // Moliere fraction F and functions that depend on it
   double MOLIERE_FRACTION,MOLIERE_RATIO1,MOLIERE_RATIO2;
   double MS_SCALE_FACTOR;
@@ -511,15 +507,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double ANNEAL_POW_CONST,ANNEAL_SCALE;
   double FORWARD_ANNEAL_POW_CONST,FORWARD_ANNEAL_SCALE;
 
-  // Min. momentum needed for fit before returning fitSuccess
-  double MIN_FIT_P;
-  // Maximum seed momentum
-  double MAX_SEED_P;
-  
-  // Minimum proton momentum
-  double MIN_PROTON_P;
-  // Minimum pion momentum
-  double MIN_PION_P;
   // minimum pt or p
   double PT_MIN;
   double Q_OVER_P_MAX;

@@ -25,7 +25,9 @@
 #include "TRACKING/DMCThrown.h"
 #include <TRACKING/DTrackTimeBased.h>
 #include <FCAL/DFCALShower.h>
+#include <FCAL/DFCALShower_factory.h>
 #include <BCAL/DBCALShower.h>
+#include <BCAL/DBCALShower_factory_IU.h>
 #include <START_COUNTER/DSCHit.h>
 #include <TOF/DTOFPoint.h>
 #include <TRIGGER/DTrigger.h>
@@ -89,6 +91,12 @@ class DEventSourceREST:public JEventSource
    // store any data here that might change from event to event.
 
 	uint32_t Convert_SignedIntToUnsigned(int32_t locSignedInt) const;
+
+	bool USE_CCDB_BCAL_COVARIANCE;
+	bool USE_CCDB_FCAL_COVARIANCE;
+	
+	DFCALShower_factory *dFCALShowerFactory;
+	DBCALShower_factory_IU *dBCALShowerFactory;
 
 	map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
 	map<unsigned int, double> dBeamBunchPeriodMap; //unsigned int is run number

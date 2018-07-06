@@ -222,7 +222,7 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 
 	dHist_BCALVsFCAL_TrigBit1 = new TH2I("BCALVsFCAL_TrigBit1","TRIG BIT 1;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
 	
-	dHist_L1bits_gtp = new TH1I("L1bits_gtp", "L1 trig bits from GTP;Trig. bit (1-32)", 32, 0.5, 32.5);
+	dHist_L1bits_gtp = new TH1I("L1bits_gtp", "L1 trig bits from GTP;Trig. bit (1-32)", 34, 0.5, 34.5);
 	dHist_L1bits_fp  = new TH1I("L1bits_fp", "L1 trig bits from FP;Trig. bit (1-32)", 32, 0.5, 32.5);
 
 	/****************************************************** NUM RECONSTRUCTED OBJECTS *****************************************************/
@@ -718,6 +718,9 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 			if(locgtpTrigBits[bit-1]) dHist_L1bits_gtp->Fill(bit);
 			if(locfpTrigBits[bit-1] ) dHist_L1bits_fp->Fill(bit);
 		}
+		
+		// Keep counts of events with any physics trigger as bit 33
+		if( locgtpTrigBits[1-1] | locgtpTrigBits[3-1] ) dHist_L1bits_gtp->Fill(33);
 
 		// #triggers: total
 		if(locL1Trigger->trig_mask > 0)

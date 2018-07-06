@@ -225,7 +225,22 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		locFcalCorrelationsList().setEycorr(fcalshowers[i]->EYcorr());
 		locFcalCorrelationsList().setTxcorr(fcalshowers[i]->XTcorr());
 		locFcalCorrelationsList().setTycorr(fcalshowers[i]->YTcorr());
-	}
+
+        // add in classification based on MVA		
+        //hddm_r::FcalShowerClassificationList locFcalShowerClassificationList = fcal().addFcalShowerClassifications(1);
+        //        locFcalShowerClassificationList().setClassifierOuput(fcalshowers[i]->getClassifierOutput());
+
+        // add in shower properties used for MVA algorithm, etc.
+        
+        hddm_r::FcalShowerPropertiesList locFcalShowerPropertiesList = fcal().addFcalShowerPropertiesList(1);
+        locFcalShowerPropertiesList().setDocaTrack(fcalshowers[i]->getDocaTrack());
+        locFcalShowerPropertiesList().setTimeTrack(fcalshowers[i]->getTimeTrack());
+        locFcalShowerPropertiesList().setSumU(fcalshowers[i]->getSumU());
+        locFcalShowerPropertiesList().setSumV(fcalshowers[i]->getSumV());
+        locFcalShowerPropertiesList().setE1E9(fcalshowers[i]->getE1E9());
+        locFcalShowerPropertiesList().setE9E25(fcalshowers[i]->getE9E25());
+    }
+            
 
 	// push any DBCALShower objects to the output record
 	for (size_t i=0; i < bcalshowers.size(); i++)
@@ -267,6 +282,12 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		//N_cell
 		hddm_r::BcalClusterList bcalcluster = bcal().addBcalClusters(1);
 		bcalcluster().setNcell(bcalshowers[i]->N_cell);
+
+		hddm_r::BcalLayersList bcallayerdata = bcal().addBcalLayerses(1);
+		bcallayerdata().setE_L2(bcalshowers[i]->E_L2);
+		bcallayerdata().setE_L3(bcalshowers[i]->E_L3);
+		bcallayerdata().setE_L4(bcalshowers[i]->E_L4);
+		bcallayerdata().setRmsTime(bcalshowers[i]->rmsTime);
 	}
 
 	// push any DTOFPoint objects to the output record
@@ -349,6 +370,10 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			elo().setDxCDC(tracks[i]->ddx_CDC);
 			elo().setDEdxFDC(tracks[i]->ddEdx_FDC);
 			elo().setDEdxCDC(tracks[i]->ddEdx_CDC);
+			hddm_r::CDCAmpdEdxList elo2 = elo().addCDCAmpdEdxs(1);
+			elo2().setDxCDCAmp(tracks[i]->ddx_CDC_amp);
+			elo2().setDEdxCDCAmp(tracks[i]->ddEdx_CDC_amp);
+
 		}
 	}
 

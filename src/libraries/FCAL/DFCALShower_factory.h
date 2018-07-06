@@ -18,45 +18,65 @@
 
 #include <TH2F.h>
 
+class DFCALHit;
+class DTrackWireBased;
+
 class DFCALShower_factory:public JFactory<DFCALShower>{
-	public:
-		DFCALShower_factory();
-		~DFCALShower_factory(){};
-		jerror_t LoadCovarianceLookupTables();
-		jerror_t FillCovarianceMatrix(DFCALShower* shower);
+ public:
+  DFCALShower_factory();
+  ~DFCALShower_factory(){};
+  jerror_t LoadCovarianceLookupTables(JEventLoop *eventLoop);
+  jerror_t FillCovarianceMatrix(DFCALShower* shower);
 	
-	private:
-		jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
-		jerror_t brun(JEventLoop *loop, int32_t runnumber);
-        jerror_t erun(void);
+ private:
 
-		void GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVector3 *aVertex);
+  jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
+  jerror_t brun(JEventLoop *loop, int32_t runnumber);
+  jerror_t erun(void);
 
-                double m_zTarget,m_FCALfront;
+  void GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected,
+				     DVector3 &pos_corrected, double &errZ,
+				     const DVector3 *aVertex);
 
-		double LOAD_CCDB_CONSTANTS;
-		double SHOWER_ENERGY_THRESHOLD;
-		double cutoff_energy;
-		double linfit_slope;
-		double linfit_intercept;
-		double expfit_param1;
-		double expfit_param2;
-		double expfit_param3;
+  unsigned int getMaxHit( const vector< const DFCALHit* >& hitVec ) const;
+
+  void getUVFromHits( double& sumUSh, double& sumVSh, 
+		      const vector< const DFCALHit* >& hits,
+		      const DVector3& showerVec,
+		      const DVector3& trackVec ) const;
+
+  void getE1925FromHits( double& e1e9Sh, double& e9e25Sh, 
+			 const vector< const DFCALHit* >& hits,
+			 unsigned int maxIndex ) const;
+
+  vector< const DTrackWireBased* >
+    filterWireBasedTracks( vector< const DTrackWireBased* >& wbTracks ) const;
+  
+  double m_zTarget, m_FCALfront;
+
+  double LOAD_CCDB_CONSTANTS;
+  double SHOWER_ENERGY_THRESHOLD;
+  double cutoff_energy;
+  double linfit_slope;
+  double linfit_intercept;
+  double expfit_param1;
+  double expfit_param2;
+  double expfit_param3;
 		
-		double timeConst0;
-                double timeConst1;
-		double timeConst2;
-                double timeConst3;
-                double timeConst4;
+  double timeConst0;
+  double timeConst1;
+  double timeConst2;
+  double timeConst3;
+  double timeConst4;
 
-		double FCAL_RADIATION_LENGTH;
-		double FCAL_CRITICAL_ENERGY;
-		double FCAL_SHOWER_OFFSET;
-		double FCAL_C_EFFECTIVE;
+  double FCAL_RADIATION_LENGTH;
+  double FCAL_CRITICAL_ENERGY;
+  double FCAL_SHOWER_OFFSET;
+  double FCAL_C_EFFECTIVE;
 
-		int VERBOSE;
-		string COVARIANCEFILENAME;
-		TH2F *CovarianceLookupTable[5][5];
+  int VERBOSE;
+  string COVARIANCEFILENAME;
+  TH2F *CovarianceLookupTable[5][5];
 };
 
 

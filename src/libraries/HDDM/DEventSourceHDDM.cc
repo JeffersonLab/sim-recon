@@ -1240,8 +1240,8 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
             }
 	    else{  
 	      // for generated events (not folded-in background events) for which we
-	      // have no digi hits we simply scale q using Naomi's factor of 28.8
-	      hit->amp=hit->q/28.8;
+	      // have no digi hits return q
+	      hit->amp=hit->q;
 	    }
             hit->QF     = 0;
             if(iter->getCdcHitQFs().size() > 0) {

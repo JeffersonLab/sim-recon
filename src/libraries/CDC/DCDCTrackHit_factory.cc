@@ -138,7 +138,9 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 		double w_eff=29.5e-9;
 		double gas_gain=1e5;
 		double electron_charge=1.6022e-4; /* fC */
-		hit->dE=cdchit->q*w_eff/(gas_gain*electron_charge);
+		double dEscale=w_eff/(gas_gain*electron_charge);
+		hit->dE=cdchit->q*dEscale;
+		hit->dE_amp=cdchit->amp*dEscale; // using Naomi's scale factor
 		
 		// Calculate drift distance assuming no tof to wire for now.
 		// The tracking package will replace this once an estimate
@@ -153,7 +155,7 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 		if(tcorr < cdc_drift_table_min){
 			index = 0;
 		}else if (tcorr >= cdc_drift_table_max){
-			index = cdc_drift_table.size()-1;
+		  index = cdc_drift_table.size()-2;
 		}else{
 			index=locate(cdc_drift_table,tcorr);
 		}

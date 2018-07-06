@@ -144,6 +144,73 @@ void Fill1DHistogram (const char * plugin, const char * directoryName, const cha
    return;
 }
 
+// This overloaded function allows the creation of a 1D histogram with variable bin sizes.
+void Fill1DHistogram (const char * plugin, const char * directoryName, const char * name, const double value, const char * title , int nBins, double *xbins) {//, bool print = false){
+   static pthread_rwlock_t *mapLock = InitializeMapLock();
+   TH1I * histogram;
+   pair<TH1I*, pthread_rwlock_t*> histogramPair;
+
+   char fullNameChar[500];
+   sprintf(fullNameChar, "%s/%s/%s", plugin, directoryName, name);
+   TString fullName = TString(fullNameChar);
+
+   try {
+      pthread_rwlock_rdlock(mapLock); // Grab the read lock
+      histogramPair = Get1DMap().at(fullName); // If the exception is caught, it bails immediately and will not release the lock
+      pthread_rwlock_unlock(mapLock);
+   }
+   catch (const std::out_of_range& oor) {
+      // Drop the read lock and grab the write lock
+      pthread_rwlock_unlock(mapLock);
+      pthread_rwlock_wrlock(mapLock);
+      // At this point, more than one thread might have made it through the try and ended up in the catch.
+      // do a single threaded (write locked) "try" again to be sure we aren't duplicating the histogram
+      try {
+         histogramPair = Get1DMap().at(fullName);
+      }
+      catch(const std::out_of_range& oor) {
+         // This now must be the first thread to get here, so we should make the histogram, fill and move on
+         //if (print) std::cerr << ansi_green << plugin << " ===> Making New 1D Histogram " << fullName << ansi_normal << endl;
+         // Initialize the histogram lock
+         pthread_rwlock_t *histogramLock = new pthread_rwlock_t();
+         pthread_rwlock_init(histogramLock, NULL);
+         // Get the ROOT lock and create the histogram
+         // WARNING: Locking inside a lock is bad practice, but sometimes not easy to avoid.
+         // there would be a problem if there was another function that tried to grab the map lock
+         // inside a root lock. In this code, this will not happen.
+         japp->RootWriteLock();
+         TDirectory *homedir = gDirectory;
+         TDirectory *temp;
+         temp = gDirectory->mkdir(plugin);
+         if(temp) GetAllDirectories().push_back(temp);
+         gDirectory->cd(plugin);
+         GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
+         gDirectory->cd(directoryName);
+         histogram = new TH1I( name, title, nBins, xbins);
+         histogram->Fill(value);
+         homedir->cd();
+         japp->RootUnLock();
+
+         Get1DMap()[fullName] = make_pair(histogram, histogramLock);
+         pthread_rwlock_unlock(mapLock);
+         return;
+      }
+      // If nothing is caught, the histogram must have been created by another thread
+      // while we were waiting to grab the write lock. Drop the lock and carry on...
+      pthread_rwlock_unlock(mapLock);
+   }
+
+   histogram = histogramPair.first;
+   pthread_rwlock_t *histogramLockPtr = histogramPair.second;
+   pthread_rwlock_wrlock(histogramLockPtr);
+   histogram->Fill(value);
+   pthread_rwlock_unlock(histogramLockPtr);
+
+   return;
+}
+
+
+
 void Fill1DWeightedHistogram (const char * plugin, const char * directoryName, const char * name, const double value, const double weight, const char * title , int nBins, double xmin, double xmax, bool print = false){
     static pthread_rwlock_t *mapLock = InitializeMapLock(); 
     TH1D * histogram;

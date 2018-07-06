@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <cstdlib>
+#include <complex.h>
 
 #include "TLorentzVector.h"
 #include "TLorentzRotation.h"
@@ -26,8 +27,8 @@ UserAmplitude< TwoPiAngles_primakoff >( args )
 
 	assert( ( phipol >= 0.) && (phipol <= 2*3.14159));
 	assert( ( polFrac >= 0 ) && ( polFrac <= 1 ) );
-        assert( ( m_rho == 0 ) );
-        assert( ( PhaseFactor == 0 ) || ( PhaseFactor == 1 ));
+        assert( ( m_rho == 1 ) || ( m_rho == 0 ) || ( m_rho == -1 ));
+        assert( ( PhaseFactor == 0 ) || ( PhaseFactor == 1 ) || ( PhaseFactor == 2 ) || ( PhaseFactor == 3 ));
 	assert( (flat == 0) || (flat == 1) );
 
 	// need to register any free parameters so the framework knows about them
@@ -38,12 +39,23 @@ UserAmplitude< TwoPiAngles_primakoff >( args )
 complex< GDouble >
 TwoPiAngles_primakoff::calcAmplitude( GDouble** pKin ) const {
 
+	complex< GDouble > i( 0, 1 );
+	complex< GDouble > factor( 0, 0 );
+	complex< GDouble > Amp( 0, 0 );
+	Int_t Mrho=0;
+
+  if (flat == 1) { // no computations needed
+     Amp = 1;
+     return Amp;
+  }
+
+
   // for Primakoff, all calculations are in the lab frame. Keep recoil but remember that it cannot be measured by detector.
   
-	TLorentzVector beam   ( pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0] ); 
-	TLorentzVector recoil ( pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0] );
-	TLorentzVector p1     ( pKin[2][1], pKin[2][2], pKin[2][3], pKin[2][0] ); 
-	TLorentzVector p2     ( pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0] ); 
+	TLorentzVector beam   ( pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0] );
+	TLorentzVector p1     ( pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0] ); 
+	TLorentzVector p2     ( pKin[2][1], pKin[2][2], pKin[2][3], pKin[2][0] ); 
+	TLorentzVector recoil ( pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0] );
 	TLorentzVector resonance = p1 + p2;
 
         TVector3 eps(cos(phipol), sin(phipol), 0.0); // beam polarization vector in lab
@@ -81,29 +93,28 @@ TwoPiAngles_primakoff::calcAmplitude( GDouble** pKin ) const {
 	cout << "phi= " << phi << endl;
 	cout << " psi=" << psi << endl;*/
      
-	complex< GDouble > i( 0, 1 );
-	complex< GDouble > prefactor( 0, 0 );
-	complex< GDouble > Amp( 0, 0 );
-	complex< GDouble> eta_c(1,0);
-	Int_t Mrho=0;
 
 	switch (PhaseFactor) {
         case 0:
-	  prefactor = 0.5*sqrt(1-polFrac)*(cos(Phi)-i*sin(Phi) - eta_c*(cos(Phi)+i*sin(Phi)) );
 	  Mrho = m_rho;
+	  Amp = sqrt(1-polFrac)*(-sin(Phi)* Y( 0, Mrho, CosTheta, phi) );
 	  break;
         case 1:
-	  prefactor = 0.5*sqrt(1+polFrac)*(cos(Phi)-i*sin(Phi) + eta_c*(cos(Phi)+i*sin(Phi)) );
 	  Mrho = m_rho;
+	  Amp = sqrt(1+polFrac)*(cos(Phi)* Y( 0, Mrho, CosTheta, phi)  );
+	  break;
+        case 2:
+	  Mrho = m_rho;
+	  factor = exp(-i*Phi)* Y( 1, Mrho, CosTheta, phi);
+	  Amp = sqrt(1-polFrac)* imag(factor);
+	  break;
+        case 3:
+	  Mrho = m_rho;
+	  factor = exp(-i*Phi)* Y( 1, Mrho, CosTheta, phi);
+	  Amp = sqrt(1+polFrac)* real(factor);
 	  break;
 	}
-	
-	if (flat == 1) {
-	  Amp = 1;
-	}
-	else {
-	  Amp =  prefactor * Y( 0, Mrho, CosTheta, phi);
-	}
+
 
 	// cout << " m_rho=" << m_rho << " CosTheta=" << CosTheta << " phi=" << phi << " prefactor=" << prefactor << " Amp=" << Amp << endl;
 

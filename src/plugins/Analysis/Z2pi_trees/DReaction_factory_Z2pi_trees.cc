@@ -9,9 +9,9 @@
 
 
 // #include "DCustomAction_dEdxCut_Z2pi.h"
-#include "DCustomAction_Z2pi_trees.h"
-#include "DCustomAction_Z2pi_cuts.h"
-#include "DCustomAction_Z2pi_unusedHists.h"
+// #include "DCustomAction_Z2pi_trees.h"
+// #include "DCustomAction_Z2pi_cuts.h"
+// #include "DCustomAction_Z2pi_unusedHists.h"
 #include "DReaction_factory_Z2pi_trees.h"
 
 //------------------
@@ -64,10 +64,11 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 
 	// Kinematic Fit
 	//locReaction->Set_KinFitType(d_NoFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	// locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, NO vertex
+	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	// locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, NO vertex
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
+	  // Outdated version for RF selection locReaction->Set_MaxPhotonRFDeltaT(1.5*dBeamBunchPeriod); //should be minimum cut value
 	locReaction->Set_NumPlusMinusRFBunches(0);
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
@@ -140,7 +141,7 @@ jerror_t DReaction_factory_Z2pi_trees::evnt(JEventLoop* locEventLoop, uint64_t l
 
 		// Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
 		//comment locReaction->Add_AnalysisAction(new DCustomAction_Z2pi_unusedHists(locReaction, false, "Unused"));
-	}
+	}   
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data

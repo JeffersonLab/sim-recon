@@ -12,11 +12,42 @@
 //
 
 {
+
+// The following are empty versions of routines defined in RootSpy
+// compiled executables. These are defined here for when this
+// macro is run outside that context.
+#ifndef ROOTSPY_MACROS
+#define rs_SetFlag(A) cout<<"rs_SetFlag ignored outside of RootSpy context"<<endl
+#define rs_GetFlag(A) 0
+#define rs_ResetHisto(A) cout<<"rs_ResetHisto ignored outside of RootSpy context"<<endl
+#define rs_RestoreHisto(A) cout<<"rs_RestoreHisto ignored outside of RootSpy context"<<endl
+#define InsertSeriesData(A) cout<<"InsertSeriesData ignored outside of RootSpy context"<<endl
+#define InsertSeriesMassFit(A,B,C,D,E,F) cout<<"InsertSeriesMassFit ignored outside of RootSpy context"<<endl
+#endif
+
 	// RootSpy saves the current directory and style before
 	// calling the macro and restores it after so it is OK to
 	// change them and not change them back.
 	TDirectory *savedir = gDirectory;
-	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
+
+	// First get EventInfo which is used to get unix_time for time series DB
+	double unix_time =  0;
+	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("highlevel");
+	if(dir) dir->cd();
+	TH1* EventInfo           = (TH1*)gDirectory->Get("EventInfo");
+	if(EventInfo){
+		Double_t Nunix = EventInfo->GetBinContent(1);
+		if(Nunix>0.0){
+			Double_t sum_unix_time = EventInfo->GetBinContent(2);
+			unix_time = (sum_unix_time/Nunix);
+			time_t t = (time_t)unix_time;
+			cout << ctime(&t);
+		}
+	}
+
+	// Get all other histos from occupancy
+	savedir->cd();
+	dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
 	if(dir) dir->cd();
 
 	TH2I *digihits_trig1 = (TH2I*)gDirectory->FindObjectAny("digihits_trig1");
@@ -103,6 +134,8 @@
 		box.SetFillColor(kGray);
 		latex.SetTextColor(kBlack);
 		TAxis *yaxis = digihits_trig4->GetYaxis();
+		stringstream ss;
+		ss << "digihits,trig=4 ";
 		for(auto p : digihitbinmap){
 			int ibin = (int)digihitbinmap[p.first];
 			double x = xaxis->GetBinCenter(ibin);
@@ -129,6 +162,22 @@
 			}
 			box.DrawBox(x-0.3, y-10.0, x+0.33, y+10.0);
 			latex.DrawLatex(x, y, str);
+			
+			// Build time series string
+			if(digihits_scale_factors){
+				string lab = digihits_scale_factors->GetXaxis()->GetBinLabel(ibin);
+				if( ibin>1 ) ss << ",";
+				ss << lab << "=" << mean;
+			}
+		}
+		
+		// Only write out once every 100000 objects
+		if(digihits_trig1->Integral()>100000){
+			if(unix_time!=0.0) ss<<" "<<(uint64_t)(unix_time*1.0E9);  // time is in units of ns
+			InsertSeriesData( ss.str() );
+		
+			// Optionally reset the histogram so next fit is independent of this one
+			if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/occupancy/digihits_trig4");
 		}
 		
 	}	
@@ -185,6 +234,8 @@
 		box.SetFillColor(kGray);
 		latex.SetTextColor(kBlack);
 		TAxis *yaxis = digihits_trig1->GetYaxis();
+		stringstream ss;
+		ss << "digihits,trig=1 ";
 		for(auto p : digihitbinmap){
 			int ibin = (int)digihitbinmap[p.first];
 			double x = xaxis->GetBinCenter(ibin);
@@ -211,6 +262,22 @@
 			}
 			box.DrawBox(x-0.3, y-10.0, x+0.33, y+10.0);
 			latex.DrawLatex(x, y, str);
+			
+			// Build time series string
+			if(digihits_scale_factors){
+				string lab = digihits_scale_factors->GetXaxis()->GetBinLabel(ibin);
+				if( ibin>1 ) ss << ",";
+				ss  << lab << "=" << mean;
+			}
+		}
+		
+		// Only write out once every 100000 objects
+		if(digihits_trig1->Integral()>100000){
+			if(unix_time!=0.0) ss<<" "<<(uint64_t)(unix_time*1.0E9);  // time is in units of ns
+			InsertSeriesData( ss.str() );
+		
+			// Optionally reset the histogram so next fit is independent of this one
+			if(rs_GetFlag("RESET_AFTER_FIT")) rs_ResetHisto("/occupancy/digihits_trig1");
 		}
 	}
 }
