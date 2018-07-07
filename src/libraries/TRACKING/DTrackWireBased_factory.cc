@@ -438,8 +438,10 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
                rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
             }
             DReferenceTrajectory *rt = rtv[num_used_rts];
-            if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
+            if(locNumInitialReferenceTrajectories == rtv.size()){ //didn't create a new one
                rt->Reset();
+	    }
+	 
             rt->SetDGeometry(geom);
             rt->q = candidate->charge();
 
@@ -602,8 +604,7 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       // and position
       rt->SetMass(mass);
       //rt->Swim(candidate->position(),candidate->momentum(),candidate->charge());
-      rt->Rsqmax_exterior=61.*61.;
-      rt->FastSwim(candidate->position(),candidate->momentum(),candidate->charge(),2000.0,0.,345.);
+      rt->FastSwimForHitSelection(candidate->position(),candidate->momentum(),candidate->charge());
 
       status=fitter->FindHitsAndFitTrack(*candidate,rt,loop,mass,candidate->Ndof+3);
       if (/*false && */status==DTrackFitter::kFitNotDone){

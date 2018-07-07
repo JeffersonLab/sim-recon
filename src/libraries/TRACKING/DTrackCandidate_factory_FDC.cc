@@ -286,7 +286,7 @@ void DTrackCandidate_factory_FDC::FillSeedHits(DFDCSeed &seed)
 	}
 
 	// Sort hits by increasing z
-	sort(seed.hits.begin(), seed.hits.end(), FDCSortByZincreasing);
+	stable_sort(seed.hits.begin(), seed.hits.end(), FDCSortByZincreasing);
 	
 	// Below, we fill in the phi_hit field of the DFDCTrkHit objects for
 	// this candidate. We do so incrementally to try and accomodate

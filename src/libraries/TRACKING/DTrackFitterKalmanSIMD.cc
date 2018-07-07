@@ -37,6 +37,9 @@ inline bool static DKalmanSIMDFDCHit_cmp(DKalmanSIMDFDCHit_t *a, DKalmanSIMDFDCH
     if (fabs(a->t-b->t)<EPS){
       double tsum_1=a->hit->t_u+a->hit->t_v;
       double tsum_2=b->hit->t_u+b->hit->t_v;
+      if (fabs(tsum_1-tsum_2)<EPS){
+	return (a->dE>b->dE);
+      }
       return (tsum_1<tsum_2);
     }
     return(a->t<b->t);
@@ -663,8 +666,6 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 
 
    mT0=0.,mT0MinimumDriftTime=1e6;
-   mMinDriftTime=1e6;
-   mMinDriftID=2000;
    mVarT0=25.;
 
    mCDCInternalStepSize=0.5;
@@ -714,14 +715,6 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
    if (num_good_cdchits>0){
       stable_sort(my_cdchits.begin(),my_cdchits.end(),DKalmanSIMDCDCHit_cmp);
 
-      // Find earliest time to use for estimate for T0
-      for (unsigned int i=0;i<my_cdchits.size();i++){
-         if (my_cdchits[i]->tdrift<mMinDriftTime){
-            mMinDriftTime=my_cdchits[i]->tdrift;
-            mMinDriftID=1000+i;
-         }
-      }
-
       // Look for multiple hits on the same wire
       for (unsigned int i=0;i<my_cdchits.size()-1;i++){
          if (my_cdchits[i]->hit->wire->ring==my_cdchits[i+1]->hit->wire->ring && 
@@ -740,14 +733,6 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
    // Order the fdc hits by z
    if (num_good_fdchits>0){
       stable_sort(my_fdchits.begin(),my_fdchits.end(),DKalmanSIMDFDCHit_cmp);
-
-      // Find earliest time to use for estimate for T0
-      for (unsigned int i=0;i<my_fdchits.size();i++){
-         if (my_fdchits[i]->t<mMinDriftTime){
-            mMinDriftID=i;
-            mMinDriftTime=my_fdchits[i]->t;
-         }      
-      }
 
       // Look for multiple hits on the same wire 
       for (unsigned int i=0;i<my_fdchits.size()-1;i++){
@@ -789,40 +774,29 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
       fdc_used_in_fit=vector<bool>(my_fdchits.size());
    }
 
-
    // start time and variance
-   mT0=mMinDriftTime;
    if (fit_type==kTimeBased){
       mT0=input_params.t0();
-      if (mT0>mMinDriftTime){
-         mT0=mMinDriftTime;
-         mVarT0=7.5;
+      switch(input_params.t0_detector()){
+      case SYS_TOF:
+	mVarT0=0.01;
+	break;
+      case SYS_CDC:
+	mVarT0=7.5;
+	break;
+      case SYS_FDC:
+	mVarT0=7.5;
+	break;
+      case SYS_BCAL:
+	mVarT0=0.25;
+	break;
+      default:
+	mVarT0=0.09;
+	break;
       }
-      else{
-         switch(input_params.t0_detector()){
-            case SYS_TOF:
-               mVarT0=0.01;
-               break;
-            case SYS_CDC:
-               mVarT0=7.5;
-               break;
-            case SYS_FDC:
-               mVarT0=7.5;
-               break;
-            case SYS_BCAL:
-               mVarT0=0.25;
-               break;
-            default:
-               mVarT0=0.09;
-               break;
-         }
-      }
-
-      //  _DBG_ << SystemName(input_params.t0_detector()) << " " << mT0 <<endl;
-      //	_DBG_ << mMinDriftTime << endl;
-
    }
-
+   
+   //_DBG_ << SystemName(input_params.t0_detector()) << " " << mT0 <<endl;
 
    //Set the mass
    MASS=input_params.mass();
@@ -1123,36 +1097,6 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
 
    // return an error if there are still no entries in the trajectory
    if (forward_traj.size()==0) return RESOURCE_UNAVAILABLE;
-
-   // Find estimate for t0 using smallest drift time
-   if (fit_type==kWireBased){
-      mT0Detector=SYS_CDC;
-      int id=my_cdchits.size()-1;
-      double old_time=0.,doca2=0.,old_doca2=1e6;
-      int min_id=mMinDriftID-1000;
-      for (unsigned int m=0;m<forward_traj.size();m++){
-         if (id>=0){
-            DVector2 origin=my_cdchits[id]->origin;
-            DVector2 dir=my_cdchits[id]->dir;
-            DVector2 wire_xy=origin+(forward_traj[m].z-my_cdchits[id]->z0wire)*dir;
-            DVector2 my_xy(forward_traj[m].S(state_x),forward_traj[m].S(state_y));
-            doca2=(wire_xy-my_xy).Mod2();
-
-            if (doca2>old_doca2){	
-               if (id==min_id){
-                  double tcorr=1.18; // not sure why needed..
-                  mT0MinimumDriftTime=my_cdchits[id]->tdrift-old_time+tcorr;  
-                  // _DBG_ << "T0 =  " << mT0MinimumDriftTime << endl; 
-                  break;
-               }
-               doca2=1e6;
-               id--;
-            }
-         }
-         old_doca2=doca2;
-         old_time=forward_traj[m].t*TIME_UNIT_CONVERSION;
-      }
-   }
 
    if (DEBUG_LEVEL>20)
    {
@@ -1558,38 +1502,6 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(const DVector2 &xy,
    // return an error if there are still no entries in the trajectory
    if (central_traj.size()==0) return RESOURCE_UNAVAILABLE;
 
-   // Find estimate for t0 using smallest drift time
-   if (fit_type==kWireBased){
-      mT0Detector=SYS_CDC;
-      int id=my_cdchits.size()-1;
-      double old_time=0.;
-      double doca2=0.,old_doca2=1e6;
-      int min_id=mMinDriftID-1000;
-      for (unsigned int m=0;m<central_traj.size();m++){
-         if (id>=0){
-            origin=my_cdchits[id]->origin;
-            dir=my_cdchits[id]->dir;
-            DVector2 wire_xy=origin+(central_traj[m].S(state_z)-my_cdchits[id]->z0wire)*dir;
-            DVector2 my_xy=central_traj[m].xy;
-            doca2=(wire_xy-my_xy).Mod2();
-
-            if (doca2>old_doca2){	
-               if (id==min_id){
-                  double tcorr=1.18; // not sure why needed..
-                  mT0MinimumDriftTime=my_cdchits[id]->tdrift-old_time+tcorr;
-                  //_DBG_ << "T0 =  " << mT0MinimumDriftTime << endl; 
-                  break;
-               }
-               doca2=1e6;
-               id--;
-            }
-         }
-         old_doca2=doca2;
-         old_time=central_traj[m].t*TIME_UNIT_CONVERSION;
-      }
-   }
-
-
    if (DEBUG_LEVEL>20)
    {
       cout << "---------" << central_traj.size() <<" entries------" <<endl;
@@ -1930,10 +1842,6 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
          if (fabs(z-my_fdchits[hit_id]->z)<EPS2){
             forward_traj[m].h_id=my_id;
 
-            if (my_id==mMinDriftID&&fit_type==kWireBased){
-               mT0=mMinDriftTime-forward_traj[m].t*TIME_UNIT_CONVERSION;
-            }
-
             // Get the magnetic field at this position along the trajectory
             bfield->GetField(forward_traj[m].S(state_x),forward_traj[m].S(state_y),
                   z,Bx,By,Bz);
@@ -1968,59 +1876,6 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
             forward_traj[m].num_hits=num;
          }
 
-      }
-   }
-
-   // Find estimate for t0 using smallest drift time
-   if (fit_type==kWireBased){
-      if (mMinDriftID<1000){  
-         mT0Detector=SYS_FDC;
-         bool found_minimum=false;
-         for (unsigned int m=0;m<forward_traj.size();m++){
-            if (found_minimum) break;
-            unsigned int numhits=forward_traj[m].num_hits;
-            if (numhits>0){
-               unsigned int first_hit=forward_traj[m].h_id-1;
-               for (unsigned int n=0;n<numhits;n++){
-                  unsigned int myid=first_hit-n;
-                  if (myid==mMinDriftID){
-                     double tcorr=-1.66;
-                     mT0MinimumDriftTime=my_fdchits[myid]->t-forward_traj[m].t*TIME_UNIT_CONVERSION+tcorr;
-                     //_DBG_ << "T0 =  " << mT0MinimumDriftTime << endl; 
-                     found_minimum=true;
-                     break;
-                  }
-               }
-            }
-         }
-      }
-      else if (my_cdchits.size()>0 && mMinDriftID>=1000){
-         mT0Detector=SYS_CDC;
-         int id=my_cdchits.size()-1;
-         double old_time=0.,doca2=0.,old_doca2=1e6;
-         int min_id=mMinDriftID-1000;
-         for (unsigned int m=0;m<forward_traj.size();m++){
-            if (id>=0){
-               DVector2 origin=my_cdchits[id]->origin;
-               DVector2 dir=my_cdchits[id]->dir;
-               DVector2 wire_xy=origin+(forward_traj[m].z-my_cdchits[id]->z0wire)*dir;
-               DVector2 my_xy(forward_traj[m].S(state_x),forward_traj[m].S(state_y));
-               doca2=(wire_xy-my_xy).Mod2();
-
-               if (doca2>old_doca2){	
-                  if (id==min_id){
-                     double tcorr=1.18; // not sure why needed..
-                     mT0MinimumDriftTime=my_cdchits[id]->tdrift-old_time+tcorr;  
-                     //_DBG_ << "T0 =  " << mT0MinimumDriftTime << endl; 
-                     break;
-                  }
-                  doca2=1e6;
-                  id--;
-               }
-            }
-            old_doca2=doca2;
-            old_time=forward_traj[m].t*TIME_UNIT_CONVERSION;
-         }
       }
    }
 
@@ -4342,9 +4197,6 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
    double var_cdc_cut=NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
    double cdc_chi2cut=my_cdc_anneal*var_cdc_cut;
 
-   // Variables for estimating t0 from tracking
-   //mInvVarT0=mT0wires=0.;
-
    unsigned int num_fdc_hits=break_point_fdc_index+1;
    unsigned int max_num_fdc_used_in_fit=num_fdc_hits;
    unsigned int num_cdc_hits=my_cdchits.size(); 
@@ -4494,6 +4346,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
                      -tv*sinalpha
                      ));
             Mdiff(0)=-doca;
+
             if (fit_type==kTimeBased && USE_FDC_DRIFT_TIMES){
                double drift_time=my_fdchits[id]->t-mT0
                   -forward_traj[k].t*TIME_UNIT_CONVERSION;
@@ -5729,7 +5582,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                   S+=res*K;
                }
                // Mark point on ref trajectory with a hit id for the straw
-               forward_traj[k].h_id=cdc_index+1;
+               forward_traj[k].h_id=cdc_index+1000;
 
                // Store some updated values related to the hit
                double scale=(skip_ring)?1.:(1.-H*K);
@@ -7102,9 +6955,6 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 	   last_forward_pulls.assign(forward_pulls.begin(),forward_pulls.end());
 	 }
 
-	 // Source for t0 guess
-	 mT0Detector=SYS_CDC; 
-
          last_fdc_used_in_fit=fdc_used_in_fit;
          last_cdc_used_in_fit=cdc_used_in_fit;
       } //iteration
@@ -7116,9 +6966,6 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
    // total chisq and ndf
    chisq_=chisq_forward;
    ndf_=last_ndf;
-
-   // Source for t0 guess
-   mT0Detector=SYS_CDC;
 
    // output lists of hits used in the fit and fill pull vector
    cdchits_used_in_fit.clear();
@@ -7366,9 +7213,6 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 	   last_cdc_pulls.assign(cdc_pulls.begin(),cdc_pulls.end());
 	 }
 
-	 // source for t0 guess
-	 mT0Detector=SYS_CDC; 
-
          chisq_forward=chisq;
          Slast=S;
          Clast=C;
@@ -7386,9 +7230,6 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
    // total chisq and ndf
    chisq_=chisq_forward;
    ndf_=last_ndf;
-
-   // source for t0 guess
-   mT0Detector=SYS_CDC;
 
    // output lists of hits used in the fit and fill the pull vector
    cdchits_used_in_fit.clear();
@@ -7618,9 +7459,6 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 	   last_cdc_pulls.assign(cdc_pulls.begin(),cdc_pulls.end()); 
 	 }
 
-	 // source for t0 guess
-	 mT0Detector=SYS_CDC;
-
          last_cdc_used_in_fit=cdc_used_in_fit;
       }
       else{	
@@ -7641,9 +7479,6 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
    if (last_pos.Mod()>0.001){ // in cm
       if (ExtrapolateToVertex(last_pos,Sclast,Cclast)!=NOERROR) return EXTRAPOLATION_FAILED; 
    }
-
-   // source for t0 guess
-   mT0Detector=SYS_CDC;
 
    // output lists of hits used in the fit 
    cdchits_used_in_fit.clear();
@@ -8456,8 +8291,8 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(vector<pull_t>&cdc_pulls){
    DMatrix5x5 Cs=C;
    DMatrix5x5 A;
    for (unsigned int m=max-1;m>0;m--){
-      if (forward_traj[m].h_id>0){ 
-         unsigned int cdc_index=forward_traj[m].h_id-1; 	
+      if (forward_traj[m].h_id>999){ 
+         unsigned int cdc_index=forward_traj[m].h_id-1000; 	
          if(cdc_used_in_fit[cdc_index] && my_cdchits[cdc_index]->status == good_hit){
             if (DEBUG_LEVEL > 5)  {
                _DBG_ << " Smoothing CDC index " << cdc_index << " ring " << my_cdchits[cdc_index]->hit->wire->ring
@@ -9187,6 +9022,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
 
   // Deal with points within fiducial volume of chambers
   unsigned int fdc_plane=0;
+  mT0Detector=SYS_NULL;
+  mT0MinimumDriftTime=1e6;
   for (int k=intersected_start_counter?index_beyond_start_counter:inner_index;k>=0;k--){
     double z=forward_traj[k].z;
     double t=forward_traj[k].t*TIME_UNIT_CONVERSION;
@@ -9197,7 +9034,25 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateForwardToOtherDetectors(){
     double cosl=cos(atan(tanl));
     double pt=cosl/fabs(S(state_q_over_p));
     double phi=atan2(S(state_ty),S(state_tx)); 
-    
+
+    // Find estimate for t0 using earliest drift time
+    if (forward_traj[k].h_id>999){
+      unsigned int index=forward_traj[k].h_id-1000;
+      double dt=my_cdchits[index]->tdrift-t;
+      if (dt<mT0MinimumDriftTime){
+	mT0MinimumDriftTime=dt;
+	mT0Detector=SYS_CDC;
+      }
+    }
+    else if (forward_traj[k].h_id>0){
+      unsigned int index=forward_traj[k].h_id-1;
+      double dt=my_fdchits[index]->t-t;  
+      if (dt<mT0MinimumDriftTime){
+	mT0MinimumDriftTime=dt;
+	mT0Detector=SYS_FDC;
+      }
+    }
+
     //multiple scattering terms
     if (k>0){
       double ds_theta_ms_sq=3.*fabs(forward_traj[k].Q(state_x,state_x));
@@ -9580,6 +9435,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   
   // Deal with points within fiducial volume of chambers
   unsigned int fdc_plane=0;
+  mT0Detector=SYS_NULL;
+  mT0MinimumDriftTime=1e6;
   for (int k=index_beyond_start_counter;k>=0;k--){ 
     S=central_traj[k].S;
     xy=central_traj[k].xy;
@@ -9588,6 +9445,16 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
     double tanl=S(state_tanl);
     double pt=1/fabs(S(state_q_over_pt));
     double phi=S(state_phi); 
+
+    // Find estimate for t0 using earliest drift time
+    if (central_traj[k].h_id>0){
+      unsigned int index=central_traj[k].h_id-1;
+      double dt=my_cdchits[index]->tdrift-t;  
+      if (dt<mT0MinimumDriftTime){
+	mT0MinimumDriftTime=dt;
+	mT0Detector=SYS_CDC;
+      }
+    }
 
     //multiple scattering terms
     if (k>0){
