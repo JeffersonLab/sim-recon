@@ -63,10 +63,8 @@ bool searchMap( map<string, Int_t> p_map, string substring )
    return isMatch;
 }
 
-bool compareMaps( map<string, Int_t> p_map, map<string, Int_t> s_map, string substring )
+bool compareMaps( map<string, Int_t> p_map, map<string, Int_t> s_map )
 {
-   // This method is used to compare combos from each TTree. If a TTree has multiple of the same final state particle,
-   // i.e. PiPlus1, PiPlus2, etc, then compare the branch names that contain the same substring, i.e. "Plus", "Minus", etc
    
    bool isMatch = false;
    int totalParticles = 0;
@@ -300,21 +298,16 @@ void mergeTrees(const char* primaryFile, const char* primaryTree, const char* se
             // check for the types of final state particles in the primary map
             bool hasPlus = searchMap( primary_trackIDs, "Plus" );
             bool hasMinus = searchMap( primary_trackIDs, "Minus" );
-            bool hasProton = searchMap( primary_trackIDs, "Proton" );
+            bool hasProton = searchMap( primary_trackIDs, "Proton" ); // finds both protons and antiprotons
             bool hasPhoton = searchMap( primary_neutralIDs, "Photon" );
 
             // if the reaction does not contain a certain type of final state particle, set the match to true
             // otherwise, find the correct match
-            bool plusMatch = hasPlus ? compareMaps( primary_trackIDs, secondary_trackIDs, "Plus" ) : true;
-/*
-            bool minusMatch = hasMinus ?  compareMaps( primary_trackIDs, secondary_trackIDs, "Minus" ) : true;
-            bool protonMatch = hasProton ? compareMaps( primary_trackIDs, secondary_trackIDs, "Proton" ) : true;
-            bool photonMatch = hasPhoton ? compareMaps( primary_neutralIDs, secondary_neutralIDs, "Photon" ) : true;
-*/
+            bool chargedMatch = (hasPlus || hasMinus || hasProton) ? compareMaps( primary_trackIDs, secondary_trackIDs ) : true;
+            bool neutralMatch = hasPhoton ? compareMaps( primary_neutralIDs, secondary_neutralIDs ) : true;
 
             // match final state particle IDs
-            //if ( !(plusMatch && minusMatch && protonMatch && photonMatch) )
-            if ( !plusMatch )
+            if ( !(chargedMatch && neutralMatch) )
                continue;
             // match beam ID
             if (beam != secondary_beam)
