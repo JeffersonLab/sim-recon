@@ -170,10 +170,12 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>&points,
   double z=0,zlast=0;
   double two_rc=2.*rc;
   DVector2 oldxy=XYZ[0].xy;
+  unsigned int num_z=0;
   for (unsigned int k=0;k<n;k++){
     zlast=z;
     z=XYZ[k].z;
     if (fabs(z-zlast)<0.01) continue;
+    num_z++;
 
     DVector2 diffxy=XYZ[k].xy-oldxy;
     double var=CR(k,k);
@@ -197,7 +199,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>&points,
     //oldx=XYZ(k,0);
     //oldy=XYZ(k,1);
     oldxy=XYZ[k].xy;
-  }
+  } 
 
   Delta=sumv*sumxx-sumx*sumx;
   double denom=sumv*sumxy-sumy*sumx;
@@ -223,6 +225,10 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>&points,
     }
     else tanl=(zlast-zvertex)/sperp;
     var_tanl=100.; // guess for now 
+  }
+  if (num_z<3){
+    //_DBG_ << "Too few z points..." << endl;
+    return VALUE_OUT_OF_RANGE;
   }
   if (got_bad_intersection) return VALUE_OUT_OF_RANGE;
   return NOERROR;
