@@ -314,7 +314,7 @@ void CreateHistograms(){
 
 
 // Create a graph of the cross section dsigma/dt as a function of -t
-void GraphCrossSection(){
+void GraphCrossSection(double &xsec_max){
   // beam energy in lab
   double Egamma=Emin;
 
@@ -335,11 +335,13 @@ void GraphCrossSection(){
   double t_old=t0;
   double t_array[10000];
   double xsec_array[10000];
+  xsec_max=0.;
   for (unsigned int k=0;k<10000;k++){
     double theta_cm=M_PI*double(k)/10000.;
     double sin_theta_over_2=sin(0.5*theta_cm);
     double t=t0-4.*p_gamma*p_eta*sin_theta_over_2*sin_theta_over_2;
     double xsec=CrossSection(s,t,p_gamma,p_eta,theta_cm);
+    if (xsec>xsec_max) xsec_max=xsec;
     
     t_array[k]=-t;
     xsec_array[k]=xsec;
@@ -451,22 +453,60 @@ int main(int narg, char *argv[])
   // Set up vectors of particle ids and 4-vectors
   int last_index=num_decay_particles;
   int num_final_state_particles=num_decay_particles+1;
-  vector<TLorentzVector>particle_vectors(num_final_state_particles);
-  vector<Particle_t>particle_types(num_final_state_particles);
+
+  vector<Particle_t>particle_types;
   double *decay_masses =new double[num_decay_particles];
-  particle_types[last_index]=Proton;
+  double *res_decay_masses=NULL;
+  vector<Particle_t>res_particle_types;
 
   // GEANT ids of decay particles
   getline(infile,comment_line);
+  cout << comment_line << endl;
+  int reson_index=-1;
   cout << "Particle id's of decay particles =";
   for (int k=0;k<num_decay_particles;k++){
     int ipart;
     infile >> ipart;
     cout << " " << ipart; 
-    particle_types[k]=(Particle_t)ipart;
-    decay_masses[k]=ParticleMass(particle_types[k]);
-  }
+    particle_types.push_back((Particle_t)ipart);
+    if (ipart>0){
+      decay_masses[k]=ParticleMass((Particle_t)ipart);
+    }
+    else {
+      reson_index=k;
+    }
+  } 
   cout << endl;
+  unsigned int num_res_decay_particles=0; 
+  double reson_mass=0.,reson_width=0.;
+  int reson_L=0;
+  if (reson_index>=0){
+    infile.ignore(); // ignore the '\n' at the end of this line 
+    getline(infile,comment_line);
+    cout << comment_line << endl;
+    double reson_mass=0.;
+    infile >> reson_mass;
+    decay_masses[reson_index]=reson_mass;
+    cout << "Resonance mass = " << reson_mass << " [GeV]" << endl;   
+    infile >> reson_width;
+    cout << "Resonance width = " << reson_width << " [GeV]" << endl; 
+    infile >> reson_L;
+    cout << "Resonance orbital angular momentum L = " << reson_L << endl; 
+    infile >> num_res_decay_particles;
+    if (num_res_decay_particles>1) res_decay_masses=new double[num_res_decay_particles]; 
+    else{
+      cout << "Invalid number of decay particles! " << endl;
+      exit(0);
+    }
+    cout << " Decay particles: ";
+    for (unsigned int i=0;i<num_res_decay_particles;i++){
+      int ipart;
+      infile >> ipart;
+      cout << " " << ipart; 
+      res_particle_types.push_back((Particle_t)ipart);
+      res_decay_masses[i]=ParticleMass((Particle_t)ipart);
+    }
+  }
 
   infile.close();
  
@@ -488,7 +528,8 @@ int main(int narg, char *argv[])
   // Create some diagonistic histographs
   CreateHistograms();
   // Make a TGraph of the cross section at a fixed beam energy
-  GraphCrossSection();
+  double xsec_max=0.;
+  GraphCrossSection(xsec_max);
   
   // Fill histogram of coherent bremmsstrahlung distribution 
   for (int i=1;i<=1000;i++){
@@ -498,15 +539,12 @@ int main(int narg, char *argv[])
     else y=cobrems.Rate_dNtdx(x);
     cobrems_vs_E->Fill(Ee*double(x),double(y));
   }
-
-
+  
   //----------------------------------------------------------------------------
   // Event generation loop
   //----------------------------------------------------------------------------
   for (int i=1;i<=Nevents;i++){
     double Egamma=0.;
-    // Maximum value for cross section 
-    double xsec_max=0.3;
     double xsec=0.,xsec_test=0.;
 
     // Polar angle in center of mass frame
@@ -635,11 +673,32 @@ int main(int narg, char *argv[])
     vert[2]=zmin+myrand->Uniform(zmax-zmin);
 
     // Gather the particles in the reaction and write out event in hddm format
-    particle_vectors[last_index]=proton4;
+    vector<TLorentzVector>output_particle_vectors;
+    output_particle_vectors.push_back(proton4);
+    vector<Particle_t>output_particle_types;
+    output_particle_types.push_back(Proton);
     for (int j=0;j<num_decay_particles;j++){
-      particle_vectors[j]=*phase_space.GetDecay(j);
+      if (particle_types[j]!=Unknown){
+	output_particle_vectors.push_back(*phase_space.GetDecay(j));
+	output_particle_types.push_back(particle_types[j]);
+      }
+      else {
+	TGenPhaseSpace phase_space2;
+	phase_space2.SetDecay(*phase_space.GetDecay(j),num_res_decay_particles,
+			      res_decay_masses);
+	weight=0.,rand_weight=1.;
+	do{
+	  weight=phase_space2.Generate();
+	  rand_weight=myrand->Uniform(1.);
+	}
+	while (rand_weight>weight);
+	for (int m=0;m<num_res_decay_particles;m++){
+	  output_particle_types.push_back(res_particle_types[m]);
+	  output_particle_vectors.push_back(*phase_space2.GetDecay(m));
+	}
+      }
     }
-    WriteEvent(i,beam,vert,particle_types,particle_vectors,file);
+    WriteEvent(i,beam,vert,output_particle_types,output_particle_vectors,file);
     
     if ((i%(Nevents/10))==0) cout << 100.*double(i)/double(Nevents) << "\% done" << endl;
   }
@@ -656,6 +715,7 @@ int main(int narg, char *argv[])
 
   // Cleanup
   delete []decay_masses;
+  if (res_decay_masses!=NULL) delete []res_decay_masses;
 
   return 0;
 }
