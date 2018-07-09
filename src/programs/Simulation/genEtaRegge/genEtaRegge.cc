@@ -450,10 +450,7 @@ int main(int narg, char *argv[])
   infile >> num_decay_particles;
   infile.ignore(); // ignore the '\n' at the end of this line
 
-  // Set up vectors of particle ids and 4-vectors
-  int last_index=num_decay_particles;
-  int num_final_state_particles=num_decay_particles+1;
-
+  // Set up vectors of particle ids
   vector<Particle_t>particle_types;
   double *decay_masses =new double[num_decay_particles];
   double *res_decay_masses=NULL;
@@ -484,7 +481,6 @@ int main(int narg, char *argv[])
     infile.ignore(); // ignore the '\n' at the end of this line 
     getline(infile,comment_line);
     cout << comment_line << endl;
-    double reson_mass=0.;
     infile >> reson_mass;
     decay_masses[reson_index]=reson_mass;
     cout << "Resonance mass = " << reson_mass << " [GeV]" << endl;   
@@ -621,6 +617,39 @@ int main(int narg, char *argv[])
     // Compute the 4-momentum for the recoil proton
     TLorentzVector proton4=beam+target-eta4;
 
+    // Generate mass distribution for unstable particle in the final state 
+    // with non-negligible width
+    if (reson_index>-1 && reson_width>0.){
+      if (num_res_decay_particles==2){
+	double BW=0.,BWtest=0.;
+	double m1sq=res_decay_masses[0]*res_decay_masses[0];
+	double m2sq=res_decay_masses[1]*res_decay_masses[1];
+	double m0sq=reson_mass*reson_mass;
+	double q0sq=(m0sq*m0sq-2.*m0sq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
+	  /(4.*m0sq);
+	double Gamma0sq=reson_width*reson_width;
+	double BWmax=pow(q0sq,2*reson_L)/(m0sq*m0sq*Gamma0sq);
+	double m_min=res_decay_masses[0]+res_decay_masses[1];
+	double m_max=eta4.M();
+	for (int im=0;im<num_decay_particles;im++){
+	  if (im==reson_index) continue;
+	  m_max-=decay_masses[im];
+	}
+	double m=0.;
+	do{
+	  m=m_min+myrand->Uniform(m_max-m_min);
+	  double msq=m*m;
+	  double qsq=(msq*msq-2.*msq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
+	    /(4.*msq);
+	  BW=pow(qsq,2*reson_L)/(msq*(m0sq-msq)*(m0sq-msq)+m0sq*m0sq*pow(qsq/q0sq,2*reson_L+1)*Gamma0sq);
+	  BWtest=myrand->Uniform(BWmax);
+	}
+	while (BWtest>BW);
+	decay_masses[reson_index]=m;
+      }
+ 
+    }
+
     //proton4.Print();
     thrown_theta_vs_p->Fill(proton4.P(),180./M_PI*proton4.Theta());
 
@@ -692,9 +721,9 @@ int main(int narg, char *argv[])
 	  rand_weight=myrand->Uniform(1.);
 	}
 	while (rand_weight>weight);
-	for (int m=0;m<num_res_decay_particles;m++){
-	  output_particle_types.push_back(res_particle_types[m]);
-	  output_particle_vectors.push_back(*phase_space2.GetDecay(m));
+	for (unsigned int im=0;im<num_res_decay_particles;im++){
+	  output_particle_types.push_back(res_particle_types[im]);
+	  output_particle_vectors.push_back(*phase_space2.GetDecay(im));
 	}
       }
     }
