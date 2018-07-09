@@ -1253,7 +1253,7 @@ bool DSourceComboer::Cut_dEdxAndEOverP(const DChargedTrackHypothesis* locCharged
 //cout << "PID, p, dedx, #hits = " << locPID << ", " << locP << ", " << locTrackTimeBased->ddEdx_CDC*1.0E6 << ", " << locTrackTimeBased->dNumHitsUsedFordEdx_CDC << endl;
 	if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
 	{
-		auto locdEdx = locTrackTimeBased->ddEdx_CDC*1.0E6;
+		auto locdEdx = locTrackTimeBased->ddEdx_CDC_amp*1.0E6;
 		if(!Cut_dEdx(locPID, SYS_CDC, locP, locdEdx))
 			locPassedCutFlag = false;
 	}

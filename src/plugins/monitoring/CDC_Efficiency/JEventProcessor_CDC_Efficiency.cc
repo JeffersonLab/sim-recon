@@ -267,7 +267,7 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
       //The cuts used for track quality
       if(!dIsNoFieldFlag){ // Quality cuts for Field on runs.
-         if(thisTimeBasedTrack->ddEdx_CDC > 1E-3) {
+         if(thisTimeBasedTrack->ddEdx_CDC_amp > 1E-3) {
             //cout << "Cut on dEdX" << endl;
             continue; // Trying to cut out "proton" candidates
          }

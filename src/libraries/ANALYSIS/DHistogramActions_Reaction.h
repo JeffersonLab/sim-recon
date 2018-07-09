@@ -89,6 +89,9 @@ class DHistogramAction_PID : public DAnalysisAction
 			dThrownPIDs.push_back(PiPlus);  dThrownPIDs.push_back(KPlus);  dThrownPIDs.push_back(Proton);
 			dThrownPIDs.push_back(PiMinus);  dThrownPIDs.push_back(KMinus);
 
+			// used for indexing into maps
+			SYS_CDC_AMP = static_cast<DetectorSystem_t>(SYS_CDC + SYS_FDC);
+
 			dParticleID = NULL;
 			dAnalysisUtilities = NULL;
 		}
@@ -112,6 +115,8 @@ class DHistogramAction_PID : public DAnalysisAction
 
 		void Fill_ChargedHists(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch);
 		void Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch);
+
+		DetectorSystem_t SYS_CDC_AMP;
 
 		const DParticleID* dParticleID;
 		const DAnalysisUtilities* dAnalysisUtilities;
