@@ -161,7 +161,7 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
 
         // Fill 2D histograms
         Fill2DHistogram ("BCAL_SiPM_saturation", "Hists2D", "Eshower_vs_Ethrown", Ethrown, Eshower,
-                         "BCAL SiPM Saturation; Shower Energy (GeV); Thrown Energy (GeV)",
+                         "BCAL SiPM Saturation; Thrown Energy (GeV); Shower Energy (GeV)",
                          4*nbins,0,10,4*nbins,0,10);
         Fill2DHistogram ("BCAL_SiPM_saturation", "Hists2D", "EDiff_vs_Ethrown", Ethrown, Eshower - Ethrown,
                          "BCAL SiPM Saturation; Thrown Energy (GeV); (Shower - Thrown) Energy (GeV)",
