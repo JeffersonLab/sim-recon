@@ -33,8 +33,8 @@ def library(env, libname=''):
 
 	# Add C/C++, and FORTRAN targets
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.c'))
-	#env.AppendUnique(ALL_SOURCES = env.Glob('*.cc'))
-	env.AppendUnique(ALL_SOURCES = filter(IsNotSWIGWrapper,env.Glob('*.cc')))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.cc'))
+	#env.AppendUnique(ALL_SOURCES = filter(IsNotSWIGWrapper,env.Glob('*.cc')))
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.cpp'))
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.F'))
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.f90'))
