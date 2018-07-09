@@ -26,6 +26,9 @@ using namespace jana;
 #include <PID/DBeamPhoton.h>
 #include <DIRC/DDIRCTruthBarHit.h>
 #include <DIRC/DDIRCTruthPmtHit.h>
+#include <DIRC/DrcHit.h>
+#include <DIRC/DrcEvent.h>
+#include <DIRC/Particle.h>
 
 #include <TMath.h>
 #include <TFile.h>
@@ -36,10 +39,6 @@ using namespace jana;
 #include <TVector3.h>
 #include <TROOT.h>
 #include <TClonesArray.h>
-
-#include "DrcHit.h"
-#include "DrcEvent.h"
-#include "Particle.h"
 
 class DEventProcessor_pid_dirc: public JEventProcessor {
 

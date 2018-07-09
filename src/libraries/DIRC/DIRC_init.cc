@@ -13,6 +13,10 @@ using namespace jana;
 #include "DDIRCTruthHit.h"
 #include "DDIRCTruthBarHit.h"
 #include "DDIRCTruthPmtHit.h"
+#include "DrcHit.h"
+#include "DrcEvent.h"
+#include "DrcLutNode.h"
+#include "Particle.h"
 
 jerror_t DIRC_init(JEventLoop *loop) {
 	/// Create and register DIRC data factories

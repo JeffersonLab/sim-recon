@@ -5,7 +5,7 @@
 // -----------------------------------------
 
 #ifndef DrcEvent_h
-#define DrcEvent_h 1
+#define DrcEvent_h 
 
 #include <vector>
 
@@ -63,12 +63,12 @@ private:
   TVector3 fPosition;
   Double_t fTest1;
   Double_t fTest2;
-  
-  ClassDef(DrcEvent, 1);
+
+  ClassDef(DrcEvent, 1);  
 };
 
 #endif
 
-// #if defined(__ROOTCLING__)
-// #pragma link C++ class DrcEvent+;
-// #endif
+#if defined(__ROOTCLING__)
+#pragma link C++ class DrcEvent+;
+#endif

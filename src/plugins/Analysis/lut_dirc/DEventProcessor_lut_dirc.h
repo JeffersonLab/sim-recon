@@ -23,6 +23,7 @@ using namespace jana;
 #include <PID/DBeamPhoton.h>
 #include <DIRC/DDIRCTruthBarHit.h>
 #include <DIRC/DDIRCTruthPmtHit.h>
+#include <DIRC/DrcLutNode.h>
 
 #include <TMath.h>
 #include <TFile.h>
@@ -34,7 +35,6 @@ using namespace jana;
 #include <TROOT.h>
 #include <TClonesArray.h>
 
-#include "DrcLutNode.h"
 
 class DEventProcessor_lut_dirc: public JEventProcessor {
 

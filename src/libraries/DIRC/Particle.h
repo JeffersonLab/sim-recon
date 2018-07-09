@@ -74,8 +74,7 @@ public:
 	}
 
 private:
-	ClassDef(Particle,1)
-	;
+	ClassDef(Particle, 1);
 
 };
 

@@ -64,7 +64,8 @@ protected:
   Int_t fChannel;
   Double_t fLeadTime;    
 
-  ClassDef(DrcHit,2)
+  ClassDef(DrcHit,1);
+  
 };
 
 #endif
