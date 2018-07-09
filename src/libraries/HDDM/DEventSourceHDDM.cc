@@ -1229,8 +1229,8 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
    // assume that is what we are reading in, so that we don't support the
    // default tag anymore
    // sdobbs -- 3/13/2018
-   //if (tag != "" && tag != "TRUTH" && tag != "Calib")
-   if (tag != "TRUTH" && tag != "Calib")
+   if (tag != "" && tag != "TRUTH" && tag != "Calib")
+     //if (tag != "TRUTH" && tag != "Calib")
       return OBJECT_NOT_AVAILABLE;
    
    vector<DCDCHit*> data;

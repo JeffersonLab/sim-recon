@@ -48,7 +48,7 @@ DEventWriterHDDM::DEventWriterHDDM(JEventLoop* locEventLoop, string locOutputFil
         }
     }
     
-    CDC_TAG = "Calib";
+    CDC_TAG = "";
     gPARMS->SetDefaultParameter("HDDMOUT:CDCTAG", CDC_TAG, "Tag (string) to use when selecting CDC hits to read out.");
     
     FDC_TAG = "";
