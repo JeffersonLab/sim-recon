@@ -423,11 +423,14 @@ int main(int narg, char *argv[])
   // Get decaying particle mass and width
   string comment_line2;
   getline(infile,comment_line);
-  infile >> m_eta;
+  double m_eta_R=0.;
+  infile >> m_eta_R;
   infile >> width;
   infile.ignore(); // ignore the '\n' at the end of this line
 
+  m_eta=m_eta_R;
   m_eta_sq=m_eta*m_eta;
+
   cout << "Mass, width of decaying particle [GeV] = "<< m_eta <<"," << width << endl;
 
   // Get coupling constants for photon vertex
@@ -567,10 +570,81 @@ int main(int narg, char *argv[])
       // Momenta of incoming photon and outgoing eta and proton in cm frame
       double p_gamma=(s-m_p_sq)/(2.*Ecm);
 
-      if (width>0){  // Take into account width of resonance
-	// Use a relativistic Breit-Wigner distribution for the shape
-
+      // Generate mass distribution for unstable particle in the final state 
+      // with non-negligible width
+      if (reson_index>-1 && reson_width>0.){
+	if (num_res_decay_particles==2){
+	  double BW=0.,BWtest=0.;
+	  double m1sq=res_decay_masses[0]*res_decay_masses[0];
+	  double m2sq=res_decay_masses[1]*res_decay_masses[1];
+	  double m0sq=reson_mass*reson_mass;
+	  double q0sq=(m0sq*m0sq-2.*m0sq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
+	    /(4.*m0sq);
+	  double Gamma0sq=reson_width*reson_width;
+	  double BWmax=0.;
+	  double BWmin=0.;
+	  double m_min=res_decay_masses[0]+res_decay_masses[1];
+	  double BW_at_m_min=0.;
+	  double BW_at_m_max=0.;
+	  if (reson_L==0){
+	    BWmax=1./(m0sq*Gamma0sq);
+	  }
+	  else{
+	    BWmax=pow(q0sq,2*reson_L)/(m0sq*Gamma0sq);
+	  }
+	  double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
+	  for (int im=0;im<num_decay_particles;im++){
+	    if (im==reson_index) continue;
+	    m_max-=decay_masses[im];
+	  }
+	  double m=0.;
+	  do{
+	    m=m_min+myrand->Uniform(m_max-m_min);
+	    double msq=m*m;
+	    double qsq=(msq*msq-2.*msq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
+	      /(4.*msq);
+	    if (reson_L==0){
+	      BW=1./((m0sq-msq)*(m0sq-msq)+m0sq*qsq/q0sq*Gamma0sq);
+	    }
+	    else{
+	      BW=pow(qsq,2*reson_L)/((m0sq-msq)*(m0sq-msq)+m0sq*pow(qsq/q0sq,2*reson_L+1)*Gamma0sq);
+	    }
+	    BWtest=BWmin+myrand->Uniform(BWmax-BWmin);
+	  }
+	  while (BWtest>BW);
+	  decay_masses[reson_index]=m;
+	}	
       }
+
+      if (width>0){  // Take into account width of resonance
+	// Use a relativistic Breit-Wigner distribution for the shape.  
+	if (num_decay_particles==2){
+	  double m_max_=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);	
+	  double m1sq_=decay_masses[0]*decay_masses[0];
+	  double m2sq_=decay_masses[1]*decay_masses[1];
+	  double m_min_=decay_masses[0]+decay_masses[1];
+	  double m0sq_=m_eta_R*m_eta_R;
+	  double BW_=0.,BWtest_=0.;
+	  double Gamma0sq_=width*width;
+	  double q0sq_=(m0sq_*m0sq_-2.*m0sq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
+	    /(4.*m0sq_);
+	  double BWmax_=1./(Gamma0sq_*m0sq_);
+	  double BWmin_=0.;
+	  double m_=0.;
+	  do{
+	    m_=m_min_+myrand->Uniform(m_max_-m_min_);
+	    double msq_=m_*m_;
+	    double qsq_=(msq_*msq_-2.*msq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
+	      /(4.*msq_);
+	    BW_=1./((m0sq_-msq_)*(m0sq_-msq_)+m0sq_*m0sq_*Gamma0sq_*qsq_/q0sq_);
+	    BWtest_=BWmin_+myrand->Uniform(BWmax_-BWmin_);
+	  }
+	  while (BWtest_>BW_);
+	  m_eta=m_;
+	  m_eta_sq=m_*m_;
+	}
+      }
+   
       double E_eta=(s+m_eta_sq-m_p_sq)/(2.*Ecm);
       p_eta=sqrt(E_eta*E_eta-m_eta_sq);
     
@@ -612,43 +686,9 @@ int main(int narg, char *argv[])
     //Boost the eta 4-momentum into the lab
     eta4.Boost(v_cm);
     // eta4.Print();
-
   
     // Compute the 4-momentum for the recoil proton
-    TLorentzVector proton4=beam+target-eta4;
-
-    // Generate mass distribution for unstable particle in the final state 
-    // with non-negligible width
-    if (reson_index>-1 && reson_width>0.){
-      if (num_res_decay_particles==2){
-	double BW=0.,BWtest=0.;
-	double m1sq=res_decay_masses[0]*res_decay_masses[0];
-	double m2sq=res_decay_masses[1]*res_decay_masses[1];
-	double m0sq=reson_mass*reson_mass;
-	double q0sq=(m0sq*m0sq-2.*m0sq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
-	  /(4.*m0sq);
-	double Gamma0sq=reson_width*reson_width;
-	double BWmax=pow(q0sq,2*reson_L)/(m0sq*m0sq*Gamma0sq);
-	double m_min=res_decay_masses[0]+res_decay_masses[1];
-	double m_max=eta4.M();
-	for (int im=0;im<num_decay_particles;im++){
-	  if (im==reson_index) continue;
-	  m_max-=decay_masses[im];
-	}
-	double m=0.;
-	do{
-	  m=m_min+myrand->Uniform(m_max-m_min);
-	  double msq=m*m;
-	  double qsq=(msq*msq-2.*msq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
-	    /(4.*msq);
-	  BW=pow(qsq,2*reson_L)/(msq*(m0sq-msq)*(m0sq-msq)+m0sq*m0sq*pow(qsq/q0sq,2*reson_L+1)*Gamma0sq);
-	  BWtest=myrand->Uniform(BWmax);
-	}
-	while (BWtest>BW);
-	decay_masses[reson_index]=m;
-      }
- 
-    }
+    TLorentzVector proton4=beam+target-eta4; 
 
     //proton4.Print();
     thrown_theta_vs_p->Fill(proton4.P(),180./M_PI*proton4.Theta());
