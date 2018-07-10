@@ -618,31 +618,52 @@ int main(int narg, char *argv[])
 
       if (width>0){  // Take into account width of resonance
 	// Use a relativistic Breit-Wigner distribution for the shape.  
-	if (num_decay_particles==2){
-	  double m_max_=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);	
-	  double m1sq_=decay_masses[0]*decay_masses[0];
-	  double m2sq_=decay_masses[1]*decay_masses[1];
-	  double m_min_=decay_masses[0]+decay_masses[1];
-	  double m0sq_=m_eta_R*m_eta_R;
-	  double BW_=0.,BWtest_=0.;
-	  double Gamma0sq_=width*width;
-	  double q0sq_=(m0sq_*m0sq_-2.*m0sq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
-	    /(4.*m0sq_);
-	  double BWmax_=1./(Gamma0sq_*m0sq_);
-	  double BWmin_=0.;
-	  double m_=0.;
-	  do{
-	    m_=m_min_+myrand->Uniform(m_max_-m_min_);
-	    double msq_=m_*m_;
-	    double qsq_=(msq_*msq_-2.*msq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
-	      /(4.*msq_);
+	double m_max_=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
+	double m_min_=decay_masses[0]; // will add the second mass below
+	double m1sq_=decay_masses[0]*decay_masses[0];
+	double m2sq_=0.;
+	switch(num_decay_particles){
+	case 2:
+	  {
+	    m_min_+=decay_masses[1];
+	    m2sq_=decay_masses[1]*decay_masses[1];
+	    break;
+	  }
+	case 3:
+	  // Define an effective mass in an ad hoc way:  we assume that in the 
+	  // CM one particle goes in one direction and the two other particles
+	  // go in the opposite direction such that p1=-p2-p3.  The effective
+	  // mass of the 2-3 system must be something between min=m2+m3 
+	  // and max=M-m1, where M is the mass of the resonance.  For
+	  // simplicity use the average of these two extremes.
+	  {
+	    double m2_=0.5*(m_eta_R-decay_masses[0]+decay_masses[1]+decay_masses[2]);
+	    m_min_+=decay_masses[1]+decay_masses[2];
+	    m2sq_=m2_*m2_;
+	    break;
+	  }
+	default:
+	  break;
+	}
+	double m0sq_=m_eta_R*m_eta_R;
+	double BW_=0.,BWtest_=0.;
+	double Gamma0sq_=width*width;
+	double q0sq_=(m0sq_*m0sq_-2.*m0sq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
+	  /(4.*m0sq_);
+	double BWmax_=1./(Gamma0sq_*m0sq_);
+	double BWmin_=0.;
+	double m_=0.;
+	do{
+	  m_=m_min_+myrand->Uniform(m_max_-m_min_);
+	  double msq_=m_*m_;
+	  double qsq_=(msq_*msq_-2.*msq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
+	    /(4.*msq_);
 	    BW_=1./((m0sq_-msq_)*(m0sq_-msq_)+m0sq_*m0sq_*Gamma0sq_*qsq_/q0sq_);
 	    BWtest_=BWmin_+myrand->Uniform(BWmax_-BWmin_);
 	  }
-	  while (BWtest_>BW_);
-	  m_eta=m_;
-	  m_eta_sq=m_*m_;
-	}
+	while (BWtest_>BW_);
+	m_eta=m_;
+	m_eta_sq=m_*m_;
       }
    
       double E_eta=(s+m_eta_sq-m_p_sq)/(2.*Ecm);
