@@ -22,7 +22,7 @@ class DTrackTimeBased:public DTrackingData{
 	public:
 		JOBJECT_PUBLIC(DTrackTimeBased);
 		
-		double dEdx(void) const{return ((dNumHitsUsedFordEdx_CDC >= dNumHitsUsedFordEdx_FDC) ? ddEdx_CDC : ddEdx_FDC);}
+		double dEdx(void) const{return ((dNumHitsUsedFordEdx_CDC >= dNumHitsUsedFordEdx_FDC) ? ddEdx_CDC_amp : ddEdx_FDC);}
 		typedef struct{
 		  unsigned int inner_layer;
 		  unsigned int outer_layer;
