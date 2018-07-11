@@ -580,8 +580,9 @@ int main(int narg, char *argv[])
 	    double m1sq=res_decay_masses[0]*res_decay_masses[0];
 	    double m2sq=res_decay_masses[1]*res_decay_masses[1];
 	    double m0sq=reson_mass*reson_mass;
-	    double q0sq=(m0sq*m0sq-2.*m0sq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
-	      /(4.*m0sq);
+	    double m1sq_minus_m2sq=m1sq-m2sq;
+	    double q0sq=(m0sq*m0sq-2.*m0sq*(m1sq+m2sq)
+			 +m1sq_minus_m2sq*m1sq_minus_m2sq)/(4.*m0sq);
 	    double BlattWeisskopf=1.;
 	    double d=5.; // Meson radius in GeV^-1: 5 GeV^-1 -> 1 fm
 	    double dsq=d*d;
@@ -606,18 +607,21 @@ int main(int narg, char *argv[])
 	    do {
 	      m=m_min+myrand->Uniform(m_max-m_min);
 	      double msq=m*m;
-	      double qsq=(msq*msq-2.*msq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
-		/(4.*msq);
+	      double qsq=(msq*msq-2.*msq*(m1sq+m2sq)
+			  +m1sq_minus_m2sq*m1sq_minus_m2sq)/(4.*msq);
 	      double z=dsq*qsq;
 	      double z0=dsq*q0sq;
+	      double m0sq_minus_msq=m0sq-msq;
 	      if (reson_L==0){
-		BW=1./((m0sq-msq)*(m0sq-msq)+m0sq*qsq/q0sq*Gamma0sq);
+		BW=1./(m0sq_minus_msq*m0sq_minus_msq+m0sq*qsq/q0sq*Gamma0sq);
 	      }
 	      else{
 		if (reson_L==1){
 		  BlattWeisskopf=(1.+z0)/(1.+z);
 		}
-		BW=pow(qsq,2*reson_L)/((m0sq-msq)*(m0sq-msq)+m0sq*pow(qsq/q0sq,2*reson_L+1)*Gamma0sq*BlattWeisskopf);
+		BW=pow(qsq,2*reson_L)
+		  /(m0sq_minus_msq*m0sq_minus_msq
+		    +m0sq*pow(qsq/q0sq,2*reson_L+1)*Gamma0sq*BlattWeisskopf);
 	      }
 	      BWtest=BWmin+myrand->Uniform(BWmax-BWmin);
 	    } while (BWtest>BW);
@@ -659,17 +663,20 @@ int main(int narg, char *argv[])
 	  double m0sq_=m_eta_R*m_eta_R;
 	  double BW_=0.,BWtest_=0.;
 	  double Gamma0sq_=width*width;
-	  double q0sq_=(m0sq_*m0sq_-2.*m0sq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
-	    /(4.*m0sq_);
+	  double m1sq_minus_m2sq_=m1sq_-m2sq_;
+	  double q0sq_=(m0sq_*m0sq_-2.*m0sq_*(m1sq_+m2sq_)
+			+m1sq_minus_m2sq_*m1sq_minus_m2sq_)/(4.*m0sq_);
 	  double BWmax_=1./(Gamma0sq_*m0sq_);
 	  double BWmin_=0.;
 	  double m_=0.;
 	  do{
 	    m_=m_min_+myrand->Uniform(m_max_-m_min_);
 	    double msq_=m_*m_;
-	    double qsq_=(msq_*msq_-2.*msq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
-	      /(4.*msq_);
-	    BW_=1./((m0sq_-msq_)*(m0sq_-msq_)+m0sq_*m0sq_*Gamma0sq_*qsq_/q0sq_);
+	    double qsq_=(msq_*msq_-2.*msq_*(m1sq_+m2sq_)
+			 +m1sq_minus_m2sq_*m1sq_minus_m2sq_)/(4.*msq_);
+	    double m0sq_minus_msq_=m0sq_-msq_;
+	    BW_=1./(m0sq_minus_msq_*m0sq_minus_msq_
+		    +m0sq_*m0sq_*Gamma0sq_*qsq_/q0sq_);
 	    BWtest_=BWmin_+myrand->Uniform(BWmax_-BWmin_);
 	  }
 	  while (BWtest_>BW_);
