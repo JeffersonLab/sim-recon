@@ -25,11 +25,13 @@ void TPOLSmearer::SmearEvent(hddm_s::HDDM *record)
       hddm_s::TpolTruthHitList::iterator titer;
       for (titer = thits.begin(); titer != thits.end(); ++titer) {
          // smear the time
-         double t_ns = titer->getT() + 
-                       gDRandom.SampleGaussian(tpol_config->TPOL_SIGMA_NS);
+         double t_ns = titer->getT();
          // smear the energy, convert to MeV
-         double dE_MeV = titer->getDE() * 1e3 +
-                         gDRandom.SampleGaussian(tpol_config->TPOL_SIGMA_MEV);
+         double dE_MeV = titer->getDE() * 1e3;
+         if(config->SMEAR_HITS) {
+			 t_ns += gDRandom.SampleGaussian(tpol_config->TPOL_SIGMA_NS);
+			 dE_MeV += gDRandom.SampleGaussian(tpol_config->TPOL_SIGMA_MEV);
+		 }
          // apply the threshold
          if (dE_MeV > tpol_config->TPOL_THRESHOLD_MEV) {
 	        hddm_s::TpolHitList hits = iter->addTpolHits();

@@ -23,9 +23,14 @@ void TAGMSmearer::SmearEvent(hddm_s::HDDM *record)
       hddm_s::TaggerTruthHitList::iterator titer;
       for (titer = thits.begin(); titer != thits.end(); ++titer) {
          // smear the time
-         double t = titer->getT() + gDRandom.SampleGaussian(tagm_config->TAGM_TSIGMA);
-         double tADC = titer->getT() + gDRandom.SampleGaussian(tagm_config->TAGM_FADC_TSIGMA);
-         double npe = gDRandom.SamplePoisson(titer->getDE() * tagm_config->TAGM_NPIX_PER_GEV);
+         double t = titer->getT();
+         double tADC = titer->getT();
+         double npe = titer->getDE() * tagm_config->TAGM_NPIX_PER_GEV;
+         if(config->SMEAR_HITS) {
+         	t += gDRandom.SampleGaussian(tagm_config->TAGM_TSIGMA);
+          	tADC += gDRandom.SampleGaussian(tagm_config->TAGM_FADC_TSIGMA);
+          	npe = gDRandom.SamplePoisson(titer->getDE() * tagm_config->TAGM_NPIX_PER_GEV);
+		 }
          hddm_s::TaggerHitList hits = iter->addTaggerHits();
          hits().setT(t);
          hits().setTADC(tADC);
