@@ -571,101 +571,119 @@ int main(int narg, char *argv[])
       double p_gamma=(s-m_p_sq)/(2.*Ecm);
 
       // Generate mass distribution for unstable particle in the final state 
-      // with non-negligible width
-      if (reson_index>-1 && reson_width>0.){
-	if (num_res_decay_particles==2){
-	  double BW=0.,BWtest=0.;
-	  double m1sq=res_decay_masses[0]*res_decay_masses[0];
-	  double m2sq=res_decay_masses[1]*res_decay_masses[1];
-	  double m0sq=reson_mass*reson_mass;
-	  double q0sq=(m0sq*m0sq-2.*m0sq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
-	    /(4.*m0sq);
-	  double Gamma0sq=reson_width*reson_width;
-	  double BWmax=0.;
-	  double BWmin=0.;
-	  double m_min=res_decay_masses[0]+res_decay_masses[1];
-	  double BW_at_m_min=0.;
-	  double BW_at_m_max=0.;
-	  if (reson_L==0){
-	    BWmax=1./(m0sq*Gamma0sq);
-	  }
-	  else{
-	    BWmax=pow(q0sq,2*reson_L)/(m0sq*Gamma0sq);
-	  }
-	  double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
-	  for (int im=0;im<num_decay_particles;im++){
-	    if (im==reson_index) continue;
-	    m_max-=decay_masses[im];
-	  }
-	  double m=0.;
-	  do{
-	    m=m_min+myrand->Uniform(m_max-m_min);
-	    double msq=m*m;
-	    double qsq=(msq*msq-2.*msq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
-	      /(4.*msq);
+      // with non-negligible width if specified in the input file
+      double mass_check=0.;
+      do {
+	if (reson_index>-1 && reson_width>0.){
+	  if (num_res_decay_particles==2){
+	    double BW=0.,BWtest=0.;
+	    double m1sq=res_decay_masses[0]*res_decay_masses[0];
+	    double m2sq=res_decay_masses[1]*res_decay_masses[1];
+	    double m0sq=reson_mass*reson_mass;
+	    double q0sq=(m0sq*m0sq-2.*m0sq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
+	      /(4.*m0sq);
+	    double BlattWeisskopf=1.;
+	    double d=5.; // Meson radius in GeV^-1: 5 GeV^-1 -> 1 fm
+	    double dsq=d*d;
+	    double Gamma0sq=reson_width*reson_width;
+	    double BWmax=0.;
+	    double BWmin=0.;
+	    double m_min=res_decay_masses[0]+res_decay_masses[1];
+	    //	    double BW_at_m_min=0.;
+	    //double BW_at_m_max=0.;
 	    if (reson_L==0){
-	      BW=1./((m0sq-msq)*(m0sq-msq)+m0sq*qsq/q0sq*Gamma0sq);
+	      BWmax=1./(m0sq*Gamma0sq);
 	    }
 	    else{
-	      BW=pow(qsq,2*reson_L)/((m0sq-msq)*(m0sq-msq)+m0sq*pow(qsq/q0sq,2*reson_L+1)*Gamma0sq);
+	      BWmax=pow(q0sq,2*reson_L)/(m0sq*Gamma0sq);
 	    }
-	    BWtest=BWmin+myrand->Uniform(BWmax-BWmin);
-	  }
-	  while (BWtest>BW);
-	  decay_masses[reson_index]=m;
-	}	
-      }
-
-      if (width>0){  // Take into account width of resonance
-	// Use a relativistic Breit-Wigner distribution for the shape.  
-	double m_max_=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
-	double m_min_=decay_masses[0]; // will add the second mass below
-	double m1sq_=decay_masses[0]*decay_masses[0];
-	double m2sq_=0.;
-	switch(num_decay_particles){
-	case 2:
-	  {
-	    m_min_+=decay_masses[1];
-	    m2sq_=decay_masses[1]*decay_masses[1];
-	    break;
-	  }
-	case 3:
-	  // Define an effective mass in an ad hoc way:  we assume that in the 
-	  // CM one particle goes in one direction and the two other particles
-	  // go in the opposite direction such that p1=-p2-p3.  The effective
-	  // mass of the 2-3 system must be something between min=m2+m3 
-	  // and max=M-m1, where M is the mass of the resonance.  For
-	  // simplicity use the average of these two extremes.
-	  {
-	    double m2_=0.5*(m_eta_R-decay_masses[0]+decay_masses[1]+decay_masses[2]);
-	    m_min_+=decay_masses[1]+decay_masses[2];
-	    m2sq_=m2_*m2_;
-	    break;
-	  }
-	default:
-	  break;
+	    double m_max=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
+	    for (int im=0;im<num_decay_particles;im++){
+	      if (im==reson_index) continue;
+	      m_max-=decay_masses[im];
+	    }
+	    double m=0.;
+	    do {
+	      m=m_min+myrand->Uniform(m_max-m_min);
+	      double msq=m*m;
+	      double qsq=(msq*msq-2.*msq*(m1sq+m2sq)+(m1sq-m2sq)*(m1sq-m2sq))
+		/(4.*msq);
+	      double z=dsq*qsq;
+	      double z0=dsq*q0sq;
+	      if (reson_L==0){
+		BW=1./((m0sq-msq)*(m0sq-msq)+m0sq*qsq/q0sq*Gamma0sq);
+	      }
+	      else{
+		if (reson_L==1){
+		  BlattWeisskopf=(1.+z0)/(1.+z);
+		}
+		BW=pow(qsq,2*reson_L)/((m0sq-msq)*(m0sq-msq)+m0sq*pow(qsq/q0sq,2*reson_L+1)*Gamma0sq*BlattWeisskopf);
+	      }
+	      BWtest=BWmin+myrand->Uniform(BWmax-BWmin);
+	    } while (BWtest>BW);
+	    decay_masses[reson_index]=m;
+	  }	
 	}
-	double m0sq_=m_eta_R*m_eta_R;
-	double BW_=0.,BWtest_=0.;
-	double Gamma0sq_=width*width;
-	double q0sq_=(m0sq_*m0sq_-2.*m0sq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
-	  /(4.*m0sq_);
-	double BWmax_=1./(Gamma0sq_*m0sq_);
-	double BWmin_=0.;
-	double m_=0.;
-	do{
-	  m_=m_min_+myrand->Uniform(m_max_-m_min_);
-	  double msq_=m_*m_;
-	  double qsq_=(msq_*msq_-2.*msq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
-	    /(4.*msq_);
+
+	if (width>0.001){  
+	  // Take into account width of resonance, but apply a practical minimum
+	  // for the width, overwise we are just wasting cpu cycles...
+	  // Use a relativistic Breit-Wigner distribution for the shape.  
+	  double m_max_=m_p*(sqrt(1.+2.*Egamma/m_p)-1.);
+	  double m_min_=decay_masses[0]; // will add the second mass below
+	  double m1sq_=decay_masses[0]*decay_masses[0];
+	  double m2sq_=0.;
+	  switch(num_decay_particles){
+	  case 2:
+	    {
+	      m_min_+=decay_masses[1];
+	      m2sq_=decay_masses[1]*decay_masses[1];
+	      break;
+	    }
+	  case 3:
+	    // Define an effective mass in an ad hoc way: we assume that in the 
+	    // CM one particle goes in one direction and the two other particles
+	    // go in the opposite direction such that p1=-p2-p3.  The effective
+	    // mass of the 2-3 system must be something between min=m2+m3 
+	    // and max=M-m1, where M is the mass of the resonance.  For
+	    // simplicity use the average of these two extremes.
+	    {
+	      double m2_=0.5*(m_eta_R-decay_masses[0]+decay_masses[1]+decay_masses[2]);
+	      m_min_+=decay_masses[1]+decay_masses[2];
+	      m2sq_=m2_*m2_;
+	      break;
+	    }
+	  default:
+	    break;
+	  }
+	  double m0sq_=m_eta_R*m_eta_R;
+	  double BW_=0.,BWtest_=0.;
+	  double Gamma0sq_=width*width;
+	  double q0sq_=(m0sq_*m0sq_-2.*m0sq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
+	    /(4.*m0sq_);
+	  double BWmax_=1./(Gamma0sq_*m0sq_);
+	  double BWmin_=0.;
+	  double m_=0.;
+	  do{
+	    m_=m_min_+myrand->Uniform(m_max_-m_min_);
+	    double msq_=m_*m_;
+	    double qsq_=(msq_*msq_-2.*msq_*(m1sq_+m2sq_)+(m1sq_-m2sq_)*(m1sq_-m2sq_))
+	      /(4.*msq_);
 	    BW_=1./((m0sq_-msq_)*(m0sq_-msq_)+m0sq_*m0sq_*Gamma0sq_*qsq_/q0sq_);
 	    BWtest_=BWmin_+myrand->Uniform(BWmax_-BWmin_);
 	  }
-	while (BWtest_>BW_);
-	m_eta=m_;
-	m_eta_sq=m_*m_;
-      }
-   
+	  while (BWtest_>BW_);
+	  m_eta=m_;
+	  m_eta_sq=m_*m_;
+	}
+	// Check that the decay products are consistent with a particle of mass
+	// m_eta...
+	mass_check=decay_masses[0];
+	for (int im=1;im<num_decay_particles;im++){
+	  mass_check+=decay_masses[im];
+	}
+      } while (mass_check>m_eta);
+    
       double E_eta=(s+m_eta_sq-m_p_sq)/(2.*Ecm);
       p_eta=sqrt(E_eta*E_eta-m_eta_sq);
     
@@ -702,11 +720,9 @@ int main(int narg, char *argv[])
     double pt=p_eta*sin(theta_cm);
     TLorentzVector eta4(pt*cos(phi_cm),pt*sin(phi_cm),p_eta*cos(theta_cm),
 			sqrt(p_eta*p_eta+m_eta_sq));
-    // eta4.Print();
 
     //Boost the eta 4-momentum into the lab
     eta4.Boost(v_cm);
-    // eta4.Print();
   
     // Compute the 4-momentum for the recoil proton
     TLorentzVector proton4=beam+target-eta4; 
