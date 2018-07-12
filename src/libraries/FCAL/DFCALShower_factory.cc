@@ -284,6 +284,7 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
       
       vector< const DFCALHit* > fcalHits;
       cluster->Get( fcalHits );
+      shower->setNumBlocks( fcalHits.size() );
       
       double e9e25, e1e9;
       getE1925FromHits( e1e9, e9e25, fcalHits, getMaxHit( fcalHits ) );
