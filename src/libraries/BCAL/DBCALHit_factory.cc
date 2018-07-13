@@ -127,6 +127,41 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 	   fADC_Saturation_Quadratic[end][layer] = (saturation_ADC_pars[i])["par2"];
    } 
 
+   // load parameters for SiPM saturation
+   map<string,double> sipm_factors;
+   if (eventLoop->GetCalib("/BCAL/SiPM_saturation", sipm_factors))
+       jout << "Error loading /BCAL/SiPM_saturation !" << endl;
+
+   if (sipm_factors.find("INTEGRAL_TO_PEAK") != sipm_factors.end()) {
+       INTEGRAL_TO_PEAK = sipm_factors["INTEGRAL_TO_PEAK"];
+     if (PRINTCALIBRATION) {
+       jout << "DBCALHit_factory >> INTEGRAL_TO_PEAK= " << INTEGRAL_TO_PEAK << endl;
+     }
+   }
+   else
+       jerr << "Unable to get INTEGRAL_TO_PEAK from /BCAL/SiPM_saturation !" << endl;
+
+   if (sipm_factors.find("SIPM_NPIXELS") != scale_factors.end()) {
+     SIPM_NPIXELS = sipm_factors["SIPM_NPIXELS"];
+     if (PRINTCALIBRATION) {
+       jout << "DBCALHit_factory >>SIPM_NPIXELS = " << SIPM_NPIXELS << endl;
+     }
+   }
+   else
+       jerr << "Unable to get SIPM_NPIXELS from /BCAL/SiPM_saturation !" << endl;
+
+   if (sipm_factors.find("INTEGRAL_2V_PIXELS") != scale_factors.end()) {
+     INTEGRAL_2V_PIXELS = sipm_factors["INTEGRAL_2V_PIXELS"];
+     if (PRINTCALIBRATION) {
+       jout << "DBCALHit_factory >>INTEGRAL_2V_PIXELS = " << INTEGRAL_2V_PIXELS << endl;
+     }
+   }
+   else
+       jerr << "Unable to get SIPM_NPIXELS from /BCAL/SiPM_saturation !" << endl;
+
+
+
+
    return NOERROR;
 }
 
@@ -216,9 +251,9 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       
 
       // make corrections for SiPM saturation
-      float INTEGRAL_TO_PEAK=12.8;
-      float SIPM_NPIXELS=57600;
-      float INTEGRAL_2V_PIXELS= 24000;   // number of pixels in integral for Peak=2V (4095 counts)
+
+      cout << " INTEGRAL_TO_PEAK=" << INTEGRAL_TO_PEAK << " SIPM_NPIXELS=" << SIPM_NPIXELS 
+	   << " INTEGRAL_2V_PIXELS=" << INTEGRAL_2V_PIXELS << endl;
 
       double integral_pedsub =0;
       if ( integral > 0 ) { 
