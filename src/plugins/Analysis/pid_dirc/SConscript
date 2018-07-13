@@ -6,6 +6,13 @@ env = env.Clone()
 
 sbms.AddDANA(env)
 sbms.AddROOT(env)
+
+# plugins usually don't link core DANA libraries. This one
+# needs to link to the DIRC library though to avoid undefined
+# reference errors to the Particle vtable.  (7/13/2018 DL)
+REDUCED_OPTIONAL_PLUGIN_LIBS= [s for s in env['OPTIONAL_PLUGIN_LIBS'] if s not in ['DIRC'] ]
+env.Replace(OPTIONAL_PLUGIN_LIBS=REDUCED_OPTIONAL_PLUGIN_LIBS)
+
 sbms.plugin(env)
 
 
