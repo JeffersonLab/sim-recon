@@ -118,7 +118,7 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
     thetathrown = 180./3.14159*pgen.Theta();
   }
 
-  if (thetathrown > 12) {   // ignore photons hitting end of bcal
+  if (NumThrown==0 || thetathrown > 12) {   // Either data or ignore MC photons hitting end of bcal
 
     // Get vector of neutral showers in event
   	vector<const DNeutralShower*> NeutralShowers;
@@ -155,7 +155,7 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
                          "BCAL SiPM Saturation; Thrown Energy (GeV)",4*nbins,0,10);
 
         Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Eshower", Eshower,
-                         "BCAL SiPM Saturation; Shower Energy (GeV)",4*nbins,0,10);
+                         "BCAL SiPM Saturation; Shower Energy (GeV)",10*nbins,0,10);
         Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Thrown Theta", thetathrown,
                          "BCAL SiPM Saturation; Thrown Theta (degrees)",4*90,0,90);
 
@@ -166,7 +166,7 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
         Fill2DHistogram ("BCAL_SiPM_saturation", "Hists2D", "EDiff_vs_Ethrown", Ethrown, Eshower - Ethrown,
                          "BCAL SiPM Saturation; Thrown Energy (GeV); (Shower - Thrown) Energy (GeV)",
                          4*nbins,0,10,nbins,-0.5,0.5);
-        Fill2DHistogram ("BCAL_SiPM_saturation", "Hists2D", "EDiff/Ethrown_vs_Ethrown", Ethrown, (Eshower - Ethrown)/Ethrown,
+        Fill2DHistogram ("BCAL_SiPM_saturation", "Hists2D", "EDiff/Ethrown_vs_Ethrown", Ethrown, Ethrown>0? (Eshower - Ethrown)/Ethrown : 0,
                          "BCAL SiPM Saturation; Thrown Energy (GeV); (EShower - EThrown)/Ethrown",
                          4*nbins,0,10,nbins,-0.2,0.2);
 	
@@ -217,7 +217,7 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
                          "BCAL SiPM Saturation; Layer Number",5,0,5);
 
         Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Ept", Ept,
-                         "BCAL SiPM Saturation; Point Energy (GeV)",4*nbins,0,10);
+                         "BCAL SiPM Saturation; Point Energy (GeV)",10*nbins,0,10);
 
 	// cout << " Point: Ept=" << Ept << endl;
 	float upHit=0;
@@ -298,6 +298,11 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
 		/*cout << " i=" << i << " module=" << module <<  " layer=" <<  layer << " sector=" << sector 
                      << " lambda=" << attenuation_length << " Eup=" << upHit << " Edown=" << downHit << " Point: Ept=" 
                      << Ept << " Ecalc=" << Ecalc << " Diff=" << Ept-Ecalc <<  endl;*/
+
+		Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Ecalc", Ecalc,
+                         "BCAL SiPM Saturation; Calc Energy (GeV)",4*nbins,0,10);
+		Fill1DHistogram ("BCAL_SiPM_saturation", "Hists1D", "Ecalc-Ept", Ecalc-Ept,
+				 "BCAL SiPM Saturation; Calc-Pt Energy (GeV)",nbins,-0.05,0.05);
 
 	}
 
