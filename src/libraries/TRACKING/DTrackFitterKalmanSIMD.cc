@@ -6874,7 +6874,6 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       // Swim through the field out to the most upstream FDC hit
       jerror_t ref_track_error=SetReferenceTrajectory(S);
       if (ref_track_error!=NOERROR){
-	_DBG_ << "Err " << ref_track_error << endl;
 	if (iter==0) return FIT_FAILED;  
 	break;
       }
@@ -7119,7 +7118,6 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       // Swim to create the reference trajectory
       jerror_t ref_track_error=SetCDCForwardReferenceTrajectory(S);
       if (ref_track_error!=NOERROR){
-	_DBG_ << "Err " << ref_track_error << endl;
 	if (iter2==0) return FIT_FAILED;  
 	break;
       }
@@ -7357,7 +7355,6 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
       // Initialize trajectory deque
       jerror_t ref_track_error=SetCDCReferenceTrajectory(last_pos,Sc);
       if (ref_track_error!=NOERROR){
-	_DBG_ << "Err " << ref_track_error << endl;
 	if (iter2==0) return FIT_FAILED;  
 	break;
       }
@@ -9420,7 +9417,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
   }
   
   // Deal with points within fiducial volume of chambers
-  unsigned int fdc_plane=0;
   mT0Detector=SYS_NULL;
   mT0MinimumDriftTime=1e6;
   for (int k=index_beyond_start_counter;k>=0;k--){ 
@@ -9456,18 +9452,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 					       s_theta_ms_sum,theta2ms_sum));
       
     }
-    else{
-      if (fdc_plane==24) break;	
-      // output step near wire plane
-      if (S(state_z)>fdc_z_wires[fdc_plane]-0.1){
-	DVector3 position(xy.X(),xy.Y(),S(state_z));
-	DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl); 
-	extrapolations[SYS_FDC].push_back(Extrapolation_t(position,momentum,t,s,
-						 s_theta_ms_sum,theta2ms_sum));
-
-	fdc_plane++;
-      }
-    }
   }
 
   //------------------------------
@@ -9489,7 +9473,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 
   // Matrix for multiple scattering covariance terms
   DMatrix5x5 Q;
-
 
   // Track propagation loop
   //if (false)
@@ -9576,21 +9559,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateCentralToOtherDetectors(){
 	extrapolations[SYS_BCAL].clear();
       }
     }
-    // Check if we have more FDC planes to pass by
-    else if (fdc_plane<24 && S(state_z)>fdc_z_wires[fdc_plane]-0.5){   
-      // output step near wire plane 
-      double tanl=S(state_tanl);
-      double pt=1/fabs(S(state_q_over_pt));
-      double phi=S(state_phi);
-      DVector3 position(xy.X(),xy.Y(),S(state_z));
-      DVector3 momentum(pt*cos(phi),pt*sin(phi),pt*tanl);
-      extrapolations[SYS_FDC].push_back(Extrapolation_t(position,momentum,
-					       t*TIME_UNIT_CONVERSION,s,
-					       s_theta_ms_sum));
-      
-      fdc_plane++;
-    }
-      
   }   
 
   return NOERROR;
