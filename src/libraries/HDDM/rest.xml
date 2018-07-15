@@ -31,6 +31,7 @@
        <fcalShowerClassification minOccurs="0" classifierOuput="float"/>
        <fcalShowerProperties minOccurs="0" maxOccurs="1" docaTrack="float" timeTrack="float" sumU="float" sumV="float"
                              E1E9="float" E9E25="float"/>
+       <fcalShowerNBlocks minOccurs="0" numBlocks="int"/>
     </fcalShower>
     <bcalShower minOccurs="0" maxOccurs="unbounded" jtag="string"
                 x="float" y="float" z="float" t="float" E="float"

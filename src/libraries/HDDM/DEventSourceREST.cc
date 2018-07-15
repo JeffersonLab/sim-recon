@@ -854,6 +854,12 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
 	          shower->setE9E25(locFcalShowerPropertiesIterator->getE9E25());
       }
       
+      const hddm_r::FcalShowerNBlocksList& locFcalShowerNBlocksList = iter->getFcalShowerNBlockses();
+      hddm_r::FcalShowerNBlocksList::iterator locFcalShowerNBlocksIterator = locFcalShowerNBlocksList.begin();
+      if(locFcalShowerNBlocksIterator != locFcalShowerNBlocksList.end()) {
+	          shower->setNumBlocks(locFcalShowerNBlocksIterator->getNumBlocks());
+      }
+
       data.push_back(shower);
    }
 
