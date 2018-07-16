@@ -102,11 +102,16 @@ void SCSmearer::SmearEvent(hddm_s::HDDM *record)
          double z_pos = 30.;    // default value in the middle, in case we can't find a good point.  this shouldn't happen, but you never know...
          if( piter != truthPoints.end() )
              z_pos = piter->getZ() - sc_config->SC_START_Z[iter->getSector()-1];
-         double t = titer->getT() + gDRandom.SampleGaussian(sc_config->GetPaddleTimeResolution(iter->getSector()-1, z_pos));
-         // smear the energy
-         double npe = titer->getDE() * 1000. *  sc_config->START_PHOTONS_PERMEV;
-         npe = npe +  gDRandom.SampleGaussian(sqrt(npe));
-         double NewE = npe/sc_config->START_PHOTONS_PERMEV/1000.;
+    
+         double t = titer->getT();
+         double NewE = titer->getDE();
+         if(config->SMEAR_HITS) {
+         	t += gDRandom.SampleGaussian(sc_config->GetPaddleTimeResolution(iter->getSector()-1, z_pos));
+         	// smear the energy
+         	double npe = titer->getDE() * 1000. *  sc_config->START_PHOTONS_PERMEV;
+         	npe = npe +  gDRandom.SampleGaussian(sqrt(npe));
+         	NewE = npe/sc_config->START_PHOTONS_PERMEV/1000.;
+         }
          if (NewE > sc_config->START_PADDLE_THRESHOLD) {
             hddm_s::StcHitList hits = iter->addStcHits();
             hits().setT(t);

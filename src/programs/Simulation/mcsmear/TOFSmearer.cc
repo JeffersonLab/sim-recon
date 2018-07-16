@@ -77,11 +77,15 @@ void TOFSmearer::SmearEvent(hddm_s::HDDM *record)
 		 			
          // Smear the time
          //double t = titer->getT() + gDRandom.SampleGaussian(tof_config->TOF_SIGMA);
-         double t = titer->getT() + gDRandom.SampleGaussian(tof_config->GetHitTimeResolution(iter->getPlane(),iter->getBar()));
+         double t = titer->getT();
          // Smear the energy
-         double npe = titer->getDE() * 1000. * tof_config->TOF_PHOTONS_PERMEV;
-         npe = npe + gDRandom.SampleGaussian(sqrt(npe));
-         float NewE = npe/tof_config->TOF_PHOTONS_PERMEV/1000.;
+         float NewE = titer->getDE();
+         if(config->SMEAR_HITS) {
+			 t += gDRandom.SampleGaussian(tof_config->GetHitTimeResolution(iter->getPlane(),iter->getBar()));
+         	 double npe = titer->getDE() * 1000. * tof_config->TOF_PHOTONS_PERMEV;
+         	 npe += gDRandom.SampleGaussian(sqrt(npe));
+          	 NewE = npe/tof_config->TOF_PHOTONS_PERMEV/1000.;
+		 }
          if (NewE > tof_config->TOF_BAR_THRESHOLD) {
             hddm_s::FtofHitList hits = iter->addFtofHits();
             hits().setEnd(titer->getEnd());
