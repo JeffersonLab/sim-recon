@@ -9,7 +9,6 @@
 #include "TRIGGER/DTrigger.h"
 using namespace jana;
 
-
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
@@ -19,7 +18,6 @@ void InitPlugin(JApplication *app){
 	app->AddProcessor(new JEventProcessor_ST_Propagation_Time());
 }
 } // "C"
-
 
 //------------------
 // JEventProcessor_ST_Propagation_Time (Constructor)
@@ -52,7 +50,7 @@ jerror_t JEventProcessor_ST_Propagation_Time::init(void)
 	//
   //****** Define Some Constants*********************************
   int NoBins_time = 200;
-  int NoBins_z = 300;
+  int NoBins_z = 60;
   double time_lower_limit = -10.0;      
   double time_upper_limit =  10.0;
   double z_lower_limit = 0.0;
@@ -210,10 +208,6 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
       // Grab associated time based track object by selecting charged track with best FOM
       const DTrackTimeBased *timeBasedTrack = thisChargedTrack->Get_BestTrackingFOM()->Get_TrackTimeBased();
 
-      // if (thisChargedTrack->Get_Hypothesis(PiMinus) == NULL) continue;
-      // pim_pmag_cut = 0.500; // GeV
-      // if (timeBasedTrack->pmag() < pim_pmag_cut) continue;
-
       // Implement quality cuts for the time based tracks 
       if(timeBasedTrack->FOM  < trackingFOMCut) continue;
   
@@ -312,53 +306,9 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
           // Z intersection of charged track and SC 
           double locSCzIntersection = IntersectionPoint.z();
           // Calculate the path along the paddle
-          //Define some parameters
-          //double Radius = 12.0;
-          //double pi = 3.14159265358979323846;
-          //double theta  = 18.5 * pi/180.0;
-          double path_ss=0.,path_bs=0.,path_ns=0.; 
+	  double path_ss=0.,path_bs=0.,path_ns=0.; 
           double SS_Length = sc_pos_eoss - sc_pos_soss;// same for along z or along the paddle
-          //double BS_Length = Radius *  theta ; // along the paddle
-          //double NS_Length = (sc_pos_eons - sc_pos_eobs)/cos(theta);// along the paddle
-          //double Paddle_Length = SS_Length + BS_Length + NS_Length; // total paddle length
-          //double SC_Length_AlongZ = sc_pos_eons - sc_pos_soss; // SC length along z which is shorter than the total paddle length
-          //=================================================================================================
-          // I tested the calculation of the path along the paddle between the equal signs ========= comments
-          //from line 303 to line 339
-          // cout <<" ========== This is event number " << eventnumber <<"==========="<<endl;
-          // cout << "Length of straight section              = "  << SS_Length << endl;
-          // cout << "Length of bend section along the paddle = "  << BS_Length  << endl;
-          // cout << "Length of nose section along the paddle = "  << NS_Length << endl;
-          // cout << "Total Paddle_Length  = "  << Paddle_Length << endl;
-          // cout << "-----------------"<<endl;
-          // cout << "   SC_Length_AlongZ  = "  << SC_Length_AlongZ << endl;
-          // // cout << "Start of straight section = "  << sc_pos_soss << endl;
-          // // cout << "End of straight section = "  << sc_pos_eoss << endl;
-          // // cout << "End of bend section = "  << sc_pos_eobs << endl;
-          // // cout << "End of nose section = "  << sc_pos_eons << endl;
-          // cout << " ========================================================="<<endl;
-          // cout << "                   next z coordiate is                    "<<endl;
-          // cout << " ========================================================="<<endl;
-          // cout << "Z along the beam line = "  << IntersectionPoint.z() << endl;
-          // if (locSCzIntersection > sc_pos_soss && locSCzIntersection <= sc_pos_eoss)
-          //   {
-          //     // Path along the paddle for straight section the 
-          //     path_ss = IntersectionPoint.z() - sc_pos_soss;
-          //     //   cout << "$$$$$$$ Path along paddle for  SS  = "  << path_ss << endl;
-          //   }
-          // if(locSCzIntersection > sc_pos_eoss && locSCzIntersection <= sc_pos_eobs)
-          //   {
-          //     //  Path along the paddle for the bend section 
-          //     path_bs = SS_Length + Radius * asin((IntersectionPoint.z()- sc_pos_eoss)/Radius);
-          //     // cout << "$$$$$$$ Path along paddle for BS  = "  << path_bs << endl;
-          //   }
-          // if(locSCzIntersection > sc_pos_eobs && locSCzIntersection <= sc_pos_eons)
-          //   { 
-          //     //  Path along the paddle for the nose section 
-          //     path_ns = SS_Length + BS_Length +((IntersectionPoint.z() - sc_pos_eobs)/cos(theta));
-          //     //  cout << "$$$$$$$ Path along paddle for NS  = "  << path_ns << endl;
-          //   }
-          //========================================================================================================	  
+          
           /////////////////////////////////////////////
           // Fill the histograms before corrections////
           ////////////////////////////////////////////
@@ -376,16 +326,14 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
           // Bend Sections
           if(locSCzIntersection > sc_pos_eoss && locSCzIntersection <= sc_pos_eobs)
           {
-              //path_bs = SS_Length + Radius * asin((IntersectionPoint.z()- sc_pos_eoss)/Radius);
-              path_bs = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;;
+	    path_bs = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;;
               h2_PropTime_z_BS_chan[sc_index]->Fill(path_bs,locSCPropTime);
               h2_PpropTime_z[sc_index]->Fill(path_bs,locSCPropTime);
           }
           // Nose Sections
           if(locSCzIntersection > sc_pos_eobs && locSCzIntersection <= sc_pos_eons) 
           {
-              //path_ns = SS_Length + BS_Length +((IntersectionPoint.z() - sc_pos_eobs)/cos(theta));
-              path_ns = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;;
+	    path_ns = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;;
               h2_PropTime_z_NS_chan[sc_index]->Fill(path_ns,locSCPropTime);
               h2_PpropTime_z[sc_index]->Fill(path_ns,locSCPropTime);
           }
@@ -406,23 +354,40 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
               h2_PropTimeCorr_z_SS_chan[sc_index]->Fill(path_ss,Corr_Time_ss);
               h2_CorrectedTime_z[sc_index]->Fill(path_ss,Corr_Time_ss);
           }
-          // Bend Sections
+          // Bend Sections:
+	  //In new calibration we are using SS constants up to 44 cm.
           if( sc_pos_eoss < locSCzIntersection  && locSCzIntersection <= sc_pos_eobs)
           {
-              double Corr_Time_bs = locSCPropTime - (incpt_bs + (slope_bs *  path_bs));
+              double Corr_Time_bs = locSCPropTime - (incpt_ss + (slope_ss *  path_bs));
               h2_PropTimeCorr_z_BS_chan[sc_index]->Fill(path_bs,Corr_Time_bs);
               h2_CorrectedTime_z[sc_index]->Fill(path_bs,Corr_Time_bs);
           }
           // Nose Sections
           if(sc_pos_eobs < locSCzIntersection   && locSCzIntersection <= sc_pos_eons)
           { 
-              double Corr_Time_ns = locSCPropTime - (incpt_ns + (slope_ns *  path_ns));
+
+	    if (path_ns <= 44.0)
+	      {        
+		double Corr_Time_ns = locSCPropTime - (incpt_ss + (slope_ss *  path_ns));
               h2_PropTimeCorr_z_NS_chan[sc_index]->Fill(path_ns,Corr_Time_ns);
               h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns);
+	      }
+
+	    else if ((44.0 < path_ns)&&(path_ns <= 52.0))
+	      {
+		double Corr_Time_ns = locSCPropTime - (incpt_bs + (slope_bs *  path_ns));
+		h2_PropTimeCorr_z_NS_chan[sc_index]->Fill(path_ns,Corr_Time_ns);
+		h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns);
+	      }
+	    else
+	      {
+		double Corr_Time_ns = locSCPropTime - (incpt_ns + (slope_ns *  path_ns));
+		h2_PropTimeCorr_z_NS_chan[sc_index]->Fill(path_ns,Corr_Time_ns);
+		h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns);
+	      }
           }
           japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
-
-   	} // sc charged tracks
+      } // sc charged tracks
     }// TOF reference time
 
 

@@ -58,10 +58,10 @@ jerror_t JEventProcessor_ST_Tresolution::init(void)
 
   h2_CorrectedTime_z = new TH2I*[NCHANNELS];
   // All my Calculations in 2015 were using the binning below
-  int NoBins_time = 100;
-  int NoBins_z = 300;
-  double time_lower_limit = -5.0;      
-  double time_upper_limit = 5.0;
+  int NoBins_time = 200;
+  int NoBins_z = 60;
+  double time_lower_limit = -10.0;      
+  double time_upper_limit = 10.0;
   double z_lower_limit = 0.0;
   double z_upper_limit = 60.0;
   for (Int_t i = 0; i < NCHANNELS; i++)
@@ -283,7 +283,7 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
       {
           //double path_bs = SS_Length + Radius * asin((locSCzIntersection - sc_pos_eoss)/Radius);
           double path_bs = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;
-          double Corr_Time_bs =  st_corr_FlightTime  - (incpt_bs + (slope_bs *  path_bs));
+          double Corr_Time_bs =  st_corr_FlightTime  - (incpt_ss + (slope_ss *  path_bs));
           double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_bs);
           h2_CorrectedTime_z[sc_index]->Fill(path_bs,Corr_Time_bs - SC_RFShiftedTime);
       }
@@ -292,9 +292,25 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
       { 
           //double path_ns = SS_Length + BS_Length +((locSCzIntersection - sc_pos_eobs)/cos(theta));
           double path_ns = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;
-          double Corr_Time_ns =  st_corr_FlightTime  - (incpt_ns + (slope_ns *  path_ns));
-          double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
-          h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
+	  if (path_ns <= 44.0)
+	    {
+	      double Corr_Time_ns =  st_corr_FlightTime  - (incpt_ss + (slope_ss *  path_ns));
+	      double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
+	      h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
+	    }
+	  else if ((44.0 < path_ns)&&(path_ns <= 52.0))
+	    {
+	      double Corr_Time_ns =  st_corr_FlightTime  - (incpt_bs + (slope_bs *  path_ns));
+	      double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
+	      h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
+	    }
+	  else
+	    {
+	      double Corr_Time_ns =  st_corr_FlightTime  - (incpt_ns + (slope_ns *  path_ns));
+	      double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
+	      h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
+	    }
+
       }
       japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
