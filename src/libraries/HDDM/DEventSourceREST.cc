@@ -1027,6 +1027,12 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       DVector3 track_mom(fit.getPx(),fit.getPy(),fit.getPz());
       tra->setPosition(track_pos);
       tra->setMomentum(track_mom);
+      tra->flags=0;
+      const hddm_r::TrackFlagsList &myflags = iter->getTrackFlagses();
+      hddm_r::TrackFlagsList::iterator flagiter = myflags.begin();
+      if (flagiter != myflags.end()) {
+	tra->flags=flagiter->getFlags();
+      }
 
       auto loc5x5ErrorMatrix = dResourcePool_TMatrixFSym->Get_SharedResource();
       loc5x5ErrorMatrix->ResizeTo(5, 5);

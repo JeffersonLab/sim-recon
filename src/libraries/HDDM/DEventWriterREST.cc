@@ -351,7 +351,10 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		fit().setE35(errors(2,4));
 		fit().setE44(errors(3,3));
 		fit().setE45(errors(3,4));
-		fit().setE55(errors(4,4));
+		fit().setE55(errors(4,4));	
+
+		hddm_r::TrackFlagsList myflags = tra().addTrackFlagses(1);
+		myflags().setFlags(tracks[i]->flags);
 
 		hddm_r::HitlayersList locHitLayers = tra().addHitlayerses(1);
 		locHitLayers().setCDCrings(tracks[i]->dCDCRings);
