@@ -275,7 +275,8 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       timebased_track->IsSmoothed = track->IsSmoothed;
-      
+      timebased_track->flags=DTrackTimeBased::FLAG__USED_WIREBASED_FIT;
+
       // Lists of hits used in the previous pass
       vector<const DCDCTrackHit *>cdchits;
       track->GetT(cdchits);
@@ -369,7 +370,8 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  timebased_track->extrapolations = track->extrapolations;
 	  timebased_track->trackid = track->id;
 	  timebased_track->candidateid=track->candidateid;
-	  
+	  timebased_track->flags=DTrackTimeBased::FLAG__USED_WIREBASED_FIT;
+ 
 	  for(unsigned int m=0; m<fdchits.size(); m++)
 	    timebased_track->AddAssociatedObject(fdchits[m]); 
 	  for(unsigned int m=0; m<cdchits.size(); m++)
@@ -894,6 +896,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       timebased_track->FOM=track->FOM;
+      timebased_track->flags=DTrackTimeBased::FLAG__USED_WIREBASED_FIT;
    
       // add the list of start times
       timebased_track->start_times.assign(start_times.begin(),
@@ -939,6 +942,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->IsSmoothed = fitter->GetIsSmoothed();
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
+      timebased_track->flags=DTrackTimeBased::FLAG__GOODFIT;
       
       // Set the start time and add the list of start times
       timebased_track->setT0(mStartTime,start_times[0].t0_sigma, mStartDetector);
@@ -1047,6 +1051,8 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   timebased_track->FOM=src_track->FOM;
   timebased_track->cdc_hit_usage=src_track->cdc_hit_usage;
   timebased_track->fdc_hit_usage=src_track->fdc_hit_usage;
+  timebased_track->flags=DTrackTimeBased::FLAG__USED_OTHER_HYPOTHESIS;
+  
   // Add list of start times
   timebased_track->start_times.assign(src_track->start_times.begin(),  
 				      src_track->start_times.end());
@@ -1094,6 +1100,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
       timebased_track->extrapolations=std::move(fitter->GetExtrapolations());
       timebased_track->IsSmoothed = fitter->GetIsSmoothed();  
       *static_cast<DTrackingData*>(timebased_track) = fitter->GetFitParameters();
+      timebased_track->flags=DTrackTimeBased::FLAG__GOODFIT;
 
       // Add hits used as associated objects
       const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
