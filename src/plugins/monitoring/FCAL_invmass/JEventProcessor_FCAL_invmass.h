@@ -31,8 +31,8 @@ class JEventProcessor_FCAL_invmass : public jana::JEventProcessor
 		~JEventProcessor_FCAL_invmass(){};
 		const char* className(void){return "JEventProcessor_FCAL_invmass";}
 		//DVector3 Calc_CrudeVertex(const deque< const DKinematicData* > & locParticles) const;
-		
-	       	
+
+
 	private:
 		//const DAnalysisUtilities* dAnalysisUtilities;
 		jerror_t init(void);						///< Called once at program start.
@@ -41,26 +41,29 @@ class JEventProcessor_FCAL_invmass : public jana::JEventProcessor
 		jerror_t erun(void);						///< Called every time run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed
 		//jerror_t fillHists();
-//double m_x;
+		//double m_x;
 
-//vector<vector<string> > ParseTSV(const char* s);
-	 int XYtoAbsNum(int my_x, int my_y);
-	 pair<int,int> AbsNumtoXY(int channel);
+		//vector<vector<string> > ParseTSV(const char* s);
+		int XYtoAbsNum(int my_x, int my_y);
+		pair<int,int> AbsNumtoXY(int channel);
 
-        DFCALGeometry *m_fcalgeom;
-        DFCALGeometry* mygeom;
-
-
+		DFCALGeometry *m_fcalgeom;
+		DFCALGeometry* mygeom;
 
 
-	// bool read_gains;
+		// bool read_gains;
 
-        double z_diff;
+		double z_diff;
+		double zTarget;
+		float qualL;
+		float qualH;
+		float invM;
+		float eL;
+		float eH;		
 
-       
-        TMatrixD m_nhits;
-       
-		
+		TMatrixD m_nhits;
+
+
 };
 
 #endif 
