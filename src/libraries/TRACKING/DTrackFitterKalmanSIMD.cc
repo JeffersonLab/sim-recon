@@ -6921,6 +6921,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 	}
 	else error=FIT_SUCCEEDED;
       }
+      if ((error==POSITION_OUT_OF_RANGE || error==MOMENTUM_OUT_OF_RANGE)
+	  && iter==0){ 
+	return FIT_FAILED;
+      }
       if (error==FIT_FAILED || error==INVALID_FIT  || my_ndf==0){
 	if (iter==0) return FIT_FAILED; // first iteration failed
 	break;
@@ -7178,6 +7182,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 	}
 	else error=FIT_SUCCEEDED;
       }
+      if ((error==POSITION_OUT_OF_RANGE || error==MOMENTUM_OUT_OF_RANGE)
+	  && iter2==0){ 
+	return FIT_FAILED;
+      }
       if (error==FIT_FAILED || error==INVALID_FIT || my_ndf==0){  
 	if (iter2==0) return error;
 	break;
@@ -7413,6 +7421,10 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 	  else error=FIT_FAILED;
 	}
 	else error=FIT_SUCCEEDED;
+      }
+      if ((error==POSITION_OUT_OF_RANGE || error==MOMENTUM_OUT_OF_RANGE)
+	  && iter2==0){ 
+	return FIT_FAILED;
       }
       if (error==FIT_FAILED || error==INVALID_FIT || my_ndf==0){
 	if (iter2==0) return error;
