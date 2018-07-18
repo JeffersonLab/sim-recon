@@ -239,6 +239,9 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
         locFcalShowerPropertiesList().setSumV(fcalshowers[i]->getSumV());
         locFcalShowerPropertiesList().setE1E9(fcalshowers[i]->getE1E9());
         locFcalShowerPropertiesList().setE9E25(fcalshowers[i]->getE9E25());
+        hddm_r::FcalShowerNBlocksList locFcalShowerNBlocksList = fcal().addFcalShowerNBlockses(1);
+	locFcalShowerNBlocksList().setNumBlocks(fcalshowers[i]->getNumBlocks());
+
     }
             
 

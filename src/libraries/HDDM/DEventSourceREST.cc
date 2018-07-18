@@ -854,6 +854,12 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
 	          shower->setE9E25(locFcalShowerPropertiesIterator->getE9E25());
       }
       
+      const hddm_r::FcalShowerNBlocksList& locFcalShowerNBlocksList = iter->getFcalShowerNBlockses();
+      hddm_r::FcalShowerNBlocksList::iterator locFcalShowerNBlocksIterator = locFcalShowerNBlocksList.begin();
+      if(locFcalShowerNBlocksIterator != locFcalShowerNBlocksList.end()) {
+	          shower->setNumBlocks(locFcalShowerNBlocksIterator->getNumBlocks());
+      }
+
       data.push_back(shower);
    }
 
@@ -924,60 +930,49 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 	  	 shower->ExyztCovariance = covariance;
 	  }
 
-		// preshower
-		const hddm_r::PreshowerList& locPreShowerList = iter->getPreshowers();
-		hddm_r::PreshowerList::iterator locPreShowerIterator = locPreShowerList.begin();
-		if(locPreShowerIterator == locPreShowerList.end())
-			shower->E_preshower = 0.0;
-		else //should only be 1
-		{
-			for(; locPreShowerIterator != locPreShowerList.end(); ++locPreShowerIterator)
-				shower->E_preshower = locPreShowerIterator->getPreshowerE();
-		}
+	  // preshower
+	  const hddm_r::PreshowerList& locPreShowerList = iter->getPreshowers();
+	  hddm_r::PreshowerList::iterator locPreShowerIterator = locPreShowerList.begin();
+	  if(locPreShowerIterator == locPreShowerList.end())
+	      shower->E_preshower = 0.0;
+	  else {  //should only be 1
+	      shower->E_preshower = locPreShowerIterator->getPreshowerE();
+	  }
 
-		// width
-		const hddm_r::WidthList& locWidthList = iter->getWidths();
-		hddm_r::WidthList::iterator locWidthIterator = locWidthList.begin();
-		if(locWidthIterator == locWidthList.end()) {
-			shower->sigLong = -1.;
-			shower->sigTrans = -1.;
-			shower->sigTheta = -1.;
-		}
-		else //should only be 1
-		{
-			for(; locWidthIterator != locWidthList.end(); ++locWidthIterator) {
-				shower->sigLong = locWidthIterator->getSigLong();
-				shower->sigTrans = locWidthIterator->getSigTrans();
-				shower->sigTheta = locWidthIterator->getSigTheta();
-			}
-		}
+	  // width
+	  const hddm_r::WidthList& locWidthList = iter->getWidths();
+	  hddm_r::WidthList::iterator locWidthIterator = locWidthList.begin();
+	  if(locWidthIterator == locWidthList.end()) {
+	      shower->sigLong = -1.;
+	      shower->sigTrans = -1.;
+	      shower->sigTheta = -1.;
+	  } else {   //should only be 1
+	      shower->sigLong = locWidthIterator->getSigLong();
+	      shower->sigTrans = locWidthIterator->getSigTrans();
+	      shower->sigTheta = locWidthIterator->getSigTheta();
+	  }
 
-		const hddm_r::BcalClusterList& locBcalClusterList = iter->getBcalClusters();
-		hddm_r::BcalClusterList::iterator locBcalClusterIterator = locBcalClusterList.begin();
-		if(locBcalClusterIterator == locBcalClusterList.end())
-			shower->N_cell = -1;
-		else //should only be 1
-		{
-			for(; locBcalClusterIterator != locBcalClusterList.end(); ++locBcalClusterIterator)
-				shower->N_cell = locBcalClusterIterator->getNcell();
-		}
+	  const hddm_r::BcalClusterList& locBcalClusterList = iter->getBcalClusters();
+	  hddm_r::BcalClusterList::iterator locBcalClusterIterator = locBcalClusterList.begin();
+	  if(locBcalClusterIterator == locBcalClusterList.end())
+	      shower->N_cell = -1;
+	  else { //should only be 1
+	      shower->N_cell = locBcalClusterIterator->getNcell();
+	  }
 
-		const hddm_r::BcalLayersList& locBcalLayersList = iter->getBcalLayerses();
-		hddm_r::BcalLayersList::iterator locBcalLayersIterator = locBcalLayersList.begin();
-		if(locBcalLayersIterator == locBcalLayersList.end()) {
-		        shower->E_L2 = 0.;
-		        shower->E_L3 = 0.;
-		        shower->E_L4 = 0.;
-			shower->rmsTime = -1;
-		}
-		else //should only be 1
-		{
-			for(; locBcalLayersIterator != locBcalLayersList.end(); ++locBcalLayersIterator)
-				shower->rmsTime = locBcalLayersIterator->getRmsTime();
-				shower->E_L2 = locBcalLayersIterator->getE_L2();
-				shower->E_L3 = locBcalLayersIterator->getE_L3();
-				shower->E_L4 = locBcalLayersIterator->getE_L4();
-		}
+	  const hddm_r::BcalLayersList& locBcalLayersList = iter->getBcalLayerses();
+	  hddm_r::BcalLayersList::iterator locBcalLayersIterator = locBcalLayersList.begin();
+	  if(locBcalLayersIterator == locBcalLayersList.end()) {
+	      shower->E_L2 = 0.;
+	      shower->E_L3 = 0.;
+	      shower->E_L4 = 0.;
+	      shower->rmsTime = -1;
+	  } else {   //should only be 1
+	      shower->rmsTime = locBcalLayersIterator->getRmsTime();
+	      shower->E_L2 = locBcalLayersIterator->getE_L2();
+	      shower->E_L3 = locBcalLayersIterator->getE_L3();
+	      shower->E_L4 = locBcalLayersIterator->getE_L4();
+	  }
 
       data.push_back(shower);
    }
