@@ -6495,7 +6495,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
       // Now refit with the truncated trajectory and list of hits
       //C1=C0;
       //C1=4.0*C0;
-      C1=1.5*C0;
+      C1=10.0*C0;
       S1=central_traj[break_point_step_index].S;
       refit_chisq=-1.;
       refit_ndf=0; 
@@ -6637,7 +6637,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
 
       // Re-initialize the state vector, covariance, chisq and number of degrees of freedom    
       //C1=4.0*C0;
-      C1=1.5*C0;
+      C1=10.0*C0;
       S1=forward_traj[break_point_step_index].S;
       refit_chisq=-1.;
       refit_ndf=0;
@@ -6759,7 +6759,7 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double fdc_anneal,
 
       // Re-initialize the state vector, covariance, chisq and number of degrees of freedom    
       //C1=4.0*C0;
-      C1=1.5*C0;
+      C1=10.0*C0;
       S1=forward_traj[break_point_step_index].S;
       refit_chisq=-1.;
       refit_ndf=0;
