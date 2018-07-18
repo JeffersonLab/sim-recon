@@ -55,6 +55,9 @@ DDetectorMatches* DDetectorMatches_factory::Create_DDetectorMatches(jana::JEvent
 	vector<const DBCALShower*> locBCALShowers;
 	locEventLoop->Get(locBCALShowers);
 
+	vector<const DDIRCTruthPmtHit*> locDIRCHits;
+	locEventLoop->Get(locDIRCHits);
+
 	DDetectorMatches* locDetectorMatches = new DDetectorMatches();
 
 	//Match tracks to showers/hits
@@ -64,6 +67,7 @@ DDetectorMatches* DDetectorMatches_factory::Create_DDetectorMatches(jana::JEvent
 		MatchToTOF(locParticleID, locTrackTimeBasedVector[loc_i], locTOFPoints, locDetectorMatches);
 		MatchToFCAL(locParticleID, locTrackTimeBasedVector[loc_i], locFCALShowers, locDetectorMatches);
 		MatchToSC(locParticleID, locTrackTimeBasedVector[loc_i], locSCHits, locDetectorMatches);
+		MatchToDIRC(locParticleID, locTrackTimeBasedVector[loc_i], locDIRCHits, locDetectorMatches);
 	}
 
 	//Find nearest tracks to showers
@@ -149,6 +153,22 @@ void DDetectorMatches_factory::MatchToSC(const DParticleID* locParticleID, const
 	    if(locParticleID->Cut_MatchDistance(extrapolations, locSCHits[loc_i], locInputStartTime, locSCHitMatchParams, true))
 	      locDetectorMatches->Add_Match(locTrackTimeBased, locSCHits[loc_i], locSCHitMatchParams);
 	}
+}
+
+void DDetectorMatches_factory::MatchToDIRC(const DParticleID* locParticleID, const DTrackTimeBased* locTrackTimeBased, const vector<const DDIRCTruthPmtHit*>& locDIRCHits, DDetectorMatches* locDetectorMatches) const
+{
+	vector<DTrackFitter::Extrapolation_t> extrapolations=locTrackTimeBased->extrapolations.at(SYS_DIRC);
+	if (extrapolations.size()==0) return;
+
+	// for now just exit
+	//return;
+
+	// loop over DIRC hits and compare time with LUT
+	double locInputStartTime = locTrackTimeBased->t0();
+	shared_ptr<DDIRCMatchParams> locDIRCMatchParams;
+	shared_ptr<DDIRCLut> locDIRCLut;
+	if(locParticleID->DIRC_LUT(extrapolations, locDIRCHits, locInputStartTime, locTrackTimeBased->mass(), locDIRCMatchParams, locDIRCLut))
+	locDetectorMatches->Add_Match(locTrackTimeBased, locDIRCLut, locDIRCMatchParams);
 }
 
 void DDetectorMatches_factory::MatchToTrack(const DParticleID* locParticleID, const DBCALShower* locBCALShower, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, DDetectorMatches* locDetectorMatches) const

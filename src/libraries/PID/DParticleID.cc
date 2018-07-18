@@ -292,6 +292,71 @@ DParticleID::DParticleID(JEventLoop *loop)
 	loop->Get(locTOFPoints);
 
 	dTOFPointFactory = static_cast<DTOFPoint_factory*>(loop->GetFactory("DTOFPoint"));
+	
+	// Initialize DIRC LUT
+	DIRC_DEBUG_HISTS = false;
+	gPARMS->SetDefaultParameter("DIRC:DEBUG_HISTS",DIRC_DEBUG_HISTS);
+
+	gDirectory->Cd("/");
+	
+	// Set expected angle functions: should get parameters from CCDB for sigma_thetaC
+	for(int loc_i = 0; loc_i<3; loc_i++) {
+		fAngle[loc_i] = new TF1(Form("fAngle_%d",loc_i),"[0]*exp(-0.5*((x-[1])/[2])*(x-[1])/[2])",0.7,0.9);
+		fAngle[loc_i]->SetParameter(0,1);         // const
+		fAngle[loc_i]->SetParameter(2,0.0085);    // sigma
+		// mean is set later depending on momentum of track
+		//
+		//japp->RootWriteLock();
+		if(DIRC_DEBUG_HISTS) 
+    			hAngle[loc_i]= new TH1F(Form("hAngle_%d",loc_i),  "cherenkov angle;#theta_{C} [rad];entries/N_{max} [#]", 250,0.6,1);
+		//japp->RootWriteUnLock();
+	}
+
+	if(DIRC_DEBUG_HISTS) {
+		//japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+        	{
+
+		hDiff = new TH1F("hDiff",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
+        	hDiffT = new TH1F("hDiffT",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
+        	hDiffD = new TH1F("hDiffD",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
+        	hDiffR = new TH1F("hDiffR",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
+        	hTime = new TH1F("hTime",";propagation time [ns];entries [#]",   1000,0,200);
+        	hCalc = new TH1F("hCalc",";calculated time [ns];entries [#]",   1000,0,200);
+        	hNph = new TH1F("hNph",";detected photons [#];entries [#]", 150,0,150);	
+		
+		}
+		//japp->RootWriteUnLock(); //REMOVE ROOT LOCK!!
+
+	}
+
+	// retrieve from LUT from file for now
+	const int nodes = 15000;
+        const int luts = 48;
+
+/*
+	cout<<endl<<endl;
+	TFile *fLut = new TFile("/work/halld2/home/jrsteven/2018-dirc/macro/lut_all_avr.root");
+	fLut->ls();
+        TTree *tLut=(TTree*) fLut->Get("lut_dirc");
+	tLut->Print();
+	TClonesArray *cLut[luts];
+        for(int l=0; l<luts; l++){
+                cLut[l] = new TClonesArray("DrcLutNode");
+		cLut[l]->Print();
+                tLut->SetBranchAddress(Form("LUT_%d",l),&cLut[l]);
+        }
+        cout<<"How many bytes = "<<tLut->GetEntry(0)<<endl;
+	//cLut[0]->Print();
+
+        // fill nodes with LUT info for each bar/pixel combination
+        for(int l=0; l<luts; l++){
+		for(int i=0; i<nodes; i++) {
+			lutNode[l][i] = (DrcLutNode*) cLut[l]->At(i);
+			if(lutNode[l][i] && lutNode[l][i]->Entries() > 0) cout<<l<<" "<<i<<endl;
+		}
+        }
+	cout<<endl<<endl;
+*/
 }
 
 // Group fitted tracks according to candidate id
@@ -1695,6 +1760,198 @@ bool DParticleID::Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> 
 }
 
 
+bool DParticleID::DIRC_LUT(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DDIRCTruthPmtHit*> locDIRCHits, double locInputStartTime, double locMass, shared_ptr<DDIRCMatchParams>& locDIRCMatchParams, shared_ptr<DDIRCLut>& locDIRCLut, DVector3 *locOutputProjPos, DVector3 *locOutputProjMom) const
+{
+	//cout<<"In DIRC_LUT"<<endl;	
+
+	if(extrapolations.size()==0)
+		return false;
+
+	DVector3 locProjPos = extrapolations[0].position;
+	DVector3 locProjMom = extrapolations[0].momentum;
+	double locFlightTime = extrapolations[0].t;
+	
+	if(locOutputProjMom != nullptr) {
+		*locOutputProjPos = locProjPos;
+		*locOutputProjMom = locProjMom;
+	}
+
+	//cout<<"Have DIRC extrapolation"<<endl;
+
+	// get bar and track position/momentum from extrapolation
+	int bar = 31;
+	TVector3 momInBar = locProjMom;
+	double tangle,luttheta,evtime;
+	int64_t pathid; 
+	TVector3 dir,dird;
+	double criticalAngle = asin(1.00028/1.47125); // n_quarzt = 1.47125; //(1.47125 <==> 390nm)
+	
+	double mAngle = acos(sqrt(momInBar.Mag()*momInBar.Mag() + locMass*locMass)/momInBar.Mag()/1.473);
+	
+	Particle_t hypotheses[3] = {PiPlus, KPlus, Proton};
+	for(int loc_i = 0; loc_i<3; loc_i++) {
+		double expectedAngle = acos(sqrt(momInBar.Mag()*momInBar.Mag() + ParticleMass(hypotheses[loc_i])*ParticleMass(hypotheses[loc_i]))/momInBar.Mag()/1.473);
+		fAngle[loc_i]->SetParameter(1, expectedAngle);
+	}
+
+	TVector3 fnX1 = TVector3 (1,0,0);
+	TVector3 fnY1 = TVector3 (0,1,0);
+	TVector3 fnZ1 = TVector3 (0,0,1);
+
+	// timing cuts for photons
+	double cut_tdiffd=2; // direct cut in ns
+	double cut_tdiffr=3; // reflected cut in ns
+
+	// loop over DIRC hits
+	double logLikelihoodSum[3];
+	int nPhotons = 0;
+	int nPhotonsThetaC = 0;
+	double meanThetaC = 0.;
+	for (unsigned int loc_i = 0; loc_i < locDIRCHits.size(); loc_i++){
+		const DDIRCTruthPmtHit* locDIRCHit = locDIRCHits[loc_i];
+	
+		//cout<<"TruthHit i="<<loc_i<<endl;
+	
+		// cheat and determine bar from truth info
+		//bar = locDIRCHit->key_bar;
+
+                // get channel information for LUT
+		int pmt = locDIRCHit->ch/64;
+		int pix = locDIRCHit->ch%64;
+		int sensorId = 100*pmt + pix;
+
+		// use hit time to determine if reflected or not
+		double hitTime = locDIRCHit->t - locFlightTime;
+
+		// needs to be X dependent choice for reflection cut (from CCDB?)
+		bool reflected = hitTime>48;
+		
+		// get position along bar for calculated time
+		double radiatorL = 4*1225; // get from CCDB
+		double barend = 2940; // get from CCDB
+		double lenz = 0;
+		if(locProjPos.Y() < 0) 
+			lenz = fabs(barend + locProjPos.X()*10);  
+		else 
+			lenz = fabs(locProjPos.X()*10 - barend);
+
+		// get length for reflected and direct photons
+		double rlenz = 2*radiatorL - lenz; // reflected
+		double dlenz = lenz; // direct
+		
+		if(reflected) lenz = 2*radiatorL - lenz;
+		
+		bool isGood(false);
+
+#if 0
+		//cout<<"before checking LUT "<<bar<<" "<<sensorId<<endl;
+		if(!lutNode[bar][sensorId]) continue;
+		//cout<<"test "<<bar<<" "<<sensorId<<" "<<lutNode[bar][sensorId]->Entries()<<endl;
+
+		// loop over LUT table for this bar/pixel to calculate thetaC	     
+		for(int i = 0; i < lutNode[bar][sensorId]->Entries(); i++){
+			cout<<"LUT node check"<<endl;
+			/*
+			dird   = lutNode[bar][sensorId]->GetEntry(i);
+			evtime = lutNode[bar][sensorId]->GetTime(i);
+			pathid = lutNode[bar][sensorId]->GetPathId(i);
+			
+			// in MC we can check if the path of the LUT and measured photon are the same
+			bool samepath(false);
+			if(fabs(pathid - locDIRCHit->path)<0.0001) samepath=true;
+			
+			for(int r=0; r<2; r++){
+				if(!reflected && r==1) continue;
+				
+				if(r) lenz = rlenz;
+				else lenz = dlenz;
+				
+				for(int u = 0; u < 4; u++){
+					if(u == 0) dir = dird;
+					if(u == 1) dir.SetXYZ( dird.X(),-dird.Y(),  dird.Z());
+					if(u == 2) dir.SetXYZ( dird.X(), dird.Y(), -dird.Z());
+					if(u == 3) dir.SetXYZ( dird.X(),-dird.Y(), -dird.Z());
+					if(r) dir.SetXYZ( -dir.X(), dir.Y(), dir.Z());
+					if(dir.Angle(fnY1) < criticalAngle || dir.Angle(fnZ1) < criticalAngle) continue;
+					
+					luttheta = dir.Angle(TVector3(-1,0,0));
+					if(luttheta > TMath::PiOver2()) luttheta = TMath::Pi()-luttheta;
+					tangle = momInBar.Angle(dir);//-0.002; //correction
+					
+					double bartime = lenz/cos(luttheta)/208.0; 
+					double totalTime = bartime+evtime;
+
+					if(DIRC_DEBUG_HISTS) {
+					//japp->RootFillLock();
+					hTime->Fill(hitTime);
+					hCalc->Fill(totalTime);
+					//cout<<lenz<<endl;
+
+					if(fabs(tangle-mAngle)<0.2){
+						hDiff->Fill(totalTime-hitTime);
+						if(samepath){
+							hDiffT->Fill(totalTime-hitTime);
+							if(r) hDiffR->Fill(totalTime-hitTime);
+							else hDiffD->Fill(totalTime-hitTime);
+						}
+					}
+					//japp->RootFillUnLock();
+					}
+
+					double locDeltaT = totalTime-hitTime;
+					if(!r && fabs(totalTime-hitTime)>cut_tdiffd) continue;
+					if(r && fabs(totalTime-hitTime) >cut_tdiffr) continue;
+
+					if(DIRC_DEBUG_HISTS) {
+					//japp->RootFillLock();
+					hAngle[0]->Fill(tangle);
+					//japp->RootFillUnLock();
+					}
+
+					// remove photon candidates not used in likelihood
+					if(fabs(tangle-mAngle)>0.02) continue;
+					
+					// save good photons to DIRCLut object
+					isGood = true;
+					pair<double, double> photonInfo(tangle, fabs(locDeltaT));
+					//locDIRCLut->dPhoton.push_back(photonInfo);
+
+					// calculate average thetaC
+					nPhotonsThetaC++;
+					meanThetaC += tangle;
+
+					// calculate likelihood
+					for(int loc_j = 0; loc_j<3; loc_j++) 
+						logLikelihoodSum[loc_i] += TMath::Log(fAngle[loc_i]->Eval(tangle)+0.0001);
+				}
+			} // end loop over reflections
+			*/
+
+		} // end loop over nodes
+#endif
+
+		// count good photons
+		if(isGood) nPhotons++;
+
+	} // end loop over hits
+
+	// skip tracks without enough photons
+	if(nPhotons<5) 
+		return false;
+
+/*	
+	// set DIRCMatchParameters contents
+	locDIRCMatchParams->dThetaC = meanThetaC/(double)nPhotonsThetaC;
+	locDIRCMatchParams->dLikelihoodPion = logLikelihoodSum[0];
+	locDIRCMatchParams->dLikelihoodKaon = logLikelihoodSum[1];
+	locDIRCMatchParams->dLikelihoodProton = logLikelihoodSum[2];
+	locDIRCMatchParams->dNPhotons = nPhotons;
+*/
+	
+	return true;
+}
+
+
 /********************************************************** GET BEST MATCH **********************************************************/
 
 bool DParticleID::Get_BestBCALMatchParams(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches, shared_ptr<const DBCALShowerMatchParams>& locBestMatchParams) const
@@ -1807,6 +2064,17 @@ shared_ptr<const DFCALShowerMatchParams> DParticleID::Get_BestFCALMatchParams(ve
 		locBestMatchParams = locShowerMatchParams[loc_i];
 	}
 	return locBestMatchParams;
+}
+
+bool DParticleID::Get_DIRCMatchParams(const DTrackingData* locTrack, const DDetectorMatches* locDetectorMatches, shared_ptr<const DDIRCMatchParams>& locBestMatchParams) const
+{
+	//choose the "best" shower to use for computing quantities
+	shared_ptr<const DDIRCMatchParams> locDIRCMatchParams;
+	if(!locDetectorMatches->Get_DIRCMatchParams(locTrack, locDIRCMatchParams))
+		return false;
+
+	locBestMatchParams = locDIRCMatchParams;
+	return true;
 }
 
 /********************************************************** GET CLOSEST TO TRACK **********************************************************/
