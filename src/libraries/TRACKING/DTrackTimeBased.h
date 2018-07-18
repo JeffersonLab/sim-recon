@@ -38,6 +38,13 @@ class DTrackTimeBased:public DTrackingData{
 		int Ndof;				///< Number of degrees of freedom in the fit
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)
 		map<DetectorSystem_t,vector<DTrackFitter::Extrapolation_t> >extrapolations;
+		int flags;
+		enum DTrackTimeBased_flag_t{
+		  FLAG__GOODFIT=0,
+		  FLAG__USED_WIREBASED_FIT=1,
+		  FLAG__USED_OTHER_HYPOTHESIS=2,
+		};
+		
 
 		bool GetProjection(DetectorSystem_t detector,DVector3 &pos,
 				   DVector3 *mom=nullptr,double *t=nullptr) const;
@@ -76,8 +83,9 @@ class DTrackTimeBased:public DTrackingData{
 			AddString(items, "chisq", "%f", chisq);
 			AddString(items, "Ndof", "%d", Ndof);
 			AddString(items, "FOM", "%f",(float)FOM);
-			AddString(items, "MCMatchID", "%d",dMCThrownMatchMyID);
-			AddString(items, "#HitsMCMatched", "%d",dNumHitsMatchedToThrown);
+			AddString(items, "Flags","%d",flags);
+			//AddString(items, "MCMatchID", "%d",dMCThrownMatchMyID);
+			//AddString(items, "#HitsMCMatched", "%d",dNumHitsMatchedToThrown);
 		}
 };
 
