@@ -101,6 +101,7 @@ class JEventProcessor_ST_Tresolution:public jana::JEventProcessor{
 		TH2I **h2_CorrectedTime_z;
 		//Define Calibration parameters variable called from CCDB
 		vector<vector<double> >propagation_time_corr;
+		vector<vector<double> >PTC_Boundary;
 };
 
 #endif // _JEventProcessor_ST_Tresolution_
