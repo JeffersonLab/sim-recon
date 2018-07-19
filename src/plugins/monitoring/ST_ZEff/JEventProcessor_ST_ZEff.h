@@ -81,7 +81,7 @@ static TH1D *h_N_trck_prd_z_ns_eff[Nof_ns_intervals];
                 
 static TH2I *h2_z_vs_r;
 static TH2I *h2_x_vs_y;
-		
+
 
 
 
@@ -111,8 +111,8 @@ double SC_RFShiftedTime;
 double locVertexRFTime;
 
 
-double z_ss[Nof_ss_intervals],z_bs[Nof_bs_intervals],z_ns[Nof_ss_intervals]; 
-
+ double z_ss[Nof_ss_intervals],z_bs[Nof_bs_intervals],z_ns[Nof_ss_intervals]; 
+ double incpt_ss,slope_ss,incpt_bs,slope_bs,incpt_ns,slope_ns,Bound1,Bound2; 
         /*
 		// Grab match track detector parameters
 		uint32_t N_trck_prd_All[NCHANNELS];
@@ -178,7 +178,7 @@ double z_ss[Nof_ss_intervals],z_bs[Nof_bs_intervals],z_ns[Nof_ss_intervals];
 		double sc_angle_corr;
 		
         vector<vector<double> >propagation_time_corr;
-
+	vector<vector<double> >PTC_Boundary;
 };
 
 #endif // _JEventProcessor_ST_ZEff_
