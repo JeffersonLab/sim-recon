@@ -39,11 +39,13 @@
 #include <PID/DNeutralParticleHypothesis.h>
 #include <PID/DEventRFBunch.h>
 #include <PID/DDetectorMatches.h>
-#include <PID/DDIRCLut.h>
+#include <PID/DDIRCLutPhotons.h>
+#include <DIRC/DDIRCLut.h>
 #include <TRACKING/DMagneticFieldStepper.h>
 #include <TRACKING/DTrackWireBased.h>
 #include <TRACKING/DTrackCandidate.h>
 
+#include <TROOT.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1.h>
@@ -116,7 +118,7 @@ class DParticleID:public jana::JObject
 		bool Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DFCALShower* locFCALShower, double locInputStartTime,shared_ptr<DFCALShowerMatchParams>& locShowerMatchParams, DVector3 *locOutputProjPos=nullptr, DVector3 *locOutputProjMom=nullptr) const;
 		bool Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DTOFPoint* locTOFPoint, double locInputStartTime,shared_ptr<DTOFHitMatchParams>& locTOFHitMatchParams, DVector3 *locOutputProjPos=nullptr, DVector3 *locOutputProjMom=nullptr) const;
 		bool Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const DSCHit* locSCHit, double locInputStartTime,shared_ptr<DSCHitMatchParams>& locSCHitMatchParams, bool locIsTimeBased, DVector3 *locOutputProjPos=nullptr, DVector3 *locOutputProjMom=nullptr) const;
-		bool DIRC_LUT(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DDIRCTruthPmtHit*> locDIRCHits, double locInputStartTime, double locMass, shared_ptr<DDIRCMatchParams>& locDIRCMatchParams, shared_ptr<DDIRCLut>& locDIRCLut, DVector3 *locOutputProjPos=nullptr, DVector3 *locOutputProjMom=nullptr) const;
+		bool DIRC_LUT(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DDIRCTruthPmtHit*> locDIRCHits, double locInputStartTime, double locMass, shared_ptr<DDIRCMatchParams>& locDIRCMatchParams, shared_ptr<DDIRCLutPhotons>& locDIRCLutPhotons, DVector3 *locOutputProjPos=nullptr, DVector3 *locOutputProjMom=nullptr) const;
 
 		/********************************************************** GET BEST MATCH **********************************************************/
 
@@ -295,12 +297,13 @@ class DParticleID:public jana::JObject
 		DTOFPoint_factory* dTOFPointFactory;
 
 		// DIRC LUT
-		//DrcLutNode *lutNode[48][15000];
+		const DDIRCLut* dDIRCLut;
 		TF1 *fAngle[3];
 		
 		bool DIRC_DEBUG_HISTS;
 		TH1F *hDiff, *hDiffT, *hDiffD, *hDiffR, *hTime, *hCalc, *hNph, *hNphC;
 		TH1F *hAngle[3];
+		
 };
 
 #endif // _DParticleID_

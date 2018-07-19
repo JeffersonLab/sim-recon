@@ -294,10 +294,17 @@ DParticleID::DParticleID(JEventLoop *loop)
 	dTOFPointFactory = static_cast<DTOFPoint_factory*>(loop->GetFactory("DTOFPoint"));
 	
 	// Initialize DIRC LUT
-	DIRC_DEBUG_HISTS = false;
-	gPARMS->SetDefaultParameter("DIRC:DEBUG_HISTS",DIRC_DEBUG_HISTS);
+	loop->GetSingle(dDIRCLut);
 
-	gDirectory->Cd("/");
+	// LUT histograms and diagnostics
+	DIRC_DEBUG_HISTS = true;
+	//gPARMS->SetDefaultParameter("DIRC:DEBUG_HISTS",DIRC_DEBUG_HISTS);
+
+	//string locDirName = "Independent";
+	//TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+	//if(locDirectoryFile == NULL)
+	//	locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirName.c_str());
+	//locDirectoryFile->cd();
 	
 	// Set expected angle functions: should get parameters from CCDB for sigma_thetaC
 	for(int loc_i = 0; loc_i<3; loc_i++) {
@@ -305,58 +312,44 @@ DParticleID::DParticleID(JEventLoop *loop)
 		fAngle[loc_i]->SetParameter(0,1);         // const
 		fAngle[loc_i]->SetParameter(2,0.0085);    // sigma
 		// mean is set later depending on momentum of track
-		//
-		//japp->RootWriteLock();
-		if(DIRC_DEBUG_HISTS) 
-    			hAngle[loc_i]= new TH1F(Form("hAngle_%d",loc_i),  "cherenkov angle;#theta_{C} [rad];entries/N_{max} [#]", 250,0.6,1);
-		//japp->RootWriteUnLock();
+		
+		dapp->Lock(); //japp->RootWriteLock();
+		if(DIRC_DEBUG_HISTS) {
+			gDirectory->cd("/");
+			//cout<<"Initializing angle histograms"<<endl;
+			hAngle[loc_i] = (TH1F*)gROOT->FindObject(Form("hAngle_%d",loc_i));
+			if(!hAngle[loc_i]) 
+				hAngle[loc_i] = new TH1F(Form("hAngle_%d",loc_i),  "cherenkov angle;#theta_{C} [rad];entries/N_{max} [#]", 250,0.6,1);
+		}
+		dapp->Unlock(); //japp->RootUnLock();
 	}
 
 	if(DIRC_DEBUG_HISTS) {
-		//japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+		dapp->Lock(); //japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
         	{
-
-		hDiff = new TH1F("hDiff",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
-        	hDiffT = new TH1F("hDiffT",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
-        	hDiffD = new TH1F("hDiffD",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
-        	hDiffR = new TH1F("hDiffR",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
-        	hTime = new TH1F("hTime",";propagation time [ns];entries [#]",   1000,0,200);
-        	hCalc = new TH1F("hCalc",";calculated time [ns];entries [#]",   1000,0,200);
-        	hNph = new TH1F("hNph",";detected photons [#];entries [#]", 150,0,150);	
+			gDirectory->cd("/");
+			//cout<<endl<<endl<<"Initialize histograms"<<endl<<endl;
+			hDiff = (TH1F*)gROOT->FindObject("hDiff");
+			hDiffT = (TH1F*)gROOT->FindObject("hDiffT");
+			hDiffD = (TH1F*)gROOT->FindObject("hDiffD");
+			hDiffR = (TH1F*)gROOT->FindObject("hDiffR");
+			hTime = (TH1F*)gROOT->FindObject("hTime");
+			hCalc = (TH1F*)gROOT->FindObject("hCalc");
+			hNph = (TH1F*)gROOT->FindObject("hNph");
+			if(!hDiff) hDiff = new TH1F("hDiff",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
+			if(!hDiffT) hDiffT = new TH1F("hDiffT",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
+			if(!hDiffD) hDiffD = new TH1F("hDiffD",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
+			if(!hDiffR) hDiffR = new TH1F("hDiffR",";t_{calc}-t_{measured} [ns];entries [#]", 400,-20,20);
+			if(!hTime) hTime = new TH1F("hTime",";propagation time [ns];entries [#]",   1000,0,200);
+			if(!hCalc) hCalc = new TH1F("hCalc",";calculated time [ns];entries [#]",   1000,0,200);
+			if(!hNph) hNph = new TH1F("hNph",";detected photons [#];entries [#]", 150,0,150);	
 		
+			cout<<"Found hDiff at "<<gROOT->FindObjectPathName(hDiff)<<endl;
 		}
-		//japp->RootWriteUnLock(); //REMOVE ROOT LOCK!!
+		dapp->Unlock(); //japp->RootUnLock(); //REMOVE ROOT LOCK!!
 
 	}
-
-	// retrieve from LUT from file for now
-	const int nodes = 15000;
-        const int luts = 48;
-
-/*
-	cout<<endl<<endl;
-	TFile *fLut = new TFile("/work/halld2/home/jrsteven/2018-dirc/macro/lut_all_avr.root");
-	fLut->ls();
-        TTree *tLut=(TTree*) fLut->Get("lut_dirc");
-	tLut->Print();
-	TClonesArray *cLut[luts];
-        for(int l=0; l<luts; l++){
-                cLut[l] = new TClonesArray("DrcLutNode");
-		cLut[l]->Print();
-                tLut->SetBranchAddress(Form("LUT_%d",l),&cLut[l]);
-        }
-        cout<<"How many bytes = "<<tLut->GetEntry(0)<<endl;
-	//cLut[0]->Print();
-
-        // fill nodes with LUT info for each bar/pixel combination
-        for(int l=0; l<luts; l++){
-		for(int i=0; i<nodes; i++) {
-			lutNode[l][i] = (DrcLutNode*) cLut[l]->At(i);
-			if(lutNode[l][i] && lutNode[l][i]->Entries() > 0) cout<<l<<" "<<i<<endl;
-		}
-        }
-	cout<<endl<<endl;
-*/
+	
 }
 
 // Group fitted tracks according to candidate id
@@ -1760,7 +1753,7 @@ bool DParticleID::Cut_MatchDistance(const vector<DTrackFitter::Extrapolation_t> 
 }
 
 
-bool DParticleID::DIRC_LUT(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DDIRCTruthPmtHit*> locDIRCHits, double locInputStartTime, double locMass, shared_ptr<DDIRCMatchParams>& locDIRCMatchParams, shared_ptr<DDIRCLut>& locDIRCLut, DVector3 *locOutputProjPos, DVector3 *locOutputProjMom) const
+bool DParticleID::DIRC_LUT(const vector<DTrackFitter::Extrapolation_t> &extrapolations, const vector<const DDIRCTruthPmtHit*> locDIRCHits, double locInputStartTime, double locMass, shared_ptr<DDIRCMatchParams>& locDIRCMatchParams, shared_ptr<DDIRCLutPhotons>& locDIRCLutPhotons, DVector3 *locOutputProjPos, DVector3 *locOutputProjMom) const
 {
 	//cout<<"In DIRC_LUT"<<endl;	
 
@@ -1843,19 +1836,20 @@ bool DParticleID::DIRC_LUT(const vector<DTrackFitter::Extrapolation_t> &extrapol
 		
 		bool isGood(false);
 
-#if 0
 		//cout<<"before checking LUT "<<bar<<" "<<sensorId<<endl;
-		if(!lutNode[bar][sensorId]) continue;
-		//cout<<"test "<<bar<<" "<<sensorId<<" "<<lutNode[bar][sensorId]->Entries()<<endl;
-
+		if(dDIRCLut->GetLutPixelAngleSize(bar, sensorId) == 0) continue;
+		//cout<<"test "<<bar<<" "<<sensorId<<" "<<dDIRCLut->GetLutPixelAngleSize(bar, sensorId)<<endl;
+		
 		// loop over LUT table for this bar/pixel to calculate thetaC	     
-		for(int i = 0; i < lutNode[bar][sensorId]->Entries(); i++){
-			cout<<"LUT node check"<<endl;
-			/*
-			dird   = lutNode[bar][sensorId]->GetEntry(i);
-			evtime = lutNode[bar][sensorId]->GetTime(i);
-			pathid = lutNode[bar][sensorId]->GetPathId(i);
+		for(uint i = 0; i < dDIRCLut->GetLutPixelAngleSize(bar, sensorId); i++){
+			//cout<<"LUT node check "<<i<<endl;
 			
+			dird   = dDIRCLut->GetLutPixelAngle(bar, sensorId, i); 
+			evtime = dDIRCLut->GetLutPixelTime(bar, sensorId, i); 
+			pathid = dDIRCLut->GetLutPixelPath(bar, sensorId, i); 
+			
+			//cout<<"Got vector quantities"<<endl;
+
 			// in MC we can check if the path of the LUT and measured photon are the same
 			bool samepath(false);
 			if(fabs(pathid - locDIRCHit->path)<0.0001) samepath=true;
@@ -1882,20 +1876,21 @@ bool DParticleID::DIRC_LUT(const vector<DTrackFitter::Extrapolation_t> &extrapol
 					double totalTime = bartime+evtime;
 
 					if(DIRC_DEBUG_HISTS) {
-					//japp->RootFillLock();
-					hTime->Fill(hitTime);
-					hCalc->Fill(totalTime);
-					//cout<<lenz<<endl;
 
-					if(fabs(tangle-mAngle)<0.2){
-						hDiff->Fill(totalTime-hitTime);
-						if(samepath){
-							hDiffT->Fill(totalTime-hitTime);
-							if(r) hDiffR->Fill(totalTime-hitTime);
-							else hDiffD->Fill(totalTime-hitTime);
+						//dapp->RootWriteLock();
+						hTime->Fill(hitTime);
+						hCalc->Fill(totalTime);
+						//cout<<lenz<<endl;
+						
+						if(fabs(tangle-mAngle)<0.2){
+							hDiff->Fill(totalTime-hitTime);
+							if(samepath){
+								hDiffT->Fill(totalTime-hitTime);
+								if(r) hDiffR->Fill(totalTime-hitTime);
+								else hDiffD->Fill(totalTime-hitTime);
+							}
 						}
-					}
-					//japp->RootFillUnLock();
+						//dapp->RootUnLock();
 					}
 
 					double locDeltaT = totalTime-hitTime;
@@ -1903,32 +1898,32 @@ bool DParticleID::DIRC_LUT(const vector<DTrackFitter::Extrapolation_t> &extrapol
 					if(r && fabs(totalTime-hitTime) >cut_tdiffr) continue;
 
 					if(DIRC_DEBUG_HISTS) {
-					//japp->RootFillLock();
-					hAngle[0]->Fill(tangle);
-					//japp->RootFillUnLock();
+						//dapp->RootWriteLock();
+						hAngle[0]->Fill(tangle);
+						//cout<<"fill histograms"<<endl;
+						//dapp->RootUnLock();
 					}
-
+					
+					
 					// remove photon candidates not used in likelihood
 					if(fabs(tangle-mAngle)>0.02) continue;
 					
-					// save good photons to DIRCLut object
+					// save good photons to DIRCLutPhotons object
 					isGood = true;
 					pair<double, double> photonInfo(tangle, fabs(locDeltaT));
-					//locDIRCLut->dPhoton.push_back(photonInfo);
-
+					//locDIRCLutPhotons->dPhoton.push_back(photonInfo);
+					
 					// calculate average thetaC
 					nPhotonsThetaC++;
 					meanThetaC += tangle;
-
+					
 					// calculate likelihood
 					for(int loc_j = 0; loc_j<3; loc_j++) 
-						logLikelihoodSum[loc_i] += TMath::Log(fAngle[loc_i]->Eval(tangle)+0.0001);
+						logLikelihoodSum[loc_j] += TMath::Log(fAngle[loc_j]->Eval(tangle)+0.0001);
 				}
 			} // end loop over reflections
-			*/
 
 		} // end loop over nodes
-#endif
 
 		// count good photons
 		if(isGood) nPhotons++;
@@ -1939,15 +1934,15 @@ bool DParticleID::DIRC_LUT(const vector<DTrackFitter::Extrapolation_t> &extrapol
 	if(nPhotons<5) 
 		return false;
 
-/*	
 	// set DIRCMatchParameters contents
+	/*
 	locDIRCMatchParams->dThetaC = meanThetaC/(double)nPhotonsThetaC;
 	locDIRCMatchParams->dLikelihoodPion = logLikelihoodSum[0];
 	locDIRCMatchParams->dLikelihoodKaon = logLikelihoodSum[1];
 	locDIRCMatchParams->dLikelihoodProton = logLikelihoodSum[2];
 	locDIRCMatchParams->dNPhotons = nPhotons;
-*/
-	
+	*/
+
 	return true;
 }
 

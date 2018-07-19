@@ -19,7 +19,7 @@
 #include <FCAL/DFCALShower.h>
 #include <START_COUNTER/DSCHit.h>
 #include <DIRC/DDIRCTruthPmtHit.h>
-#include <PID/DDIRCLut.h>
+#include <PID/DDIRCLutPhotons.h>
 
 using namespace std;
 
@@ -109,9 +109,9 @@ class DSCHitMatchParams
 class DDIRCMatchParams
 {
 	public:
-                DDIRCMatchParams(void) : dDIRCLut(NULL), dThetaC(0.0), dLikelihoodPion(0.0), dLikelihoodKaon(0.0), dLikelihoodProton(0.0), dNPhotons(0){} 
+                DDIRCMatchParams(void) : dDIRCLutPhotons(NULL), dThetaC(0.0), dLikelihoodPion(0.0), dLikelihoodKaon(0.0), dLikelihoodProton(0.0), dNPhotons(0){} 
 
-		const DDIRCLut* dDIRCLut;
+		const DDIRCLutPhotons* dDIRCLutPhotons;
 
 		double dThetaC;
 		double dLikelihoodPion, dLikelihoodKaon, dLikelihoodProton;
@@ -157,7 +157,7 @@ class DDetectorMatches : public JObject
 		inline void Add_Match(const DTrackingData* locTrack, const DFCALShower* locFCALShower, const shared_ptr<const DFCALShowerMatchParams>& locShowerMatchParams);
 		inline void Add_Match(const DTrackingData* locTrack, const DTOFPoint* locTOFPoint, const shared_ptr<const DTOFHitMatchParams>& locHitMatchParams);
 		inline void Add_Match(const DTrackingData* locTrack, const DSCHit* locSCHit, const shared_ptr<const DSCHitMatchParams>& locHitMatchParams);
-		inline void Add_Match(const DTrackingData* locTrack, const shared_ptr<const DDIRCLut>& locDIRCLut, const shared_ptr<const DDIRCMatchParams>& locDIRCMatchParams);
+		inline void Add_Match(const DTrackingData* locTrack, const shared_ptr<const DDIRCLutPhotons>& locDIRCLutPhotons, const shared_ptr<const DDIRCMatchParams>& locDIRCMatchParams);
 		inline void Set_DistanceToNearestTrack(const DBCALShower* locBCALShower, double locDeltaPhi, double locDeltaZ);
 		inline void Set_DistanceToNearestTrack(const DFCALShower* locFCALShower, double locDistanceToNearestTrack);
 		inline void Set_FlightTimePCorrelation(const DTrackingData* locTrack, DetectorSystem_t locDetectorSystem, double locCorrelation);
@@ -421,10 +421,10 @@ inline void DDetectorMatches::Add_Match(const DTrackingData* locTrack, const DSC
 	dTrackSCMatchParams[locTrack].push_back(locHitMatchParams);
 	dSCTrackMatchParams[locSCHit].push_back(locHitMatchParams);
 }
-inline void DDetectorMatches::Add_Match(const DTrackingData* locTrack, const shared_ptr<const DDIRCLut>& locDIRCLut, const shared_ptr<const DDIRCMatchParams>& locHitMatchParams)
+inline void DDetectorMatches::Add_Match(const DTrackingData* locTrack, const shared_ptr<const DDIRCLutPhotons>& locDIRCLutPhotons, const shared_ptr<const DDIRCMatchParams>& locHitMatchParams)
 {
 	dTrackDIRCMatchParams[locTrack] = locHitMatchParams;
-	//dDIRCTrackMatchParams[locDIRCLut].push_back(locHitMatchParams);
+	//dDIRCTrackMatchParams[locDIRCLutPhotons].push_back(locHitMatchParams);
 }
 inline void DDetectorMatches::Set_DistanceToNearestTrack(const DBCALShower* locBCALShower, double locDeltaPhi, double locDeltaZ)
 {

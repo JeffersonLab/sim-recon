@@ -1,10 +1,10 @@
 // $Id$
 //
-//    File: DDIRCLut.h
+//    File: DDIRCLutPhotons.h
 //
 
-#ifndef _DDIRCLut_
-#define _DDIRCLut_
+#ifndef _DDIRCLutPhotons_
+#define _DDIRCLutPhotons_
 
 #include <vector>
 #include <utility>
@@ -18,10 +18,10 @@
 
 using namespace std;
 
-class DDIRCLut : public jana::JObject
+class DDIRCLutPhotons : public jana::JObject
 {
  public:
-  JOBJECT_PUBLIC(DDIRCLut);
+  JOBJECT_PUBLIC(DDIRCLutPhotons);
 
   vector< pair<double,double> > dPhoton; // thetaC, deltaT
 
@@ -34,5 +34,5 @@ class DDIRCLut : public jana::JObject
   }
 };
 
-#endif // _DDIRCLut_
+#endif // _DDIRCLutPhotons_
 

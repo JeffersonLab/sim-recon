@@ -13,6 +13,7 @@ using namespace jana;
 #include "DDIRCTruthHit.h"
 #include "DDIRCTruthBarHit.h"
 #include "DDIRCTruthPmtHit.h"
+#include "DDIRCLut_factory.h"
 
 jerror_t DIRC_init(JEventLoop *loop) {
 	/// Create and register DIRC data factories
@@ -20,6 +21,7 @@ jerror_t DIRC_init(JEventLoop *loop) {
 	loop->AddFactory(new JFactory<DDIRCTruthHit>());
 	loop->AddFactory(new JFactory<DDIRCTruthPmtHit>());
 	loop->AddFactory(new JFactory<DDIRCTruthBarHit>());
+	loop->AddFactory(new DDIRCLut_factory());
 
 	return NOERROR;
 }
