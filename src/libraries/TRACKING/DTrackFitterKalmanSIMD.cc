@@ -426,6 +426,11 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    MOLIERE_RATIO1=0.5/(1.-MOLIERE_FRACTION);
    MOLIERE_RATIO2=MS_SCALE_FACTOR*1.e-6/(1.+MOLIERE_FRACTION*MOLIERE_FRACTION); //scale_factor/(1+F*F)
 
+   COVARIANCE_SCALE_FACTOR=1.0;
+   gPARMS->SetDefaultParameter("KALMAN:COVARIANCE_SCALE_FACTOR",
+			       COVARIANCE_SCALE_FACTOR); 
+
+
    DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
    JCalibration *jcalib = dapp->GetJCalibration((loop->GetJEvent()).GetRunNumber());
    vector< map<string, double> > tvals;
@@ -3109,6 +3114,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
          C0(state_tx,state_tx)=C0(state_ty,state_ty)=temp*temp;
       }
       C0(state_q_over_p,state_q_over_p)=dp_over_p_sq*q_over_p_*q_over_p_;
+      C0*=COVARIANCE_SCALE_FACTOR;
 
       if (my_cdchits.size()>0){
 	mCDCInternalStepSize=0.25;
@@ -3188,6 +3194,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
          C0(state_y,state_y)=4.0;
          C0(state_tx,state_tx)=C0(state_ty,state_ty)=temp*temp;
          C0(state_q_over_p,state_q_over_p)=dp_over_p_sq*q_over_p_*q_over_p_;
+	 C0*=COVARIANCE_SCALE_FACTOR;
 
          //C0*=1.+1./tsquare;
 
@@ -3281,6 +3288,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       double one_plus_tanl2=1.+tanl2;
       C0(state_tanl,state_tanl)=(one_plus_tanl2)*(one_plus_tanl2)
          *sig_lambda*sig_lambda;
+      C0*=COVARIANCE_SCALE_FACTOR;
 
       //if (theta_deg>90.) C0*=1.+5.*tanl2;
       //else C0*=1.+5.*tanl2*tanl2;
@@ -6495,7 +6503,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
       // Now refit with the truncated trajectory and list of hits
       //C1=C0;
       //C1=4.0*C0;
-      C1=10.0*C0;
+      C1=1.0*C0;
       S1=central_traj[break_point_step_index].S;
       refit_chisq=-1.;
       refit_ndf=0; 
@@ -6637,7 +6645,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
 
       // Re-initialize the state vector, covariance, chisq and number of degrees of freedom    
       //C1=4.0*C0;
-      C1=10.0*C0;
+      C1=1.0*C0;
       S1=forward_traj[break_point_step_index].S;
       refit_chisq=-1.;
       refit_ndf=0;
@@ -6759,7 +6767,7 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double fdc_anneal,
 
       // Re-initialize the state vector, covariance, chisq and number of degrees of freedom    
       //C1=4.0*C0;
-      C1=10.0*C0;
+      C1=1.0*C0;
       S1=forward_traj[break_point_step_index].S;
       refit_chisq=-1.;
       refit_ndf=0;
