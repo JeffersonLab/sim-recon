@@ -429,19 +429,6 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
   }
 
-  // Set CDC ring & FDC plane hit patterns
-  for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
-  {
-    vector<const DCDCTrackHit*> locCDCTrackHits;
-    _data[loc_i]->Get(locCDCTrackHits);
-
-    vector<const DFDCPseudo*> locFDCPseudos;
-    _data[loc_i]->Get(locFDCPseudos);
-
-    _data[loc_i]->dCDCRings = pid_algorithm->Get_CDCRingBitPattern(locCDCTrackHits);
-    _data[loc_i]->dFDCPlanes = pid_algorithm->Get_FDCPlaneBitPattern(locFDCPseudos);
-  }
-
   return NOERROR;
 }
 
@@ -1006,6 +993,14 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->ddx_CDC = locdx_CDC;
       timebased_track->ddx_CDC_amp= locdx_CDC_amp;
       timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
+
+      // Set CDC ring & FDC plane hit patterns before candidate and wirebased tracks are associated
+      vector<const DCDCTrackHit*> tempCDCTrackHits;
+      vector<const DFDCPseudo*> tempFDCPseudos;
+      timebased_track->Get(tempCDCTrackHits);
+      timebased_track->Get(tempFDCPseudos);
+      timebased_track->dCDCRings = pid_algorithm->Get_CDCRingBitPattern(tempCDCTrackHits);
+      timebased_track->dFDCPlanes = pid_algorithm->Get_FDCPlaneBitPattern(tempFDCPseudos);
       
       // Add DTrack object as associate object
       timebased_track->AddAssociatedObject(track);
@@ -1013,7 +1008,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       // Compute the figure-of-merit based on tracking
       timebased_track->FOM = TMath::Prob(timebased_track->chisq, timebased_track->Ndof);
       //_DBG_<< "FOM:   " << timebased_track->FOM << endl;
-      
+
       _data.push_back(timebased_track);
      
       return true;

@@ -460,19 +460,6 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
    // Add any missing hypotheses
    InsertMissingHypotheses();
 
-   // Set CDC ring & FDC plane hit patterns
-   for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
-   {
-      vector<const DCDCTrackHit*> locCDCTrackHits;
-      _data[loc_i]->Get(locCDCTrackHits);
-
-      vector<const DFDCPseudo*> locFDCPseudos;
-      _data[loc_i]->Get(locFDCPseudos);
-
-      _data[loc_i]->dCDCRings = dPIDAlgorithm->Get_CDCRingBitPattern(locCDCTrackHits);
-      _data[loc_i]->dFDCPlanes = dPIDAlgorithm->Get_FDCPlaneBitPattern(locFDCPseudos);
-   }
-
    return NOERROR;
 }
 
@@ -657,6 +644,14 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
             sort(fdchits.begin(), fdchits.end(), FDCSortByZincreasing);
             for(unsigned int m=0; m<cdchits.size(); m++)track->AddAssociatedObject(cdchits[m]);
             for(unsigned int m=0; m<fdchits.size(); m++)track->AddAssociatedObject(fdchits[m]);
+
+	    // Set CDC ring & FDC plane hit patterns before candidate tracks are associated
+	    vector<const DCDCTrackHit*> tempCDCTrackHits;
+	    vector<const DFDCPseudo*> tempFDCPseudos;
+	    track->Get(tempCDCTrackHits);
+	    track->Get(tempFDCPseudos);
+	    track->dCDCRings = dPIDAlgorithm->Get_CDCRingBitPattern(tempCDCTrackHits);
+	    track->dFDCPlanes = dPIDAlgorithm->Get_FDCPlaneBitPattern(tempFDCPseudos);
 
             // Add DTrackCandidate as associated object
             track->AddAssociatedObject(candidate);
