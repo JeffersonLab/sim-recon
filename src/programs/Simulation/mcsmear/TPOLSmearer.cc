@@ -6,8 +6,9 @@
 tpol_config_t::tpol_config_t(JEventLoop *loop) 
 {
 	// default values
-	TPOL_SIGMA_NS = 15.0;  // ns
-	TPOL_SIGMA_MEV = 0.03; // MeV
+	TPOL_SIGMA_NS = 4.4;  // ns
+	TPOL_SIGMA1_MEV = 0.03; // MeV
+        TPOL_SIGMA2_MEV = 0.03; // MeV
 	TPOL_THRESHOLD_MEV = 0.05; // MeV
 }
 
@@ -30,7 +31,7 @@ void TPOLSmearer::SmearEvent(hddm_s::HDDM *record)
          double dE_MeV = titer->getDE() * 1e3;
          if(config->SMEAR_HITS) {
 			 t_ns += gDRandom.SampleGaussian(tpol_config->TPOL_SIGMA_NS);
-			 dE_MeV += gDRandom.SampleGaussian(tpol_config->TPOL_SIGMA_MEV);
+			 dE_MeV += (gDRandom.SampleGaussian(tpol_config->TPOL_SIGMA1_MEV) + gDRandom.SampleGaussian(tpol_config->TPOL_SIGMA2_MEV));
 		 }
          // apply the threshold
          if (dE_MeV > tpol_config->TPOL_THRESHOLD_MEV) {

@@ -424,13 +424,13 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       return Extract_DCereHit(record, 
                      dynamic_cast<JFactory<DCereHit>*>(factory), tag);
 
-   //if (dataClassName == "DTPOLTruthHit")
-   //   return Extract_DTPOLTruthHit(record,
-   //                  dynamic_cast<JFactory<DTPOLTruthHit>*>(factory), tag);
-
    if (dataClassName == "DTPOLHit")
       return Extract_DTPOLHit(record,
                      dynamic_cast<JFactory<DTPOLHit>*>(factory), tag);
+
+   if (dataClassName == "DTPOLTruthHit")
+      return Extract_DTPOLTruthHit(record,
+                     dynamic_cast<JFactory<DTPOLTruthHit>*>(factory), tag);
 
    return OBJECT_NOT_AVAILABLE;
 }
