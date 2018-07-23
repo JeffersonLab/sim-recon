@@ -941,7 +941,6 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
    fit_status = kFitSuccess;
 
    // figure out the number of expected hits for this track based on the final fit
-   
 	set<const DCDCWire *> expected_hit_straws;
 	set<int> expected_hit_fdc_planes;
 
@@ -993,14 +992,15 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
 			}
  		}
 	}
-
 	
 	potential_cdc_hits_on_track = expected_hit_straws.size();
 	potential_fdc_hits_on_track = expected_hit_fdc_planes.size();
 
-   _DBG_ << " CDC hits/potential hits " << my_cdchits.size() << "/" << potential_cdc_hits_on_track 
-         << "  FDC hits/potential hits " << my_fdchits.size() << "/" << potential_fdc_hits_on_track  << endl;
-
+    if(DEBUG_LEVEL>0) {
+   		_DBG_ << " CDC hits/potential hits " << my_cdchits.size() << "/" << potential_cdc_hits_on_track 
+        	 << "  FDC hits/potential hits " << my_fdchits.size() << "/" << potential_fdc_hits_on_track  << endl;
+	}
+	
    //_DBG_  << "========= done!" << endl;
 
    return fit_status;
