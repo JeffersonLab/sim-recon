@@ -172,6 +172,7 @@ int loadInput (int override_run_number, int myInputRunNo)
       v0[0] = vert->origin->vx;
       v0[1] = vert->origin->vy;
       v0[2] = vert->origin->vz;
+      v0[3] = vert->origin->t;
       if ((v0[0] == 0) && (v0[1] == 0) && (v0[2] == 0))
       {
          v0[0] = 1;
@@ -189,14 +190,15 @@ int loadInput (int override_run_number, int myInputRunNo)
          v0[1] *= BEAM_DIAMETER;
          v0[2] *= TARGET_LENGTH;
          v0[2] += TARGET_CENTER;
+         v0[3] = (v0[3] == 0)? settofg_(v0,&zero) * 1e9 : 0;
       }
       else
       {
+         v0[3] = (v0[3] == 0)? settofg_(v0,&zero) * 1e9 : 0;
          v0[0] = 0;
          v0[1] = 0;
          v0[2] = 0;
       }
-      v0[3] = settofg_(v0,&zero) * 1e9;
 
       if (beam != NULL && beam != (s_Beam_t*)&hddm_s_nullTarget)
       {
