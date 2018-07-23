@@ -289,14 +289,11 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
       +0.5*cdc_endplate_dim[2];
    
    geom->GetCDCWires(cdcwires);
-//   geom->GetCDCRmid(cdc_rmid); // THIS ISN'T IMPLEMENTED!!
-  for(int ring=0; ring<cdcwires.size(); ring++)
-  	//cdc_rmid.push_back( DVector3(cdcwires[ring][0]->x0,cdcwires[ring][0]->y0,cdcwires[ring][0]->z0).Perp() );
-  	cdc_rmid.push_back( cdcwires[ring][0]->origin.Perp() );
-   
-   cerr << "cdc_rmid SIZE = " << cdc_rmid.size() << endl;
-   cerr << "cdcwires SIZE = " << cdcwires.size() << endl;
-   
+   //   geom->GetCDCRmid(cdc_rmid); // THIS ISN'T IMPLEMENTED!!
+   // extract the "mean" radius of each ring from the wire data
+   for(int ring=0; ring<cdcwires.size(); ring++)
+  		cdc_rmid.push_back( cdcwires[ring][0]->origin.Perp() );
+      
    // Outer detector geometry parameters
    geom->GetFCALZ(dFCALz); 
    if (geom->GetDIRCZ(dDIRCz)==false) dDIRCz=1000.;
@@ -727,14 +724,14 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
 
    // keep track of the range of detector elements that could be hit
    // for calculating the number of expected hits later on
-   int min_cdc_ring=-1, max_cdc_ring=-1;
+   //int min_cdc_ring=-1, max_cdc_ring=-1;
 
    // Order the cdc hits by ring number
    if (num_good_cdchits>0){
       stable_sort(my_cdchits.begin(),my_cdchits.end(),DKalmanSIMDCDCHit_cmp);
 
-	  min_cdc_ring = my_cdchits[0]->hit->wire->ring;
-	  max_cdc_ring = my_cdchits[my_cdchits.size()-1]->hit->wire->ring;
+	  //min_cdc_ring = my_cdchits[0]->hit->wire->ring;
+	  //max_cdc_ring = my_cdchits[my_cdchits.size()-1]->hit->wire->ring;
 
       // Look for multiple hits on the same wire
       for (unsigned int i=0;i<my_cdchits.size()-1;i++){
@@ -945,9 +942,6 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
 
    // figure out the number of expected hits for this track based on the final fit
    
-   //potential_cdc_hits_on_track = extrapolations[SYS_CDC].size();
-   //potential_fdc_hits_on_track = extrapolations[SYS_FDC].size();
-
 	set<const DCDCWire *> expected_hit_straws;
 	set<int> expected_hit_fdc_planes;
 
@@ -962,14 +956,19 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
 		}
 		if(ring == cdc_rmid.size()) ring--;
 		//_DBG_ << "ring = " << ring << endl;
+		//_DBG_ << "ring = " << ring << "  stereo = " << cdcwires[ring][0]->stereo << endl;
 		int best_straw=0;
 		double best_dist_diff=fabs((extrapolations[SYS_CDC][i].position 
 			- cdcwires[ring][0]->origin).Mag());		
 	    // match based on straw center
-	    // NOTE that we should really take into account the z position
 	    for(int straw=1; straw<cdcwires[ring].size(); straw++) {
+	    	DVector3 wire_position = cdcwires[ring][straw]->origin;  // start with the nominal wire center
+	    	// now take into account the z dependence due to the stereo angle
+	    	double dz = extrapolations[SYS_CDC][i].position.Z() - cdcwires[ring][straw]->origin.Z();
+	    	double ds = dz*tan(cdcwires[ring][straw]->stereo);
+	    	wire_position += DVector3(-ds*sin(cdcwires[ring][straw]->origin.Phi()), ds*cos(cdcwires[ring][straw]->origin.Phi()), dz);
 	    	double diff = fabs((extrapolations[SYS_CDC][i].position
-				- cdcwires[ring][straw]->origin).Mag());
+				- wire_position).Mag());
 			if( diff < best_dist_diff )
 				best_straw = straw;
 	    }
