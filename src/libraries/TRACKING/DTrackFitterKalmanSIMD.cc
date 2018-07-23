@@ -7031,10 +7031,11 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
      double dx=x_-beam_pos.X();
      double dy=y_-beam_pos.Y();
      D_=sqrt(dx*dx+dy*dy)+EPS;
+     x_ = dx; y_ = dy;
      double cosphi=cos(phi_);
      double sinphi=sin(phi_);
-     if ((x_>0.0 && sinphi>0.0) || (y_ <0.0 && cosphi>0.0) 
-	 || (y_>0.0 && cosphi<0.0) || (x_<0.0 && sinphi<0.0)) D_*=-1.;
+     if ((dx>0.0 && sinphi>0.0) || (dy<0.0 && cosphi>0.0) 
+	 || (dy>0.0 && cosphi<0.0) || (dx<0.0 && sinphi<0.0)) D_*=-1.;
      TransformCovariance(Clast);      
    }
    // Covariance matrix  
@@ -7280,10 +7281,11 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
      double dx=x_-beam_pos.X();
      double dy=y_-beam_pos.Y();
      D_=sqrt(dx*dx+dy*dy)+EPS;
+     x_ = dx; y_ = dy;
      double cosphi=cos(phi_);
      double sinphi=sin(phi_);
-     if ((x_>0.0 && sinphi>0.0) || (y_ <0.0 && cosphi>0.0) 
-	 || (y_>0.0 && cosphi<0.0) || (x_<0.0 && sinphi<0.0)) D_*=-1.;
+     if ((dx>0.0 && sinphi>0.0) || (dy<0.0 && cosphi>0.0) 
+	 || (dy>0.0 && cosphi<0.0) || (dx<0.0 && sinphi<0.0)) D_*=-1.;
      TransformCovariance(Clast);
    }
    // Covariance matrix  
