@@ -148,8 +148,6 @@ jerror_t JEventProcessor_FCAL_invmass::evnt(jana::JEventLoop* locEventLoop, uint
 	vector <const DChargedTrackHypothesis*> locParticles;
 
 
-
-
 	Double_t kinfitVertexX = 0.0, kinfitVertexY = 0.0, kinfitVertexZ = 0.0;
 
 	for (unsigned int i = 0 ; i < kinfitVertex.size(); i++)
@@ -211,44 +209,7 @@ jerror_t JEventProcessor_FCAL_invmass::evnt(jana::JEventLoop* locEventLoop, uint
 			TLorentzVector sh1_p(E1*dx1/R1, E1*dy1/R1, E1*dz1/R1, E1);
 
 			for(unsigned int j=i+1; j<locFCALShowers.size(); j++){
-
-				const DFCALShower* shL = ( locFCALShowers[i]->getEnergy() >
-						locFCALShowers[j]->getEnergy() ?
-						locFCALShowers[j] : locFCALShowers[i] );
-
-				const DFCALShower* shH = ( locFCALShowers[i]->getEnergy() <
-						locFCALShowers[j]->getEnergy() ?
-						locFCALShowers[j] :locFCALShowers[i] );
-
-
-				DVector3 posL = shL->getPosition();
-				posL.SetZ( posL.Z() - zTarget );
-				eL = shL->getEnergy();
-				qualL = showerQualityMap[shL];
-				posL.SetMag( eL );
-				DLorentzVector p4L( posL, eL );
-
-
-				DVector3 posH = shH->getPosition();
-				posH.SetZ( posH.Z() - zTarget );
-				eH = shH->getEnergy();
-				qualH = showerQualityMap[shH];
-				posH.SetMag( eH );
-				DLorentzVector p4H( posH, eH );
-
-				invM = ( p4L + p4H ).M();
-
-
-				if( qualH > 0 && qualL > 0 )
-					qualCut_00->Fill(invM);
-
-				if( qualH > 0.3 && qualL > 0.3 )
-					qualCut_03->Fill(invM);
-
-				if( qualH > 0.5 && qualL > 0.5 )
-					qualCut_05->Fill(invM);
-
-
+				
 				const DFCALShower *s2 = locFCALShowers[j];
 				if (find(matchedShowers.begin(), matchedShowers.end(),s2) != matchedShowers.end()) continue;
 
@@ -258,6 +219,11 @@ jerror_t JEventProcessor_FCAL_invmass::evnt(jana::JEventLoop* locEventLoop, uint
 				Double_t dy2 = s2->getPosition().Y() - kinfitVertexY;
 				Double_t dz2 = s2->getPosition().Z() - kinfitVertexZ;
 
+				
+				qualH = showerQualityMap[s2];
+				qualL = showerQualityMap[s1];				
+
+
 				Double_t R2 = sqrt(dx2*dx2 + dy2*dy2 + dz2*dz2);
 				Double_t E2 = s2->getEnergy();
 				Double_t  t2 = s2->getTime();
@@ -265,6 +231,17 @@ jerror_t JEventProcessor_FCAL_invmass::evnt(jana::JEventLoop* locEventLoop, uint
 				TLorentzVector sh2_p(E2*dx2/R2, E2*dy2/R2, E2*dz2/R2, E2);
 				TLorentzVector ptot = sh1_p+sh2_p;
 				Double_t inv_mass = ptot.M();
+
+				
+				if( qualH > 0 && qualL > 0 )
+					qualCut_00->Fill(inv_mass);
+
+				if( qualH > 0.3 && qualL > 0.3 )
+					qualCut_03->Fill(inv_mass);
+
+				if( qualH > 0.5 && qualL > 0.5 )
+					qualCut_05->Fill(inv_mass);
+
 
 				if(E1 > 0.5 && E2 > 0.5 && s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 20*k_cm && (fabs (t1-t2) < 10) ) InvMass1->Fill(inv_mass);
 				if(E1 > 1.0 && E2 > 1.0 && s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 20*k_cm  && (fabs (t1-t2) < 10)) InvMass2->Fill(inv_mass);
