@@ -198,7 +198,6 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
     loop->Get(beamCurrent);
 
     japp->RootFillLock(this);
-    dTreeFillData.Fill_Single<ULong64_t>("eventnum",eventnumber);
     if (!beamCurrent.empty())
     {
 	// Check that photons are is_Fiducial
