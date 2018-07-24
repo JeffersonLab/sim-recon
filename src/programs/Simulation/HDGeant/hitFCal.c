@@ -134,7 +134,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
-   transformCoord(x,"global",xfcal,"FCAL");
+   transformCoord(x,"global",xfcal,"LGBL");
 
    /* if a light guide hit, record that here, no threshold */
 
@@ -280,11 +280,16 @@ void hitForwardEMcal (float xin[4], float xout[4],
       // Place holder for the MIP correction function. Currently apply 
       // simple correction
       
-      if( (ipart == 5) ||  (ipart == 6) || (ipart == 8) || (ipart == 9) ){
-	dEcorr *= 1.38;
+      if (ipart == 1 || ipart == 2 || ipart == 3) {
+         dEcorr *= 0.976;
       }
-      
-  
+      else {
+         double beta = pin[5] / pin[4];
+         if (beta > 0.6)
+            dEcorr *= 1.35;
+         else
+            dEcorr = 0;
+      }
 
       float tcorr = t + dist/C_EFFECTIVE;
       int mark = ((row+1)<<16) + (column+1);
