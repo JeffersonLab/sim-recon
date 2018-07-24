@@ -169,6 +169,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   fit_status_t FitTrack(void);
   double ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr=NULL, int *dof_ptr=NULL, vector<pull_t> *pulls_ptr=NULL);
 
+  unsigned int GetRatioMeasuredPotentialFDCHits(void) const {return my_fdchits.size()/potential_fdc_hits_on_track;}
+  unsigned int GetRatioMeasuredPotentialCDCHits(void) const {return my_cdchits.size()/potential_cdc_hits_on_track;}
+
   jerror_t AddCDCHit(const DCDCTrackHit *cdchit);
   jerror_t AddFDCHit(const DFDCPseudo *fdchit);
 
@@ -207,6 +210,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double GetdEdx(double q_over_p,double K_rho_Z_over_A,double rho_Z_over_A,
 		 double rho_Z_over_A_LnI,double Z); 
   double GetEnergyVariance(double ds,double beta2,double K_rho_Z_over_A);
+
+
 
  protected:
   enum hit_status{
@@ -504,6 +509,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   vector<vector<double> >max_sag;
   vector<vector<double> >sag_phi_offset;
+  
+  vector<vector<DCDCWire *> > cdcwires;
+  vector<double> cdc_rmid;
 
   // Parameters for dealing with FDC drift B dependence
   double FDC_DRIFT_BSCALE_PAR1,FDC_DRIFT_BSCALE_PAR2;
@@ -521,6 +529,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   
   // FDC wire info
   vector<double>fdc_z_wires;
+  double fdc_package_size;
+  double fdc_rmax;
+  vector<double> fdc_rmin_packages;
 
   // start counter geom info
   vector<vector<DVector3> >sc_dir; // direction vector in plane of plastic
