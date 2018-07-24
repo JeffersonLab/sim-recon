@@ -7024,7 +7024,9 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       if (iter>0){
 	double new_reduced_chisq=chisq/my_ndf;
 	double old_reduced_chisq=chisq_forward/last_ndf;
-	if (new_reduced_chisq>old_reduced_chisq 
+	double new_prob=TMath::Prob(chisq,my_ndf);
+	double old_prob=TMath::Prob(chisq_forward,last_ndf);
+	if (new_prob<old_prob
 	    || fabs(new_reduced_chisq-old_reduced_chisq)<CHISQ_DELTA) break;
       }
       
@@ -7291,7 +7293,9 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       if (iter2>0){
 	double new_reduced_chisq=chisq/my_ndf;
 	double old_reduced_chisq=chisq_forward/last_ndf;
-	if (new_reduced_chisq>old_reduced_chisq 
+	double new_prob=TMath::Prob(chisq,my_ndf);
+	double old_prob=TMath::Prob(chisq_forward,last_ndf);
+	if (new_prob<old_prob
 	    || fabs(new_reduced_chisq-old_reduced_chisq)<CHISQ_DELTA) break;
       }
       
@@ -7531,7 +7535,9 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
       if (iter2>0){
 	double new_reduced_chisq=chisq/my_ndf;
 	double old_reduced_chisq=chisq_iter/last_ndf;
-	if (new_reduced_chisq>old_reduced_chisq 
+	double new_prob=TMath::Prob(chisq,my_ndf);
+	double old_prob=TMath::Prob(chisq_iter,last_ndf);
+	if (new_prob<old_prob 
 	    || fabs(new_reduced_chisq-old_reduced_chisq)<CHISQ_DELTA) break;
       }
       
