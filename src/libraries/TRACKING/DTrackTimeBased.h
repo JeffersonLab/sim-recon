@@ -32,6 +32,11 @@ class DTrackTimeBased:public DTrackingData{
 		hit_usage_t cdc_hit_usage;
 		hit_usage_t fdc_hit_usage;
 
+		unsigned int measured_fdc_hits_on_track;
+		unsigned int measured_cdc_hits_on_track;
+		unsigned int potential_fdc_hits_on_track;
+		unsigned int potential_cdc_hits_on_track;
+
 		oid_t trackid;			///< id of DTrackWireBased corresponding to this track
 		oid_t candidateid;   ///< id of DTrackCandidate corresponding to this track
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)

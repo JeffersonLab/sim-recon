@@ -363,6 +363,21 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		locHitLayers().setCDCrings(tracks[i]->dCDCRings);
 		locHitLayers().setFDCplanes(tracks[i]->dFDCPlanes);
 
+		vector<const DCDCTrackHit*> locCDCHits;
+		tracks[i]->Get(locCDCHits);
+		vector<const DFDCPseudo*> locFDCHits;
+		tracks[i]->Get(locFDCHits);
+
+		hddm_r::ExpectedhitsList locExpectedHits = tra().addExpectedhitses(1);
+		//locExpectedHits().setMeasuredCDChits(locCDCHits.size());
+		//locExpectedHits().setMeasuredFDChits(locFDCHits.size());
+		locExpectedHits().setMeasuredCDChits(tracks[i]->measured_cdc_hits_on_track);
+		locExpectedHits().setMeasuredFDChits(tracks[i]->measured_fdc_hits_on_track);
+		//locExpectedHits().setMeasuredCDChits(tracks[i]->cdc_hit_usage.total_hits);
+		//locExpectedHits().setMeasuredFDChits(tracks[i]->fdc_hit_usage.total_hits);
+		locExpectedHits().setExpectedCDChits(tracks[i]->potential_cdc_hits_on_track);
+		locExpectedHits().setExpectedFDChits(tracks[i]->potential_fdc_hits_on_track);
+
 		hddm_r::McmatchList locMCMatches = tra().addMcmatchs(1);
 		locMCMatches().setIthrown(tracks[i]->dMCThrownMatchMyID);
 		locMCMatches().setNumhitsmatch(tracks[i]->dNumHitsMatchedToThrown);
