@@ -41,6 +41,17 @@ class DTrackTimeBased_factory_THROWN:public JFactory<DTrackTimeBased>{
 		DRootGeom *RootGeom;
 		DGeometry *geom;
 		DMagneticFieldMap *bfield;
+		
+		vector<vector<DCDCWire *> > cdcwires;
+	  	vector<double> cdc_rmid;
+	  	double cdc_endplate_z;
+
+  		// FDC wire info
+  		vector<double>fdc_z_wires;
+  		double fdc_package_size;
+  		double fdc_rmax;
+  		vector<double> fdc_rmin_packages;
+
 };
 
 #endif // _DTrackTimeBased_factory_THROWN_

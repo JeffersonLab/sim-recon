@@ -72,6 +72,23 @@ jerror_t DTrackTimeBased_factory_THROWN::brun(jana::JEventLoop *loop, int32_t ru
 	// Set magnetic field pointer
 	bfield = dapp->GetBfield();
 
+	// load DC geometry
+    geom->GetCDCWires(cdcwires);
+    //   geom->GetCDCRmid(cdc_rmid); // THIS ISN'T IMPLEMENTED!!
+    // extract the "mean" radius of each ring from the wire data
+    for(int ring=0; ring<cdcwires.size(); ring++)
+  		cdc_rmid.push_back( cdcwires[ring][0]->origin.Perp() );
+  	double loc_endplate_dz, loc_endplate_rmin, loc_endplate_rmax;
+  	geom->GetCDCEndplate(cdc_endplate_z, loc_endplate_dz, loc_endplate_rmin, loc_endplate_rmax);
+
+   	// Get z positions of fdc wire planes
+   	geom->GetFDCZ(fdc_z_wires);
+   	// for now, assume the z extent of a package is the difference between the positions
+   	// of the two wire planes.  save half of this distance
+   	fdc_package_size = (fdc_z_wires[1]-fdc_z_wires[0]) / 2.;
+   	geom->GetFDCRmin(fdc_rmin_packages);
+   	geom->GetFDCRmax(fdc_rmax);
+
 	// Get the particle ID algorithms
 	loop->GetSingle(dParticleID);
 
@@ -138,6 +155,75 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, uint64_t eventnu
 		for(unsigned int j=0; j<cdchits.size(); ++j)track->AddAssociatedObject(cdchits[j]);
 		for(unsigned int j=0; j<fdchits.size(); ++j)track->AddAssociatedObject(fdchits[j]);
 
+		track->measured_cdc_hits_on_track = cdchits.size();
+ 	    track->measured_fdc_hits_on_track = fdchits.size();
+
+		// Since we have swum a DReferenceTrajectory, use the same algorithm that's used 
+		// for the internal reference trajectories in DTrackFitterKalmanSIMD
+		// It's a little nasty, but should work for now
+
+		set<const DCDCWire *> expected_hit_straws;
+		set<int> expected_hit_fdc_planes;
+
+		for(int i=0; i<rt->Nswim_steps; i++) {
+			double z = rt->swim_steps[i].origin.Z();
+			double r = rt->swim_steps[i].origin.Perp();
+
+			// CHECK HITS IN CDC
+			if(z <= cdc_endplate_z) {
+			// figure out the radial position of the point to see which ring it's in
+			double r = rt->swim_steps[i].origin.Perp();
+			int ring=0;
+			for(; ring<cdc_rmid.size(); ring++) {
+				if( (r<cdc_rmid[ring]-0.78) || (fabs(r-cdc_rmid[ring])<0.78) )
+					break;
+			}
+			if(ring == cdc_rmid.size()) ring--;
+			//_DBG_ << "ring = " << ring << endl;
+			//_DBG_ << "ring = " << ring << "  stereo = " << cdcwires[ring][0]->stereo << endl;
+			int best_straw=0;
+			double best_dist_diff=fabs((rt->swim_steps[i].origin 
+				- cdcwires[ring][0]->origin).Mag());		
+	    	// match based on straw center
+	    	for(int straw=1; straw<cdcwires[ring].size(); straw++) {
+	    		DVector3 wire_position = cdcwires[ring][straw]->origin;  // start with the nominal wire center
+	    		// now take into account the z dependence due to the stereo angle
+	    		double dz = rt->swim_steps[i].origin.Z() - cdcwires[ring][straw]->origin.Z();
+	    		double ds = dz*tan(cdcwires[ring][straw]->stereo);
+	    		wire_position += DVector3(-ds*sin(cdcwires[ring][straw]->origin.Phi()), ds*cos(cdcwires[ring][straw]->origin.Phi()), dz);
+	    		double diff = fabs((rt->swim_steps[i].origin
+					- wire_position).Mag());
+				if( diff < best_dist_diff )
+					best_straw = straw;
+	    	}
+	    
+	    	expected_hit_straws.insert(cdcwires[ring][best_straw]);
+			}
+			
+			// CHECK HITS IN FDC
+			if( z>=fdc_z_wires[0] && z<=fdc_z_wires[fdc_z_wires.size()-1]) {
+			// check to make sure that the track goes through the sensitive region of the FDC
+			// assume one hit per plane
+
+			// see if we're in the "sensitive area" of a package
+			for(int plane=0; plane<fdc_z_wires.size(); plane++) {
+				int package = plane/6;
+				if(fabs(z-fdc_z_wires[plane]) < fdc_package_size) {
+					if( r<fdc_rmax && r>fdc_rmin_packages[package]) {
+						expected_hit_fdc_planes.insert(plane);
+					}
+					break; // found the right plane
+				}
+ 			}
+			}
+		}
+	
+		track->potential_cdc_hits_on_track = expected_hit_straws.size();
+		track->potential_fdc_hits_on_track = expected_hit_fdc_planes.size();
+
+   		//_DBG_ << " CDC hits/potential hits " << cdchits.size() << "/" << track->potential_cdc_hits_on_track 
+        //	 << "  FDC hits/potential hits " << fdchits.size() << "/" << track->potential_fdc_hits_on_track  << endl;
+
 		// We want to get chisq and Ndof values for this track using the hits from above.
 		// We do this using the DTrackFitter object. This more or less guarantees that the
 		// chisq calculation is done in the same way as it is for track fitting. Note
@@ -195,6 +281,7 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, uint64_t eventnu
 
 		_data[loc_i]->dCDCRings = dParticleID->Get_CDCRingBitPattern(locCDCTrackHits);
 		_data[loc_i]->dFDCPlanes = dParticleID->Get_FDCPlaneBitPattern(locFDCPseudos);
+		
 	}
 
 	return NOERROR;
