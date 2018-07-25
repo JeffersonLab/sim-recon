@@ -32,7 +32,10 @@ class JEventProcessor_imaging:public jana::JEventProcessor{
 
 		TH3I *TwoTrackXYZ;
 		TH1F *TwoTrackDoca,*TwoTrackZ,*TwoTrackRelCosTheta;
-		TH2F *TwoTrackPocaCut;
+		TH1F *TwoTrackZFit;
+		TH2F *TwoTrackXYFit_at_65cm;
+		TH3I *TwoTrackXYZFit;
+		TH2F *TwoTrackPocaCut,*TwoTrackPocaCutFit;
 		TH2F *TwoTrackXY_at_65cm;
 		TH1F *TwoTrackChi2,*TwoTrackProb;
 		TH1F *DocaPull;
@@ -44,6 +47,7 @@ class JEventProcessor_imaging:public jana::JEventProcessor{
 		const DMagneticFieldMap *bfield;
 
 		bool FIT_VERTEX;
+		double TRACK_CL_CUT,FIT_CL_CUT,DOCA_CUT;
 };
 
 #endif // _JEventProcessor_imaging_

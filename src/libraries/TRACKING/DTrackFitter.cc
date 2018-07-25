@@ -335,31 +335,11 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 	DTrackHitSelector::fit_type_t input_type = fit_type==kTimeBased ? DTrackHitSelector::kWireBased:DTrackHitSelector::kHelical;
 	hitselector->GetAllHits(input_type, rt, cdctrackhits, fdcpseudos, this,N);
 
-	// If the hit selector found no hits at all on the track, the most
-	// likely explanation is that the charge of the candidate was wrong,
-	// especially for stiff forward-going tracks.  Try rotating phi by 
-	// 180 degrees, switching the charge, and trying the hit selector again.
-    
-	if (fdchits.size()+cdchits.size()==0){
-	  // Make a temporary copy of the current reference trajectory
-	  DReferenceTrajectory temp_rt = *rt;
-
-	  // Swim a reference trajectory with revised paramters
-	  mom.SetPhi(mom.Phi()+M_PI);
-	  q*=-1.;
-	  temp_rt.Swim(pos, mom,q);
-	  if(temp_rt.Nswim_steps<1)return fit_status = kFitFailed;
-	  hitselector->GetAllHits(input_type, &temp_rt, cdctrackhits, fdcpseudos, this,N);
-       	
-	  if (fdchits.size()+cdchits.size()!=0){
-	    if (DEBUG_LEVEL>0)
-	      _DBG_ << "Switching the charge and phi of the track..." <<endl;
-	  }
-	}
+	// If the condition below is met, it seems that the track parameters 
+	// are inconsistent with the hits used to create the track candidate, 
+	// in which case we have to bail...
 	if (fdchits.size()+cdchits.size()==0) return fit_status=kFitNotDone;
 	
-	
-
 	// In case the subclass doesn't actually set the mass ....
 	fit_params.setPID(IDTrack(q, mass));
 

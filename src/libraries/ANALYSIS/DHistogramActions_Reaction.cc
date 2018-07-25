@@ -229,21 +229,37 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 				//CDC
 				CreateAndChangeTo_Directory("CDC", "CDC");
 
-				locHistName = "dEdXVsP";
-				locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);CDC dE/dx (keV/cm)");
+				locHistName = "dEdXVsP_Int";
+				locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);CDC dE/dx [Integral-based] (keV/cm)");
 				dHistMap_dEdXVsP[locPID][SYS_CDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
 
-				locHistName = "DeltadEdXVsP";
-				locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);CDC #Delta(dE/dX) (keV/cm)");
+				locHistName = "dEdXVsP_Amp";
+				locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);CDC dE/dx [Amplitude-based] (keV/cm)");
+				dHistMap_dEdXVsP[locPID][SYS_CDC_AMP] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
+
+				locHistName = "DeltadEdXVsP_Int";
+				locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);CDC #Delta(dE/dX) [Integral-based] (keV/cm)");
 				dHistMap_DeltadEdXVsP[locPID][SYS_CDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltadEdxBins, dMinDeltadEdx, dMaxDeltadEdx);
 
-				locHistName = string("dEdXPullVsP_") + locParticleName;
-				locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC #Delta(dE/dX)/#sigma_{#Delta(dE/dX)}");
+				locHistName = "DeltadEdXVsP_Amp";
+				locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);CDC #Delta(dE/dX) [Amplitude-based] (keV/cm)");
+				dHistMap_DeltadEdXVsP[locPID][SYS_CDC_AMP] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltadEdxBins, dMinDeltadEdx, dMaxDeltadEdx);
+
+				locHistName = string("dEdXPullVsP_Int_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC #Delta(dE/dX)/#sigma_{#Delta(dE/dX)} [Integral-based]");
 				dHistMap_dEdXPullVsP[locPID][SYS_CDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, dMinPull, dMaxPull);
 
-				locHistName = string("dEdXFOMVsP_") + locParticleName;
-				locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC dE/dx PID Confidence Level");
+				locHistName = string("dEdXPullVsP_Amp_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC #Delta(dE/dX)/#sigma_{#Delta(dE/dX)} [Amplitude-based]");
+				dHistMap_dEdXPullVsP[locPID][SYS_CDC_AMP] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, dMinPull, dMaxPull);
+
+				locHistName = string("dEdXFOMVsP_Int_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC dE/dx [Integral-based] PID Confidence Level");
 				dHistMap_dEdXFOMVsP[locPID][SYS_CDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DFOMBins, 0.0, 1.0);
+
+				locHistName = string("dEdXFOMVsP_Amp_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC dE/dx [Amplitude-based] PID Confidence Level");
+				dHistMap_dEdXFOMVsP[locPID][SYS_CDC_AMP] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DFOMBins, 0.0, 1.0);
 
 				gDirectory->cd("..");
 
@@ -428,16 +444,27 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 		if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
 		{
 			dHistMap_dEdXVsP[locPID][SYS_CDC]->Fill(locP, locTrackTimeBased->ddEdx_CDC*1.0E6);
+			dHistMap_dEdXVsP[locPID][SYS_CDC_AMP]->Fill(locP, locTrackTimeBased->ddEdx_CDC_amp*1.0E6);
+
 			double locProbabledEdx = dParticleID->GetMostProbabledEdx_DC(locP, locChargedTrackHypothesis->mass(), locTrackTimeBased->ddx_CDC, true);
 			double locDeltadEdx = locTrackTimeBased->ddEdx_CDC - locProbabledEdx;
 			dHistMap_DeltadEdXVsP[locPID][SYS_CDC]->Fill(locP, 1.0E6*locDeltadEdx);
+			double locDeltadEdx_amp = locTrackTimeBased->ddEdx_CDC_amp - locProbabledEdx;
+			dHistMap_DeltadEdXVsP[locPID][SYS_CDC_AMP]->Fill(locP, 1.0E6*locDeltadEdx_amp);
+
 			double locMeandx = locTrackTimeBased->ddx_CDC/locTrackTimeBased->dNumHitsUsedFordEdx_CDC;
 			double locSigmadEdx = dParticleID->GetdEdxSigma_DC(locTrackTimeBased->dNumHitsUsedFordEdx_CDC, locP, locChargedTrackHypothesis->mass(), locMeandx, true);
 			double locdEdXPull = locDeltadEdx/locSigmadEdx;
 			dHistMap_dEdXPullVsP[locPID][SYS_CDC]->Fill(locP, locDeltadEdx/locSigmadEdx);
+			double locdEdXPull_amp = locDeltadEdx_amp/locSigmadEdx;
+			dHistMap_dEdXPullVsP[locPID][SYS_CDC_AMP]->Fill(locP, locDeltadEdx_amp/locSigmadEdx);
+
 			double locdEdXChiSq = locdEdXPull*locdEdXPull;
 			double locdEdXFOM = TMath::Prob(locdEdXChiSq, locTrackTimeBased->dNumHitsUsedFordEdx_CDC);
 			dHistMap_dEdXFOMVsP[locPID][SYS_CDC]->Fill(locP, locdEdXFOM);
+			double locdEdXChiSq_amp = locdEdXPull_amp*locdEdXPull_amp;
+			double locdEdXFOM_amp = TMath::Prob(locdEdXChiSq_amp, locTrackTimeBased->dNumHitsUsedFordEdx_CDC);
+			dHistMap_dEdXFOMVsP[locPID][SYS_CDC_AMP]->Fill(locP, locdEdXFOM_amp);
 		}
 
 		//FDC dE/dx

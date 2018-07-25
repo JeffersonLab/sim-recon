@@ -920,6 +920,23 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 				shower->N_cell = locBcalClusterIterator->getNcell();
 		}
 
+		const hddm_r::BcalLayersList& locBcalLayersList = iter->getBcalLayerses();
+		hddm_r::BcalLayersList::iterator locBcalLayersIterator = locBcalLayersList.begin();
+		if(locBcalLayersIterator == locBcalLayersList.end()) {
+		        shower->E_L2 = 0.;
+		        shower->E_L3 = 0.;
+		        shower->E_L4 = 0.;
+			shower->rmsTime = -1;
+		}
+		else //should only be 1
+		{
+			for(; locBcalLayersIterator != locBcalLayersList.end(); ++locBcalLayersIterator)
+				shower->rmsTime = locBcalLayersIterator->getRmsTime();
+				shower->E_L2 = locBcalLayersIterator->getE_L2();
+				shower->E_L3 = locBcalLayersIterator->getE_L3();
+				shower->E_L4 = locBcalLayersIterator->getE_L4();
+		}
+
       data.push_back(shower);
    }
 
@@ -1010,6 +1027,31 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       (*loc7x7ErrorMatrix)(6, 6) = fit.getT0err()*fit.getT0err();
 
 		// Hit layers
+      const hddm_r::ExpectedhitsList& locExpectedhitsList = iter->getExpectedhitses();
+	   hddm_r::ExpectedhitsList::iterator locExpectedhitsIterator = locExpectedhitsList.begin();
+		if(locExpectedhitsIterator == locExpectedhitsList.end())
+		{
+			tra->potential_cdc_hits_on_track = 0;
+			tra->potential_fdc_hits_on_track = 0;
+			tra->measured_cdc_hits_on_track = 0;
+			tra->measured_fdc_hits_on_track = 0;
+			//tra->cdc_hit_usage.total_hits = 0;
+			//tra->fdc_hit_usage.total_hits = 0;
+		}
+		else //should only be 1
+		{
+			for(; locExpectedhitsIterator != locExpectedhitsList.end(); ++locExpectedhitsIterator)
+			{
+				tra->potential_cdc_hits_on_track = locExpectedhitsIterator->getExpectedCDChits();
+				tra->potential_fdc_hits_on_track = locExpectedhitsIterator->getExpectedFDChits();
+				tra->measured_cdc_hits_on_track = locExpectedhitsIterator->getMeasuredCDChits();
+				tra->measured_fdc_hits_on_track = locExpectedhitsIterator->getMeasuredFDChits();
+				//tra->cdc_hit_usage.total_hits = locExpectedhitsIterator->getMeasuredCDChits();
+				//tra->fdc_hit_usage.total_hits = locExpectedhitsIterator->getMeasuredFDChits();
+			}
+		}
+		
+		// Expected number of hits
       const hddm_r::HitlayersList& locHitlayersList = iter->getHitlayerses();
 	   hddm_r::HitlayersList::iterator locHitlayersIterator = locHitlayersList.begin();
 		if(locHitlayersIterator == locHitlayersList.end())

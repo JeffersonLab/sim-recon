@@ -29,6 +29,7 @@ const int NC_PSC = DPSGeometry::NUM_COARSE_COLUMNS;
 const int NC_PS = DPSGeometry::NUM_FINE_COLUMNS;
 const int NC_TAGH = DTAGHGeometry::kCounterCount;
 const int NC_TAGM = DTAGMGeometry::kColumnCount;
+const bool VERBOSE = false;
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
@@ -197,7 +198,6 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
     loop->Get(beamCurrent);
 
     japp->RootFillLock(this);
-    dTreeFillData.Fill_Single<ULong64_t>("eventnum",eventnumber);
     if (!beamCurrent.empty())
     {
 	// Check that photons are is_Fiducial
@@ -264,7 +264,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 			if (!tagh->has_TDC || !tagh->has_fADC) continue;
 			if (std::isnan(tagh->t) || std::isnan(tagh->E)) 
 			{
-				jerr<<"Found TAGH with NAN."<<endl;
+				if (VERBOSE) jerr<<"Found TAGH with NAN."<<tagh->counter_id<<endl;
 				continue;
 			}
 			if (fabs(E_pair-tagh->E) > EdiffMax || fabs(t_lhit-tagh->t) > tdiffMax) continue;
@@ -272,7 +272,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 			same++;
 			htag_DBeam++;
 		}
-		if (same > 1) jerr<<"Found more than one match for TAGH."<<endl;
+		if (same > 1 && VERBOSE) jerr<<"Found more than one match for TAGH."<<endl;
 		if (same == 0) dTreeFillData.Fill_Array<Bool_t>("TAGH_DBeam",false,htag);
 		else dTreeFillData.Fill_Array<Bool_t>("TAGH_DBeam",true,htag);
 		htag++;
@@ -300,7 +300,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 			if (tagm->row != 0) continue;
 			if (std::isnan(tagm->t) || std::isnan(tagm->E)) 
 			{
-				jerr<<"Found TAGM with NAN."<<endl;
+				if (VERBOSE) jerr<<"Found TAGM with NAN."<<tagm->column<<endl;
 				continue;
 			}
                         if (fabs(E_pair-tagm->E) > EdiffMax || fabs(t_lhit-tagm->t) > tdiffMax) continue;
@@ -308,7 +308,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
                         same++;
                         mtag_DBeam++;
                 }
-		if (same > 1) jerr<<"Found more than one match for TAGM."<<endl;
+		if (same > 1 && VERBOSE) jerr<<"Found more than one match for TAGM."<<endl;
                 if (same == 0) dTreeFillData.Fill_Array<Bool_t>("TAGM_DBeam",false,mtag);
                 else dTreeFillData.Fill_Array<Bool_t>("TAGM_DBeam",true,mtag);
 		mtag++;
@@ -325,7 +325,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 		if (fabs(E_pair-tag->E) > EdiffMax || fabs(t_lhit-tag->t) > tdiffMax) continue;	
                 htag_Check++;
             }
-	    if (htag_Check != htag_DBeam) jerr<<"TAGH: "<<htag_DBeam<<" , "<<htag_Check<<endl;
+	    if (htag_Check != htag_DBeam && VERBOSE) jerr<<"TAGH: "<<htag_DBeam<<" , "<<htag_Check<<endl;
 
 	    // Ensure TAGM hits match DBeamPhotons
 	    unsigned int mtag_Check = 0;
@@ -339,7 +339,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
                 if (fabs(E_pair-tag->E) > EdiffMax || fabs(t_lhit-tag->t) > tdiffMax) continue;
                 mtag_Check++;
             }
-	    if (mtag_Check != mtag_DBeam) jerr<<"TAGM: "<<mtag_DBeam<<" , "<<mtag_Check<<endl;
+	    if (mtag_Check != mtag_DBeam && VERBOSE) jerr<<"TAGM: "<<mtag_DBeam<<" , "<<mtag_Check<<endl;
 
 	    dTreeFillData.Fill_Single<UShort_t>("ntagh",htag);
 	    dTreeFillData.Fill_Single<UShort_t>("ntagm",mtag);
@@ -361,7 +361,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
                 unsigned int nsamples = samplesvector.size();
 
                 // loop over the samples to calculate integral, min, max
-                if (nsamples==0) jerr << "Raw samples vector is empty." << endl;
+                if (nsamples==0 && VERBOSE) jerr << "Raw samples vector is empty." << endl;
 
                 unsigned int w_integral = 0;
 		unsigned int w_max = 0;
@@ -398,7 +398,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 		hit++;
             }
             unsigned int nadc = hit;
-            if (nadc>NSECTORS) jerr << "TPOL_tree plugin error: nadc exceeds nmax(" << NSECTORS << ")." << endl;
+            if (nadc>NSECTORS && VERBOSE) jerr << "TPOL_tree plugin error: nadc exceeds nmax(" << NSECTORS << ")." << endl;
             dTreeFillData.Fill_Single<UShort_t>("nadc",nadc);
 	    dTreeFillData.Fill_Single<ULong64_t>("ntpol",ntpol);
 	    dTreeInterface->Fill(dTreeFillData);
@@ -420,7 +420,7 @@ int JEventProcessor_TPOL_tree::GetSector(int slot,int channel)
     // fix cable swap
     if (sector == 9) sector = 6;
     else if (sector == 6) sector = 9;
-    if (sector == 0) jerr << "sector did not change from initial value (0)." << endl;
+    if (sector == 0 && VERBOSE) jerr << "sector did not change from initial value (0)." << endl;
     return sector;
 }
 double JEventProcessor_TPOL_tree::GetPhi(int sector)

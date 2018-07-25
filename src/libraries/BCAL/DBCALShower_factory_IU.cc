@@ -93,7 +93,7 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
                 printf("%20s = %f\n","second_exp_param1",second_exp_param1);
          }
 	
-	jerror_t result = LoadCovarianceLookupTables();
+	jerror_t result = LoadCovarianceLookupTables(loop);
 	if (result!=NOERROR) return result;
 	
 	// load BCAL geometry
@@ -145,6 +145,9 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     
     shower->E_raw = (**clItr).E();
     shower->E_preshower = (**clItr).E_preshower();
+    shower->E_L2 = (**clItr).E_L2();
+    shower->E_L3 = (**clItr).E_L3();
+    shower->E_L4 = (**clItr).E_L4();
     shower->x = rho * sinTh * cosPhi;
     shower->y = rho * sinTh * sinPhi;
     shower->z = rho * cosTh + m_zTarget;
@@ -163,6 +166,8 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     shower->sigLong = (**clItr).sigRho();
     shower->sigTrans = (**clItr).sigPhi();
     shower->sigTheta = (**clItr).sigTheta();
+//    shower->sigTime = (**clItr).sigT();
+    shower->rmsTime = (**clItr).rmsTime();
 
     shower->N_cell = (**clItr).nCells();
     
@@ -253,7 +258,8 @@ DBCALShower_factory_IU::FillCovarianceMatrix(DBCALShower *shower){
 
 
 jerror_t
-DBCALShower_factory_IU::LoadCovarianceLookupTables(){
+DBCALShower_factory_IU::LoadCovarianceLookupTables(JEventLoop *eventLoop){
+    // Note that there's no error checking that the lookup tables have been loaded correctly!!
 	std::thread::id this_id = std::this_thread::get_id();
 	stringstream idstring;
 	idstring << this_id;
