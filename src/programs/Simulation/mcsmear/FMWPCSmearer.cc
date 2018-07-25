@@ -26,8 +26,12 @@ void FMWPCSmearer::SmearEvent(hddm_s::HDDM *record)
       hddm_s::FmwpcTruthHitList::iterator titer;
       for (titer = thits.begin(); titer != thits.end(); ++titer) {
          // smear the time and energy
-         double t = titer->getT() + gDRandom.SampleGaussian(fmwpc_config->FMWPC_TSIGMA);
-         double dE = titer->getDE() + gDRandom.SampleGaussian(fmwpc_config->FMWPC_ASIGMA);
+         double t = titer->getT();
+         double dE = titer->getDE();
+         if(config->SMEAR_HITS) {
+         	t += gDRandom.SampleGaussian(fmwpc_config->FMWPC_TSIGMA);
+         	dE += gDRandom.SampleGaussian(fmwpc_config->FMWPC_ASIGMA);
+		 }
          if (dE > fmwpc_config->FMWPC_THRESHOLD) {
             hddm_s::FmwpcHitList hits = iter->addFmwpcHits();
             hits().setT(t);

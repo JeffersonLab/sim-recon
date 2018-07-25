@@ -155,7 +155,7 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int32_t runnumber)
 	
 
 
-  jerror_t result = LoadCovarianceLookupTables();
+  jerror_t result = LoadCovarianceLookupTables(eventLoop);
   if (result!=NOERROR) return result;
 
   return NOERROR;
@@ -284,6 +284,7 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
       
       vector< const DFCALHit* > fcalHits;
       cluster->Get( fcalHits );
+      shower->setNumBlocks( fcalHits.size() );
       
       double e9e25, e1e9;
       getE1925FromHits( e1e9, e9e25, fcalHits, getMaxHit( fcalHits ) );
@@ -450,7 +451,7 @@ DFCALShower_factory::FillCovarianceMatrix(DFCALShower *shower){
 
 
 jerror_t
-DFCALShower_factory::LoadCovarianceLookupTables(){
+DFCALShower_factory::LoadCovarianceLookupTables(JEventLoop *eventLoop){
   std::thread::id this_id = std::this_thread::get_id();
   stringstream idstring;
   idstring << this_id;

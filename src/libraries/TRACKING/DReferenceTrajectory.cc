@@ -246,19 +246,29 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
 				    DVector3 &last_pos,DVector3 &last_mom,
 				    double q,double smax,
 				    const DCoordinateSystem *wire){
+  const DVector3 wire_origin=wire->origin;
+  const DVector3 wire_dir=wire->udir;
+  FastSwim(pos,mom,last_pos,last_mom,q,wire_origin,wire_dir,smax);
+}
+void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
+				    DVector3 &last_pos,DVector3 &last_mom,
+				    double q,
+				    const DVector3 &origin,
+				    const DVector3 &dir,double smax){
+
   DVector3 mypos(pos);
   DVector3 mymom(mom);
 
   // Initialize the stepper
   DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
   double s=0,doca=1000.,old_doca=1000.,dP_dx=0.;
-  double mass=GetMass();
+  //  double mass=GetMass();
   while (s<smax){
     // Save old value of doca
     old_doca=doca;
 
     // Adjust step size to take smaller steps in regions of high momentum loss
-    if(mass>0. && step_size<0.0 && geom){	
+    if(geom){	
       double KrhoZ_overA=0.0;
       double rhoZ_overA=0.0;
       double LogI=0.0;
@@ -271,35 +281,149 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
 		
 	if(my_step_size>MAX_STEP_SIZE)my_step_size=MAX_STEP_SIZE; // maximum step size in cm
 	if(my_step_size<MIN_STEP_SIZE)my_step_size=MIN_STEP_SIZE; // minimum step size in cm
-
+	
+	if (ploss_direction==kBackward) my_step_size*=-1.;
 	stepper.SetStepSize(my_step_size);
       }
     }
     // Swim to next
     double ds=stepper.Step(NULL);
-    s+=ds;
-
+    s+=fabs(ds);
     stepper.GetPosMom(mypos,mymom);
-    if (mass>0 && dP_dx<0.){
-      double ptot=mymom.Mag();
-      if (ploss_direction==kForward) ptot+=dP_dx*ds;
-      else ptot-=dP_dx*ds;
-      mymom.SetMag(ptot);
-      stepper.SetStartingParams(q, &mypos, &mymom);
-    }
+
+    // Take into account energy loss
+    double ptot=mymom.Mag();
+    //    if (ploss_direction==kForward) ptot+=dP_dx*ds;
+    //else ptot-=dP_dx*ds; 
+    ptot+=dP_dx*ds;
+
+    mymom.SetMag(ptot);
+    stepper.SetStartingParams(q, &mypos, &mymom);
     
-    // Break if we have passed the wire
-    DVector3 wirepos=wire->origin;
-    if (fabs(wire->udir.z())>0.){ // for CDC wires
-      wirepos+=((mypos.z()-wire->origin.z())/wire->udir.z())*wire->udir;
+    // Break if we have passed the line to which we are trying to find the doca
+    DVector3 linepos=origin;
+    if (fabs(dir.z())>0.){
+      linepos+=((mypos.z()-origin.z())/dir.z())*dir;
     }
-    doca=(wirepos-mypos).Mag();
+    doca=(linepos-mypos).Mag();
     if (doca>old_doca) break;
 
     // Store the position and momentum for this step
     last_pos=mypos;
     last_mom=mymom;
   }  
+}
+
+// Faster version of swimmer that only deals with the region inside the bore of
+// the magnet.  This is intended to be used with the hit selector, so is a 
+// paired-down version of the usual trajectory.
+void DReferenceTrajectory::FastSwimForHitSelection(const DVector3 &pos, const DVector3 &mom, double q){
+  DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
+  if(step_size>0.0)stepper.SetStepSize(step_size);
+
+  // Step until we leave the active tracking region
+  swim_step_t *swim_step = this->swim_steps;
+  Nswim_steps = 0;
+  double itheta02 = 0.0;
+  double itheta02s = 0.0;
+  double itheta02s2 = 0.0;
+  double X0sum=0.0;
+  swim_step_t *last_step=NULL;
+	
+  for(double s=0; fabs(s)<1000.; Nswim_steps++, swim_step++){
+       
+    if(Nswim_steps>=this->max_swim_steps){
+      if (debug_level>0){
+	jerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;
+      }
+      break;
+    }
+    
+    stepper.GetDirs(swim_step->sdir, swim_step->tdir, swim_step->udir);
+    stepper.GetPosMom(swim_step->origin, swim_step->mom);
+    swim_step->Ro = stepper.GetRo();
+    swim_step->s = s;
+    swim_step->t = 0.; // we do not need the time for our purpose...
+    
+    // Magnetic field at current position
+    bfield->GetField(swim_step->origin,swim_step->B);
+
+    //magnitude of momentum and beta
+    double p_sq=swim_step->mom.Mag2();
+    double one_over_beta_sq=1.+mass_sq/p_sq;
+
+    // Add material if geom is not NULL
+    double dP = 0.0;
+    double dP_dx=0.0;
+    if(geom){
+      double KrhoZ_overA=0.0;
+      double rhoZ_overA=0.0;
+      double LogI=0.0;
+      double X0=0.0;
+      jerror_t err = geom->FindMatALT1(swim_step->origin, swim_step->mom, KrhoZ_overA, rhoZ_overA,LogI, X0);
+      if(err == NOERROR){
+	if(X0>0.0){
+	  double p=sqrt(p_sq);
+	  double delta_s = s;
+	  if(last_step)delta_s -= last_step->s;
+	  double radlen = delta_s/X0;
+	  
+	  if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
+			      
+	    //  double theta0 = 0.0136*sqrt(one_over_beta_sq)/p*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
+	    //double theta02 = theta0*theta0;
+	    double factor=1.0+0.038*log(radlen);
+	    double theta02=1.8496e-4*factor*factor*radlen*one_over_beta_sq/p_sq;
+
+	    itheta02 += theta02;
+	    itheta02s += s*theta02;
+	    itheta02s2 += s*s*theta02;
+	    X0sum+=X0;
+	  }
+	  
+	  // Calculate momentum loss due to ionization
+	  dP_dx = dPdx(p, KrhoZ_overA, rhoZ_overA,LogI);
+	}
+      }
+      last_step = swim_step;
+    }
+    swim_step->itheta02 = itheta02;
+    swim_step->itheta02s = itheta02s;
+    swim_step->itheta02s2 = itheta02s2;
+    swim_step->invX0=Nswim_steps/X0sum;
+    
+    if(step_size<0.0){ // step_size<0 indicates auto-calculated step size
+      // Adjust step size to take smaller steps in regions of high momentum loss
+      double my_step_size = 0.0001/fabs(dP_dx);
+      if(my_step_size>MAX_STEP_SIZE)my_step_size=MAX_STEP_SIZE; // maximum step size in cm
+      if(my_step_size<MIN_STEP_SIZE)my_step_size=MIN_STEP_SIZE; // minimum step size in cm
+      
+      stepper.SetStepSize(my_step_size);
+    }
+
+    // Swim to next
+    double ds=stepper.FastStep(swim_step->B);
+  
+    // Calculate momentum loss due to the step we're about to take
+    dP = ds*dP_dx;
+  
+    // Adjust momentum due to ionization losses
+    if(dP!=0.0){
+      DVector3 pos, mom;
+      stepper.GetPosMom(pos, mom);
+      double ptot = mom.Mag() - dP; // correct for energy loss
+      if (ptot<0.005) {Nswim_steps++; break;}
+      mom.SetMag(ptot);
+      stepper.SetStartingParams(q, &pos, &mom);
+    }
+    s += ds;
+
+    double Rsq=swim_step->origin.Perp2();
+    double z=swim_step->origin.Z();
+    if (z>345. || z<17. || Rsq>60.*60.){
+      Nswim_steps++; break;
+    }
+  }
 }
 
 // Faster version of the swimmer that uses an alternate stepper and does not
@@ -434,7 +558,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
       DVector3 pos, mom;
       stepper.GetPosMom(pos, mom);
       double ptot = mom.Mag() - dP; // correct for energy loss
-      if (ptot<0) {Nswim_steps++; break;}
+      if (ptot<0.005) {Nswim_steps++; break;}
       mom.SetMag(ptot);
       stepper.SetStartingParams(q, &pos, &mom);
     }
@@ -459,6 +583,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
       index_at_fcal=Nswim_steps-1;
       hit_fcal=true;     
     }
+    
     
     // Exit the loop if we are already inside the volume of the BCAL
     // and the radius is decreasing
@@ -706,10 +831,10 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			  cout<<"N: " << Nswim_steps <<" x " << pos.x() <<" y " <<pos.y() <<" z " << pos.z() <<" r " << pos.Perp()<< " s " << s  << " p " << ptot << endl;
 			}
 			*/
-			if(ptot<0.0)ranged_out=true;
+			if(ptot<0.005)ranged_out=true;
 			if(dP<0.0 && ploss_direction==kForward)ranged_out=true;
 			if(dP>0.0 && ploss_direction==kBackward)ranged_out=true;
-			if(mom.Mag()==0.0)ranged_out=true;
+			//if(mom.Mag()==0.0)ranged_out=true;
 			if(ranged_out){
 				Nswim_steps++; // This will at least allow for very low momentum particles to have 1 swim step
 				break;
@@ -1389,9 +1514,6 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s,
 	    return numeric_limits<double>::quiet_NaN();
 	  }
 
-	  if (std::isnan(Ro))
-	    {
-	  }
 	}
 	
 	// Calculate distance along track ("s")

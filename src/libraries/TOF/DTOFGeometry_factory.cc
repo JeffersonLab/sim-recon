@@ -41,8 +41,14 @@ jerror_t DTOFGeometry_factory::brun(jana::JEventLoop *loop, int32_t runnumber)
   locGeometry->Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='0']", tof_plane0);
   vector<double>tof_plane1;
   locGeometry->Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='1']", tof_plane1);
-  myDTOFGeometry->CenterVPlane=tof_face[2]+tof_plane1[2];
-  myDTOFGeometry->CenterHPlane=tof_face[2]+tof_plane0[2];
+  vector<double> FTOC;
+  locGeometry->Get("//box[@name='FTOC' and sensitive='true']/@X_Y_Z", FTOC);
+
+  //z_tof.push_back(ForwardTOF[2] + forwardTOF[0][2] - FTOC[2]/2.0);
+  //z_tof.push_back(ForwardTOF[2] + forwardTOF[1][2] - FTOC[2]/2.0);
+
+  myDTOFGeometry->CenterVPlane=tof_face[2]+tof_plane1[2] - FTOC[2]/2.0;
+  myDTOFGeometry->CenterHPlane=tof_face[2]+tof_plane0[2] - FTOC[2]/2.0;
   myDTOFGeometry->CenterMPlane=0.5*(myDTOFGeometry->CenterHPlane
 				   +myDTOFGeometry->CenterVPlane);
 

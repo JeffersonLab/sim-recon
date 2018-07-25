@@ -162,14 +162,18 @@ void CDCSmearer::SmearEvent(hddm_s::HDDM *record)
 		 		&& !gDRandom.DecideToAcceptHit(cdc_config->GetEfficiencyCorrectionFactor(iter->getRing(), iter->getStraw())))
 		 	continue;
 
-         // Pedestal-smeared charge
-         double q = titer->getQ() + gDRandom.SampleGaussian(cdc_config->CDC_PEDESTAL_SIGMA);
+         double t = titer->getT();
+         double q = titer->getQ();
+ 
+         if(config->SMEAR_HITS) {
+         	// Smear out the CDC drift time using the specified sigma.
+         	// This is for timing resolution from the electronics;
+         	// diffusion is handled in hdgeant.
+			t += gDRandom.SampleGaussian(cdc_config->CDC_TDRIFT_SIGMA)*1.0e9;
+         	// Pedestal-smeared charge
+         	q +=  gDRandom.SampleGaussian(cdc_config->CDC_PEDESTAL_SIGMA);
+		 }
          double amplitude = q * cdc_config->CDC_CHARGE_TO_ADC_COUNTS * cdc_config->CDC_INTEGRAL_TO_AMPLITUDE;
-
-         // Smear out the CDC drift time using the specified sigma.
-         // This is for timing resolution from the electronics;
-         // diffusion is handled in hdgeant.
-         double t = titer->getT() + gDRandom.SampleGaussian(cdc_config->CDC_TDRIFT_SIGMA)*1.0e9;
          
          // per-wire threshold in ADC units
          double threshold = cdc_config->GetWireThreshold(iter->getRing(), iter->getStraw());

@@ -39,8 +39,9 @@ class DFCALShower:public JObject{
   double getSumV() const;
   double getE9E25() const;
   double getE1E9() const;
+  int getNumBlocks() const;
 
-  // set shower energy and position 
+  // set shower information
   void setPosition( const DVector3& aPosition );  
   void setEnergy( const double energy );  
   void setTime( const double time );
@@ -50,6 +51,7 @@ class DFCALShower:public JObject{
   void setSumV( const double sumV );
   void setE9E25( const double e9e25 );
   void setE1E9( const double e1e9 );
+  void setNumBlocks( const int numBlocks );
 
   TMatrixFSym ExyztCovariance;
 
@@ -112,6 +114,13 @@ class DFCALShower:public JObject{
     AddString(items, "dy", "%5.3f", yErr());
     AddString(items, "dz", "%5.3f", zErr());
     AddString(items, "dt", "%5.3f", tErr());
+    AddString(items, "docaTr","%7.2f", getDocaTrack());
+    AddString(items, "timeTr","%7.2f", getTimeTrack());
+    AddString(items, "sumU", "%7.2f", getSumU());
+    AddString(items, "sumV", "%7.2f", getSumV());
+    AddString(items, "E9E25", "%7.2f", getE9E25());
+    AddString(items, "E1E9", "%7.2f", getE1E9());
+    AddString(items, "numBlocks", "%3.0i",getNumBlocks());
     AddString(items, "EXcorr", "%5.3f", EXcorr());
     AddString(items, "EYcorr", "%5.3f", EYcorr());
     AddString(items, "EZcorr", "%5.3f", EZcorr());
@@ -135,6 +144,7 @@ class DFCALShower:public JObject{
   double fSumV;
   double fE9E25;
   double fE1E9;
+  int iNumBlocks;
 };
 
 
@@ -159,6 +169,7 @@ inline double DFCALShower::getSumU() const { return fSumU; }
 inline double DFCALShower::getSumV() const { return fSumV; }
 inline double DFCALShower::getE9E25() const { return fE9E25; }
 inline double DFCALShower::getE1E9() const { return fE1E9; }
+inline int DFCALShower::getNumBlocks() const { return iNumBlocks; }
 
 #endif // _DFCALShower_
 

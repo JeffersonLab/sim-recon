@@ -414,12 +414,12 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     old_straw=hit->wire->straw;
 
     // Find the DOCA to this wire
-    double s;
+    double s=0.;
     double doca = rt->DistToRT(hit->wire, &s);
     
     if(!isfinite(doca)) continue;
     if(!isfinite(s))continue;
-    if (s<=0.) continue;
+    if (s<1.) continue;
     if (doca>MAX_DOCA) continue;
     
     const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
@@ -630,12 +630,12 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
     const DFDCPseudo *hit = *iter;
     
     // Find the DOCA to this wire
-    double s;
+    double s=0.;
     double doca = rt->DistToRT(hit->wire, &s); 
 
     if(!isfinite(doca)) continue;
     if(!isfinite(s))continue;
-    if (s<=0.) continue;
+    if (s<1.) continue;
     if (doca>MAX_DOCA)continue;
 
     const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();

@@ -48,6 +48,8 @@ void plot_Z2pi_trees(TString filename)
     TH1F *Phidiff = (TH1F*)f->Get("Phidiff");
     TH1F *phidiff = (TH1F*)f->Get("phidiff");
     TH1F *CosThetadiff = (TH1F*)f->Get("CosThetadiff");
+
+    TH1F *dHist_TaggerAccidentals = (TH1F*)f->Get("dHist_TaggerAccidentals");
     
     TCanvas *c0 = new TCanvas("c0", "c0",200,10,1000,700);
 
@@ -412,10 +414,27 @@ void plot_Z2pi_trees(TString filename)
     psidiff->SetMarkerColor(4);
     psidiff->Draw();
 
+    TCanvas *c4 = new TCanvas("c4", "c4",200,10,1000,700);
     
+    c4->Divide(3,2);
+
+    c4->cd(1);
+    // gPad->SetLogy();
+    ymin = 0;
+    ymax = 4000;
+    
+    dHist_TaggerAccidentals->SetTitle(filename);
+    // dHist_TaggerAccidentals->GetXaxis()->SetRangeUser(xmin,xmax);
+    // dHist_TaggerAccidentals->GetYaxis()->SetRangeUser(ymin,ymax);
+    dHist_TaggerAccidentals->GetXaxis()->SetTitleSize(0.05);
+    dHist_TaggerAccidentals->GetYaxis()->SetTitleSize(0.05);
+    dHist_TaggerAccidentals->GetXaxis()->SetTitle("Vertex Time - RF (ns)");
+    dHist_TaggerAccidentals->SetMarkerColor(4);
+    dHist_TaggerAccidentals->Draw();
     
     c0->SaveAs(filename+".pdf(");
     c1->SaveAs(filename+".pdf");
     c2->SaveAs(filename+".pdf");
-    c3->SaveAs(filename+".pdf)");
+    c3->SaveAs(filename+".pdf");
+    c4->SaveAs(filename+".pdf)");
 }

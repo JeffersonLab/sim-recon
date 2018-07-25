@@ -53,14 +53,14 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
   }xyz_t;
 	
   
-  jerror_t FindSegments(vector<const DFDCPseudo*>points);
+  jerror_t FindSegments(vector<const DFDCPseudo*>&points);
   //		jerror_t CorrectPoints(vector<DFDCPseudo*>point,DMatrix XYZ);
   jerror_t GetHelicalTrackPosition(double z,const DFDCSegment *segment,
 				   double &xpos,double &ypos);
-  jerror_t RiemannHelicalFit(vector<const DFDCPseudo*>points);
-  jerror_t RiemannCircleFit(vector<const DFDCPseudo*>points,
+  jerror_t RiemannHelicalFit(vector<const DFDCPseudo*>&points);
+  jerror_t RiemannCircleFit(vector<const DFDCPseudo*>&points,
 			    DMatrix &CRPhi);
-  jerror_t RiemannLineFit(vector<const DFDCPseudo *>points,
+  jerror_t RiemannLineFit(vector<const DFDCPseudo *>&points,
 			  DMatrix &CR,vector<xyz_t>&XYZ);
   jerror_t UpdatePositionsAndCovariance(unsigned int n,double r1sq,
 					vector<xyz_t> &XYZ,DMatrix &CRPhi,
@@ -69,6 +69,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 			  DMatrix &CRPhi, vector<const DFDCPseudo *>&points);
   jerror_t CircleFit(vector<const DFDCPseudo *>&points);
   jerror_t LineFit(vector<const DFDCPseudo *>&points);
+  double ComputeCircleChiSq(vector<const DFDCPseudo *>&neighbors);
 
   void FillSegmentData(DFDCSegment *segment);
 

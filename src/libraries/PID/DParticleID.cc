@@ -334,8 +334,8 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
   // Position and momentum
   DVector3 pos,mom;
   // flight time and t0 for the event
-  double tflight=0.;
-  double t0=track->t0();
+  //double tflight=0.;
+  //double t0=track->t0();
   
   //dE and dx pairs
   dedx_t de_and_dx(0.,0.,0.,0.);
@@ -361,14 +361,14 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
 	  unsigned int index=j-1;
 	  mom=cdc_extrapolations[index].momentum;
 	  pos=cdc_extrapolations[index].position;
-	  tflight=cdc_extrapolations[index].t;
+	  //tflight=cdc_extrapolations[index].t;
 	  break;
 	}
 	doca2_old=doca2;
       }
             
       // Cut late drift time hits where the energy deposition is degraded
-      double dt=cdchits[i]->tdrift-tflight-t0;
+      double dt=cdchits[i]->tdrift; //-tflight-t0;
       if (dt>CDC_TIME_CUT_FOR_DEDX) continue;
 
       // Create the dE,dx pair from the position and momentum using a helical approximation for the path 
