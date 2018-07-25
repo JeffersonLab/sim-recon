@@ -77,6 +77,7 @@ class bcal_config_t
 	bool NO_SAMPLING_FLOOR_TERM;
 	bool NO_POISSON_STATISTICS;
 	bool NO_FADC_SATURATION;
+	bool NO_SIPM_SATURATION;
 
 	//vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
 	// Assume constant effective velocity instead of channel-dependent one
@@ -92,8 +93,11 @@ class bcal_config_t
 	}
 
 	double fADC_MinIntegral_Saturation[2][4];
-    double fADC_Saturation_Linear[2][4];
-    double fADC_Saturation_Quadratic[2][4];
+	double fADC_Saturation_Linear[2][4];
+	double fADC_Saturation_Quadratic[2][4];
+        float INTEGRAL_TO_PEAK;
+        float SIPM_NPIXELS;
+        float INTEGRAL_2V_PIXELS;   // number of pixels in integral for Peak=2V (4095 counts)
 };
 
 
@@ -273,6 +277,7 @@ class BCALSmearer : public Smearer
 			bcal_config->NO_SAMPLING_FLOOR_TERM = in_config->BCAL_NO_SAMPLING_FLOOR_TERM;
 			bcal_config->NO_POISSON_STATISTICS = in_config->BCAL_NO_POISSON_STATISTICS;
 			bcal_config->NO_FADC_SATURATION = in_config->BCAL_NO_FADC_SATURATION;
+			bcal_config->NO_SIPM_SATURATION = in_config->BCAL_NO_SIPM_SATURATION;
 			
 			// load BCAL geometry
   			vector<const DBCALGeometry *> BCALGeomVec;

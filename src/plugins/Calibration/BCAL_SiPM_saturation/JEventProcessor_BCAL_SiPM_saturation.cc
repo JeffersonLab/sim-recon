@@ -100,6 +100,11 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::brun(JEventLoop *eventLoop, int32
 jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
  
+  // If not Physics event call BCAL showers to initialize parameters
+  if (!loop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT)) {
+  	vector<const DBCALShower*> BCALShowers;
+  	loop->Get(BCALShowers);
+  }
 
   // Check to see if this is a physics event
   if (loop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT)) {
@@ -125,6 +130,7 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
   	loop->Get(NeutralShowers);
 
     unsigned int NumShowers=NeutralShowers.size();
+    float Eshower = 0;
 
     // loop over neutral showers
     for (unsigned int i = 0; i < NumShowers; i++){
@@ -134,9 +140,16 @@ jerror_t JEventProcessor_BCAL_SiPM_saturation::evnt(JEventLoop *loop, uint64_t e
         if (locDetector != SYS_BCAL) continue;
         // Get shower properties
         vector<const DBCALShower*> BCALShowers;
-	    locNeutralShower->Get(BCALShowers);
-        const DBCALShower* locBCALShower = BCALShowers[0];
-        float Eshower = locBCALShower->E;
+	locNeutralShower->Get(BCALShowers);
+
+	// Should be only one BCAL shower for each neutral shower
+	const DBCALShower* locBCALShower= BCALShowers[0];
+        Eshower = locBCALShower->E;
+
+	// for MC select showers that are greater than 50% of thrown energy
+	if (NumThrown == 1 && Eshower < Ethrown/2.) 
+	  continue;
+   
         /*float E_preshower = locBCALShower->E_preshower;
         float z = locBCALShower->z;
         float x = locBCALShower->x;

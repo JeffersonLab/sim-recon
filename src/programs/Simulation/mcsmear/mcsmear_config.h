@@ -52,6 +52,7 @@ class mcsmear_config_t
 	double BCAL_NO_SAMPLING_FLOOR_TERM;
 	double BCAL_NO_POISSON_STATISTICS;
 	double BCAL_NO_FADC_SATURATION;
+	double BCAL_NO_SIPM_SATURATION;
 	
 	
 #ifdef HAVE_RCDB

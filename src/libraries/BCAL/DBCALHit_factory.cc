@@ -33,8 +33,6 @@ jerror_t DBCALHit_factory::init(void)
   CORRECT_SIPM_SATURATION = true;
   gPARMS->SetDefaultParameter("BCAL:CORRECT_SIPM_SATURATION", CORRECT_SIPM_SATURATION, "Set to 1 to correct for SiPM saturation, set to 0 to not correct pulse integral or peak. (default = 1)");
 
-  cout << " DBCALHit_factory::init - BCAL:CORRECT_SIPM_SATURATION=" << CORRECT_SIPM_SATURATION << endl;
-
    return NOERROR;
 }
 
@@ -252,9 +250,6 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       // make corrections for SiPM saturation
 
-      cout << " INTEGRAL_TO_PEAK=" << INTEGRAL_TO_PEAK << " SIPM_NPIXELS=" << SIPM_NPIXELS 
-	   << " INTEGRAL_2V_PIXELS=" << INTEGRAL_2V_PIXELS << endl;
-
       double integral_pedsub =0;
       if ( integral > 0 ) { 
 	// compute in double precision to prevent round off errors
@@ -286,6 +281,8 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 							pedestal,nsamples_pedestal,single_sample_ped,totalpedestal,gain,hit_E*1000);
       if ( hit_E <= 0 ) continue;  // Throw away negative energy hits  
 
+      // integral and peak should be corrected separately because the ratio is not necessarily a constant.
+      //
       int pulse_peak_pedsub=0;
       	if (CORRECT_SIPM_SATURATION) {
 	  double pulse_peak_pedsub_measured = (int)digihit->pulse_peak - (int)single_sample_ped;

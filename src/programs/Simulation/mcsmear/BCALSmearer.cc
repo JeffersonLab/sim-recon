@@ -675,21 +675,29 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       // so we can offset the times now to ensure they are positive before the conversion, then
       // fix the offset layer in the hit factories.  Also, any hit that still has a negative time
       // will be ignored.
-      float INTEGRAL_TO_PEAK=12.8;
-      float SIPM_NPIXELS=57600;
-      float INTEGRAL_2V_PIXELS= 24000;   // number of pixels in integral for Peak=2V (4095 counts)
+      // float INTEGRAL_TO_PEAK=12.8;
+      // float SIPM_NPIXELS=57600;
+      // float INTEGRAL_2V_PIXELS= 24000;   // number of pixels in integral for Peak=2V (4095 counts)
+      // cout << " BCALSmearer: INTEGRAL_TO_PEAK=" <<  bcal_config->INTEGRAL_TO_PEAK 
+      // << " SIPM_NPIXELS=" << bcal_config->SIPM_NPIXELS 
+      // << " INTEGRAL_2V_PIXELS=" <<  bcal_config->INTEGRAL_2V_PIXELS << endl;
+      // cout << " BCALSmear: NO_SIPM_SATURATION=" << bcal_config->NO_SIPM_SATURATION << endl;
       for (unsigned int i = 0; i < hitlist.uphits.size(); i++) {
       	int integer_time = round((hitlist.uphits[i].t-bcal_config->BCAL_BASE_TIME_OFFSET)/bcal_config->BCAL_NS_PER_ADC_COUNT);
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kUp);
-	    double integral_true = round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
-	    double pulse_peak_true = integral_true/INTEGRAL_TO_PEAK;    //  approximate value for now. Should retrieve from ccdb.  ES 5/11/2018
-	    double Mpixels = SIPM_NPIXELS*hitlist.sumlayer;
-	    double Npixels_true = round(INTEGRAL_2V_PIXELS*pulse_peak_true/4095.);
-	    double Npixels_measured = round(Mpixels*(1-exp(-Npixels_true/Mpixels)));
-	    double pulse_peak = round(4095*Npixels_measured/INTEGRAL_2V_PIXELS);
-	    double integral = pulse_peak*INTEGRAL_TO_PEAK;
+	    double integral = round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
+	    double pulse_peak = integral/bcal_config->INTEGRAL_TO_PEAK;
+	    if (!bcal_config->NO_SIPM_SATURATION) {
+	      double integral_true = integral;
+	      double pulse_peak_true = integral_true/bcal_config->INTEGRAL_TO_PEAK;    //  approximate value for now. Should retrieve from ccdb.  ES 5/11/2018
+	      double Mpixels = bcal_config->SIPM_NPIXELS*hitlist.sumlayer;
+	      double Npixels_true = round(bcal_config->INTEGRAL_2V_PIXELS*pulse_peak_true/4095.);
+	      double Npixels_measured = round(Mpixels*(1-exp(-Npixels_true/Mpixels)));
+	      pulse_peak = round(4095*Npixels_measured/bcal_config->INTEGRAL_2V_PIXELS);
+	      integral = pulse_peak*bcal_config->INTEGRAL_TO_PEAK;
+	    }
 	    // cout << "Layer=" << hitlist.sumlayer << " Mpixels=" << Mpixels << " Npixels_true=" << Npixels_true << " Npixels_measured=" << Npixels_measured 
             //      << " pulse_peak_true=" << pulse_peak_true << " pulse_peak=" << pulse_peak << " integral=" << integral << endl;
 	    if (pulse_peak > 4095) pulse_peak=4095;
@@ -717,13 +725,17 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kDown);
-	    double integral_true = round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
-	    double pulse_peak_true = integral_true/INTEGRAL_TO_PEAK;    //  approximate value for now. Should retrieve from ccdb.  ES 5/11/2018
-	    double Mpixels = SIPM_NPIXELS*hitlist.sumlayer;
-	    double Npixels_true = round(INTEGRAL_2V_PIXELS*pulse_peak_true/4095.);
-	    double Npixels_measured = round(Mpixels*(1-exp(-Npixels_true/Mpixels)));
-	    double pulse_peak = round(4095*Npixels_measured/INTEGRAL_2V_PIXELS);
-	    double integral = pulse_peak*INTEGRAL_TO_PEAK;
+	    double integral = round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
+	    double pulse_peak = integral/bcal_config->INTEGRAL_TO_PEAK;
+	    if (!bcal_config->NO_SIPM_SATURATION) {
+	      double integral_true = integral;
+	      double pulse_peak_true = integral_true/bcal_config->INTEGRAL_TO_PEAK;    //  approximate value for now. Should retrieve from ccdb.  ES 5/11/2018
+	      double Mpixels = bcal_config->SIPM_NPIXELS*hitlist.sumlayer;
+	      double Npixels_true = round(bcal_config->INTEGRAL_2V_PIXELS*pulse_peak_true/4095.);
+	      double Npixels_measured = round(Mpixels*(1-exp(-Npixels_true/Mpixels)));
+	      pulse_peak = round(4095*Npixels_measured/bcal_config->INTEGRAL_2V_PIXELS);
+	      integral = pulse_peak*bcal_config->INTEGRAL_TO_PEAK;
+	    }
 	    // cout << "Layer=" << hitlist.sumlayer << " Mpixels=" << Mpixels << " Npixels_true=" << Npixels_true << " Npixels_measured=" << Npixels_measured 
             //      << " pulse_peak_true=" << pulse_peak_true << " pulse_peak=" << pulse_peak << " integral=" << integral << endl;
 	    if (pulse_peak > 4095) pulse_peak=4095;
@@ -832,6 +844,7 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
  	NO_SAMPLING_FLOOR_TERM = false;
  	NO_POISSON_STATISTICS = false;
 	NO_FADC_SATURATION = false;
+	NO_SIPM_SATURATION = false;
 		
 	// Load parameters from CCDB
     cout << "get BCAL/bcal_smear_parms_v2 parameters from CCDB..." << endl;
@@ -887,6 +900,7 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
    	}
    	
    	// load per-channel efficiencies
+    cout << "Get BCAL/channel_mc_efficiency tables from CCDB..." << endl;
 	vector<double> raw_table;
 	if(loop->GetCalib("BCAL/channel_mc_efficiency", raw_table)) {
     	jerr << "Problem loading BCAL/channel_mc_efficiency from CCDB!" << endl;
@@ -905,6 +919,7 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
         
     }
 
+    cout << "Get BCAL/ADC_saturation parameters from CCDB..." << endl;
     std::vector<std::map<string,double> > saturation_ADC_pars;
     if(loop->GetCalib("/BCAL/ADC_saturation", saturation_ADC_pars))
 	    jout << "Error loading /BCAL/ADC_saturation !" << endl;
@@ -915,5 +930,37 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
 	    fADC_Saturation_Linear[end][layer] = (saturation_ADC_pars[i])["par1"];
 	    fADC_Saturation_Quadratic[end][layer] = (saturation_ADC_pars[i])["par2"];
     } 
+
+
+
+    cout << "Get BCAL/SiPM_saturation parameters from CCDB..." << endl;
+   // load parameters for SiPM saturation
+   map<string,double> sipm_factors;
+   if (loop->GetCalib("/BCAL/SiPM_saturation", sipm_factors)) {
+       jout << "Error loading /BCAL/SiPM_saturation !" << endl;
+   }
+
+   if (sipm_factors.find("INTEGRAL_TO_PEAK") != sipm_factors.end()) {
+       INTEGRAL_TO_PEAK = sipm_factors["INTEGRAL_TO_PEAK"];
+   }
+   else {
+       jerr << "Unable to get INTEGRAL_TO_PEAK from /BCAL/SiPM_saturation !" << endl;
+   }
+
+   if (sipm_factors.find("SIPM_NPIXELS") != sipm_factors.end()) {
+     SIPM_NPIXELS = sipm_factors["SIPM_NPIXELS"];
+   }
+   else {
+       jerr << "Unable to get SIPM_NPIXELS from /BCAL/SiPM_saturation !" << endl;
+   }
+
+   if (sipm_factors.find("INTEGRAL_2V_PIXELS") != sipm_factors.end()) {
+     INTEGRAL_2V_PIXELS = sipm_factors["INTEGRAL_2V_PIXELS"];
+   }
+   else {
+       jerr << "Unable to get SIPM_NPIXELS from /BCAL/SiPM_saturation !" << endl;
+   }
+
+
 }
 
