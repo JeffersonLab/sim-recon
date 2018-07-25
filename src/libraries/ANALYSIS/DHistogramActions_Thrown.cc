@@ -754,6 +754,31 @@ void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventL
 			locHistTitle = string("Thrown ") + locParticleROOTName + string(";Vertex-T (ns)");
 			dHistMap_VertexT[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumTBins, dMinT, dMaxT);
 
+			// Tracking histograms
+			locHistName = "NumDCHitsPerTrack";
+			locHistTitle = string("Thrown ") + locParticleROOTName + string(";# Track Hits");
+  			dHist_NumDCHitsPerTrack[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, 50, 0.5, 50.5);
+  			
+ 			locHistName = "NumPossDCHitsPerTrack";
+			locHistTitle = string("Thrown ") + locParticleROOTName + string(";# Possible Track Hits");
+ 			dHist_NumPossDCHitsPerTrack[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, 50, 0.5, 50.5);
+ 			
+ 			locHistName = "TrackHitFraction";
+			locHistTitle = string("Thrown ") + locParticleROOTName + string(";# Track Hits/# Possible Track Hits");
+ 			dHist_TrackHitFraction[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, 50, 0.0, 1.0);
+  
+  			locHistName = "NumDCHitsPerTrackVsTheta";
+			locHistTitle = string("Thrown ") + locParticleROOTName + string(";#theta#circ;# Track Hits");
+  			dHist_NumDCHitsPerTrackVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, 46, 4.5, 50.5);
+
+ 			locHistName = "NumPossDCHitsPerTrackVsTheta";
+ 			locHistTitle = string("Thrown ") + locParticleROOTName + string(";#theta#circ;# Possible Track Hits");
+			dHist_NumPossDCHitsPerTrackVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, 46, 4.5, 50.5);
+
+ 			locHistName = "TrackHitFractionVsTheta";
+			locHistTitle = string("Thrown ") + locParticleROOTName + string(";#theta#circ;# Track Hits/# Possible Track Hits");
+ 			dHist_TrackHitFractionVsTheta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, 50, 0.0, 1.0);
+
 			gDirectory->cd("..");
 		}
 
@@ -777,6 +802,9 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 
 	Particle_t locPID;
 	const DMCThrown* locMCThrown;
+	
+	vector<const DTrackTimeBased*> locTimeBasedTracks;
+	locEventLoop->Get(locTimeBasedTracks, "THROWN");
 
 	vector<const DBeamPhoton*> locMCGENBeamPhotons;
 	locEventLoop->Get(locMCGENBeamPhotons, "MCGEN");
@@ -801,6 +829,37 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 		}
 	}
 	Unlock_Action();
+
+	for(size_t loc_i = 0; loc_i < locTimeBasedTracks.size(); ++loc_i)
+	{
+		locPID = (Particle_t)locTimeBasedTracks[loc_i]->PID();
+		if(dHistMap_P.find(locPID) == dHistMap_P.end())
+			continue; //not interested in histogramming
+
+		DVector3 locMomentum = locTimeBasedTracks[loc_i]->momentum();
+		double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
+		int locTotalDCHits = locTimeBasedTracks[loc_i]->measured_cdc_hits_on_track 
+								+ locTimeBasedTracks[loc_i]->measured_fdc_hits_on_track;
+		int locExpectedDCHits = locTimeBasedTracks[loc_i]->potential_cdc_hits_on_track 
+								+ locTimeBasedTracks[loc_i]->potential_fdc_hits_on_track;
+		double locRatioMeasuredExpectedDCHits = 0.;
+		if(locExpectedDCHits != 0)
+			locRatioMeasuredExpectedDCHits = static_cast<double>(locTotalDCHits) / static_cast<double>(locExpectedDCHits);
+
+		//FILL HISTOGRAMS
+		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+		Lock_Action();
+		{
+			dHist_NumDCHitsPerTrack[locPID]->Fill(locTotalDCHits);
+			dHist_NumDCHitsPerTrackVsTheta[locPID]->Fill(locTheta, locTotalDCHits);
+			dHist_NumPossDCHitsPerTrack[locPID]->Fill(locExpectedDCHits);
+			dHist_NumPossDCHitsPerTrackVsTheta[locPID]->Fill(locTheta, locExpectedDCHits);
+			dHist_TrackHitFraction[locPID]->Fill(locRatioMeasuredExpectedDCHits);
+			dHist_TrackHitFractionVsTheta[locPID]->Fill(locTheta, locRatioMeasuredExpectedDCHits);
+		}
+		Unlock_Action();
+	}
 
 	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 	{

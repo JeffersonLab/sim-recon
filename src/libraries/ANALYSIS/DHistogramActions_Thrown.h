@@ -30,6 +30,7 @@
 #include "PID/DNeutralParticleHypothesis.h"
 #include "PID/DEventRFBunch.h"
 #include "TRACKING/DMCThrown.h"
+#include "HDGEOMETRY/DRootGeom.h"
 
 #include "ANALYSIS/DReaction.h"
 #include "KINFITTER/DKinFitParticle.h"
@@ -44,6 +45,7 @@
 #include "TAGGER/DTAGHHit.h"
 #include "TAGGER/DTAGMHit.h"
 #include "CDC/DCDCHit.h"
+#include "CDC/DCDCWire.h"
 #include "FDC/DFDCHit.h"
 #include "TOF/DTOFPoint.h"
 #include "TOF/DTOFHit.h"
@@ -215,6 +217,14 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 		map<Particle_t, TH1I*> dHistMap_VertexZ;
 		map<Particle_t, TH2I*> dHistMap_VertexYVsX;
 		map<Particle_t, TH1I*> dHistMap_VertexT;
+		
+		map<Particle_t, TH1I*> dHist_NumDCHitsPerTrack;
+ 		map<Particle_t, TH1I*> dHist_NumPossDCHitsPerTrack;
+ 		map<Particle_t, TH1I*> dHist_TrackHitFraction;
+  		map<Particle_t, TH2I*> dHist_NumDCHitsPerTrackVsTheta;
+ 		map<Particle_t, TH2I*> dHist_NumPossDCHitsPerTrackVsTheta;
+ 		map<Particle_t, TH2I*> dHist_TrackHitFractionVsTheta;
+
 };
 
 class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
