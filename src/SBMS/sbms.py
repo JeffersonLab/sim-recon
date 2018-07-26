@@ -637,7 +637,7 @@ def AddCCDB(env):
 ##################################
 def AddSQLite(env):
 	sqlitecpp_home = os.getenv('SQLITECPP_HOME')
-	if(sqlite_home != None) :
+	if(sqlitecpp_home != None) :
 		env.Append(CPPDEFINES={'SQLITE_USE_LEGACY_STRUCT':'ON'})
 		SQLITECPP_CPPPATH = ["%s/include" % (sqlitecpp_home)]
 		env.AppendUnique(CPPPATH = SQLITECPP_CPPPATH)
@@ -660,17 +660,24 @@ def AddSQLite(env):
 def AddRCDB(env):
 	rcdb_home = os.getenv('RCDB_HOME')
 	if(rcdb_home != None) :
-		env.AppendUnique(CXXFLAGS = ['-DHAVE_RCDB'])
-		RCDB_CPPPATH = ["%s/cpp/include" % (rcdb_home)]
-		env.AppendUnique(CPPPATH = RCDB_CPPPATH)
- 
-		# add MySQL
-		env.Append(CPPDEFINES={'RCDB_MYSQL':1})
-		AddMySQL(env)
+	
+		if os.getenv('SQLITECPP_HOME') == None:
+			print 'WARNING: Your RCDB_HOME environment variable is set but'
+			print 'your SQLITECPP_HOME is not. RCDB dependent code cannot'
+			print 'be built without SQLiteCpp.'
+			print '########## DISABLING RCDB SUPPORT ############'
+		else:
+			env.AppendUnique(CXXFLAGS = ['-DHAVE_RCDB'])
+			RCDB_CPPPATH = ["%s/cpp/include" % (rcdb_home)]
+			env.AppendUnique(CPPPATH = RCDB_CPPPATH)
 
-		# add SQlite
-		env.Append(CPPDEFINES={'RCDB_SQLITE':1})
-		AddSQLite(env)
+			# add MySQL
+			env.Append(CPPDEFINES={'RCDB_MYSQL':1})
+			AddMySQL(env)
+
+			# add SQlite
+			env.Append(CPPDEFINES={'RCDB_SQLITE':1})
+			AddSQLite(env)
 
 ##################################
 # EVIO
