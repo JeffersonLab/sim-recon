@@ -863,6 +863,7 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
       shower->y = iter->getY();
       shower->z = iter->getZ();
       shower->t = iter->getT();
+      shower->Q = 0;
       TMatrixFSym covariance(5);
 	  covariance(0,0) = iter->getEerr()*iter->getEerr();
 	  covariance(1,1) = iter->getXerr()*iter->getXerr();
@@ -935,11 +936,12 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 		}
 		else //should only be 1
 		{
-			for(; locBcalLayersIterator != locBcalLayersList.end(); ++locBcalLayersIterator)
+			for(; locBcalLayersIterator != locBcalLayersList.end(); ++locBcalLayersIterator) {
 				shower->rmsTime = locBcalLayersIterator->getRmsTime();
 				shower->E_L2 = locBcalLayersIterator->getE_L2();
 				shower->E_L3 = locBcalLayersIterator->getE_L3();
 				shower->E_L4 = locBcalLayersIterator->getE_L4();
+            }
 		}
 
       data.push_back(shower);
