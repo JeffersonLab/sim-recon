@@ -863,7 +863,7 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
       shower->y = iter->getY();
       shower->z = iter->getZ();
       shower->t = iter->getT();
-      shower->Q = 0;
+      shower->Q = 0;    // Fix this to zero for now, can add to REST if it's ever used in higher-level analyses
       TMatrixFSym covariance(5);
 	  covariance(0,0) = iter->getEerr()*iter->getEerr();
 	  covariance(1,1) = iter->getXerr()*iter->getXerr();
