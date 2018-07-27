@@ -132,6 +132,8 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
   for( vector< const DBCALCluster* >::const_iterator clItr = clusters.begin();
        clItr != clusters.end();
       ++clItr ){
+
+    if( isnan((**clItr).t()) == 1 || isnan((**clItr).theta()) == 1 || isnan((**clItr).phi()) == 1 || isnan((**clItr).rho()) == 1 ) continue; 
    
     float cosTh = cos( (**clItr).theta() );
     float sinTh = sin( (**clItr).theta() );
