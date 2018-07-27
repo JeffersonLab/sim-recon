@@ -1690,6 +1690,9 @@ void DSourceComboer::Combo_WithBeam(const vector<const DReaction*>& locReactions
 	}
 
 	//Select beam particles
+	if (abs(locRFBunch) > 2000000000)
+	  return; // proximity to INT_MAX can cause infinite loops, certainly no valid beam particle
+
 	auto locBeamParticles = dSourceComboTimeHandler->Get_BeamParticlesByRFBunch(locRFBunch, dMaxRFBunchCuts[locReactionVertexInfo]);
 	if(dDebugLevel > 0)
 		cout << "rf bunch, max #rf bunches, #beams = " << locRFBunch << ", " << dMaxRFBunchCuts[locReactionVertexInfo] << ", " << locBeamParticles.size() << endl;
