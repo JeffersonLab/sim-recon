@@ -386,7 +386,7 @@ jerror_t DEventProcessor_fcal_charged::evnt(jana::JEventLoop* locEventLoop, int 
 	    double trkmass = locTrackTimeBased[0]->mass();
 
 	    double radius = sqrt(trkpos.X()*trkpos.X() + trkpos.Y()*trkpos.Y());  // distance of track from beamline
-	    dEdx = (locTrackTimeBased[0]->dNumHitsUsedFordEdx_CDC >= locTrackTimeBased[0]->dNumHitsUsedFordEdx_FDC) ? locTrackTimeBased[0]->ddEdx_CDC : locTrackTimeBased[0]->ddEdx_FDC;
+	    dEdx = (locTrackTimeBased[0]->dNumHitsUsedFordEdx_CDC >= locTrackTimeBased[0]->dNumHitsUsedFordEdx_FDC) ? locTrackTimeBased[0]->ddEdx_CDC_amp : locTrackTimeBased[0]->ddEdx_FDC;
 	    dEdx *= 1e6; // convert to keV
 	    if(!(trkmass < 0.15 && FOM>0.01 && radius>20)) {
 	      continue;   // select tracks of interest

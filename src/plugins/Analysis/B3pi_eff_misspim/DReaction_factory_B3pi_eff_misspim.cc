@@ -7,7 +7,6 @@
 
 
 #include "DReaction_factory_B3pi_eff_misspim.h"
-#include "../CustomActions/DCustomAction_dEdxCut.h"
 
 //------------------
 // brun
@@ -47,7 +46,7 @@ jerror_t DReaction_factory_B3pi_eff_misspim::evnt(JEventLoop* locEventLoop, uint
         std::deque<Particle_t> off_proton;
         off_proton.push_back(Proton);
 
-
+/*
         // g, p -> omega, p                                                                   
         locReactionStep = new DReactionStep();
         locReactionStep->Set_InitialParticleID(Gamma);
@@ -76,6 +75,29 @@ jerror_t DReaction_factory_B3pi_eff_misspim::evnt(JEventLoop* locEventLoop, uint
         //locReactionStep->Set_KinFitConstrainInitMassFlag(false);                            
         locReaction->Add_ReactionStep(locReactionStep);
         dReactionStepPool.push_back(locReactionStep);
+*/
+        vector<Particle_t> step0_final;
+        step0_final.push_back(omega);
+        step0_final.push_back(Proton);
+        vector<Particle_t> step1_final;
+        step1_final.push_back(PiPlus);
+        step1_final.push_back(Pi0);
+        vector<Particle_t> step2_final;
+        step2_final.push_back(Gamma);
+        step2_final.push_back(Gamma);
+
+        locReactionStep = new DReactionStep(Gamma,Proton,step0_final);
+        locReaction->Add_ReactionStep(locReactionStep);
+        dReactionStepPool.push_back(locReactionStep);
+
+        locReactionStep = new DReactionStep(omega,step1_final,PiMinus);
+        //locReactionStep = new DReactionStep(omega,step1_final);       
+        locReaction->Add_ReactionStep(locReactionStep);
+        dReactionStepPool.push_back(locReactionStep);
+
+        locReactionStep = new DReactionStep(Pi0,step2_final);
+        locReaction->Add_ReactionStep(locReactionStep);
+        dReactionStepPool.push_back(locReactionStep);
 
 
 
@@ -94,7 +116,8 @@ jerror_t DReaction_factory_B3pi_eff_misspim::evnt(JEventLoop* locEventLoop, uint
         locReaction->Set_EventStoreSkims("q+"); //boolean-AND of skims
 
         // Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch
-        locReaction->Set_MaxPhotonRFDeltaT(3.5*dBeamBunchPeriod); //should be minimum cut value
+        //dep locReaction->Set_MaxPhotonRFDeltaT(3.5*dBeamBunchPeriod); //should be minimum cut value
+        locReaction->Set_NumPlusMinusRFBunches(2); //should be minimum cut value
 
         // Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
                 // Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
@@ -107,10 +130,11 @@ jerror_t DReaction_factory_B3pi_eff_misspim::evnt(JEventLoop* locEventLoop, uint
 
         // Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
         // Example: pi0 -> g, g cut
-        locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
+        //dep locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
+	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.05, 0.22));
 
-
-        locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.4, 0.4));
+        //dep locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.4, 0.4));
+        locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.4, 0.4));
 
         /**************************************************** B3pi Analysis Actions ****************************************************/
 
@@ -127,8 +151,7 @@ jerror_t DReaction_factory_B3pi_eff_misspim::evnt(JEventLoop* locEventLoop, uint
         //locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal                                     
 
 
-//        locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true));
-        locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
+        locReaction->Add_AnalysisAction(new DCutAction_dEdx(locReaction)); //false: measured data                            
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_TOF)); //false: measured data                            
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_BCAL)); //false: measured data                                   
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.5, Proton, SYS_FCAL)); //false: measured data                                   

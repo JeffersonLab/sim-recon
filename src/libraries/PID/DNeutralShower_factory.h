@@ -45,7 +45,6 @@ class DNeutralShower_factory:public jana::JFactory<DNeutralShower>
   DNeutralShower_FCALQualityMLP* dFCALClassifier;
 
   double getFCALQuality( const DFCALShower* fcalShower, double rfTime ) const;
-  unsigned int numHitsFromShower( const DFCALShower* shower ) const;
 };
 
 #endif // _DNeutralShower_factory_

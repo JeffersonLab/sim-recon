@@ -75,27 +75,21 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 		     const DFDCSegment *segment);
   bool LinkStraySegment(const DFDCSegment *segment);
 
-  double MATCHING_PHI_CUT;
-  bool DEBUG_HISTS,USE_FDC,APPLY_MOMENTUM_CORRECTION;
-  double p_factor1,p_factor2;
+  bool DEBUG_HISTS,USE_FDC;
+
   TH2F *match_dist_fdc,*match_center_dist2;
-  TH1F *Hcircle_fit_prob;
+ 
   vector<double>z_wires;
-  double endplate_z;
-  double TARGET_Z;
-  double MAX_R_VERTEX_LIMIT;
-  double zpack[4];
+  double TARGET_Z,BEAM_VAR;
+  
   double FactorForSenseOfRotation;
   
   // Fit parameters
-  double xc,yc,rc,z_vertex,q,phi0,tanl;
- 
-  // vector of fit results
-  vector<DHelicalFit>fit_results;
- 
+  double xc,yc,rc,q,tanl;
+  
   // Parameters at the end of the segment
   double xs,ys,zs;
-  double p,cosphi,sinphi,twokappa,one_over_twokappa,cotl;
+  double p,cosphi,sinphi,twokappa,cotl;
 };
 
 inline double DTrackCandidate_factory_FDCCathodes::Match(double p){

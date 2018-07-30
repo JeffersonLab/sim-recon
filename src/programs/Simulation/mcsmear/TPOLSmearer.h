@@ -12,7 +12,8 @@ class tpol_config_t
 	tpol_config_t(JEventLoop *loop);
 
 	double TPOL_SIGMA_NS;
-	double TPOL_SIGMA_MEV;
+	double TPOL_SIGMA1_MEV;
+        double TPOL_SIGMA2_MEV;
 	double TPOL_THRESHOLD_MEV;
 
 };

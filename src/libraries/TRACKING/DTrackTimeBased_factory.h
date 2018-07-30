@@ -82,8 +82,14 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
 
   void AddMissingTrackHypothesis(vector<DTrackTimeBased*>&tracks_to_add,
 				 const DTrackTimeBased *src_track,
-				 double my_mass,double q);
-  bool InsertMissingHypotheses(void);
+				 double my_mass,double q,
+				 JEventLoop *loop);
+  bool InsertMissingHypotheses(JEventLoop *loop);
+  void CorrectForELoss(DVector3 &position,DVector3 &momentum,double q,double my_mass);
+  void AddMissingTrackHypotheses(unsigned int mass_bits,
+				 vector<DTrackTimeBased*>&tracks_to_add,
+				 vector<DTrackTimeBased *>&hypotheses,
+				 double q,bool flipped_charge,JEventLoop *loop);
 
   // Geometry
   const DGeometry *geom;

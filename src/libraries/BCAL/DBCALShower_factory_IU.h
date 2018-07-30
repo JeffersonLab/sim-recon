@@ -28,7 +28,7 @@ public:
   ~DBCALShower_factory_IU(){}
 
   const char* Tag(void){return "IU";}
-  jerror_t LoadCovarianceLookupTables();
+  jerror_t LoadCovarianceLookupTables(JEventLoop *eventLoop);
   jerror_t FillCovarianceMatrix(DBCALShower* shower);
 
 private:

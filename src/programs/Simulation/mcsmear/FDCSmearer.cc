@@ -96,9 +96,12 @@ void FDCSmearer::SmearEvent(hddm_s::HDDM *record)
                   && !gDRandom.DecideToAcceptHit(fdc_config->GetEfficiencyCorrectionFactor(siter)))
               	continue;
           
-            double q = titer->getQ() + gDRandom.SampleGaussian(fdc_config->FDC_PED_NOISE);
-            double t = titer->getT() +
-                       gDRandom.SampleGaussian(fdc_config->FDC_TDRIFT_SIGMA)*1.0e9;
+            double q = titer->getQ();
+            double t = titer->getT();
+          	if(config->SMEAR_HITS) {
+             	q += gDRandom.SampleGaussian(fdc_config->FDC_PED_NOISE);
+             	t += gDRandom.SampleGaussian(fdc_config->FDC_TDRIFT_SIGMA)*1.0e9;
+			}
             if (q > threshold && t > config->TRIGGER_LOOKBACK_TIME && t < t_max) {
                hddm_s::FdcCathodeHitList hits = siter->addFdcCathodeHits();
                hits().setQ(q);

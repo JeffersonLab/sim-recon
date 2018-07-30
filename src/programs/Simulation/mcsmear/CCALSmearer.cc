@@ -36,26 +36,26 @@ void CCALSmearer::SmearEvent(hddm_s::HDDM *record){
       // anyway.
       
       if (!ccalGeom->isBlockActive(iter->getRow(), iter->getColumn()))
-	continue;
+		continue;
       // Smear the energy and timing of the hit
       //      double sigma = ccal_config->CCAL_PHOT_STAT_COEF/sqrt(titer->getE()) ;
       
       // A.S.  new calibration of the CCAL
       double E = titer->getE();
-      double nphav = E * 2.3e3; // per GeV  Corrections
+      double t = titer->getT();
+
+	  if(config->SMEAR_HITS) {
+      	double nphav = E * 2.3e3; // per GeV  Corrections
       
-      if(nphav < 30)
-	E *= gDRandom.SamplePoisson(nphav)/nphav;           //photostatistics
-      else 
-	E *= 1.0 + gDRandom.SampleGaussian(1./sqrt(nphav)); //photostatistics
+      	if(nphav < 30)
+			E *= gDRandom.SamplePoisson(nphav)/nphav;           //photostatistics
+      	else 
+			E *= 1.0 + gDRandom.SampleGaussian(1./sqrt(nphav)); //photostatistics
       
-      E *= 1.167 + gDRandom.SampleGaussian(0.006);          // calibration
-      
-      
-      
-      // Smear the time by 200 ps (fixed for now) 7/2/2009 DL	 
-      double t = titer->getT() + gDRandom.SampleGaussian(ccal_config->CCAL_SIGMA);
-      
+      	E *= 1.167 + gDRandom.SampleGaussian(0.006);          // calibration
+      	t += gDRandom.SampleGaussian(ccal_config->CCAL_SIGMA);
+      }
+        
       // Apply a single block threshold. If the (smeared) energy is below this,
       // then set the energy and time to zero. 	 
       // A.S. 

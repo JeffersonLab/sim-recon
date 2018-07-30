@@ -66,10 +66,10 @@
 		locHist_SC_TrackDeltaPhiVsZ_WireBased->GetYaxis()->SetLabelSize(0.05);
 		locHist_SC_TrackDeltaPhiVsZ_WireBased->Draw("COLZ");
 		TF1* locFunc_High = new TF1("SC_PhiCut_High_WB", "[0] + [1]*exp([2]*(x - [3]))", 30.0, 110.0);
-		locFunc_High->SetParameters(10.0, 0.1, 0.13, 60.0);
+		locFunc_High->SetParameters(10.0, 0.5, 0.1, 60.0);
 		locFunc_High->Draw("SAME");
 		TF1* locFunc_Low = new TF1("SC_PhiCut_Low_WB", "-1.0*([0] + [1]*exp([2]*(x - [3])))", 30.0, 110.0);
-		locFunc_Low->SetParameters(10.0, 0.1, 0.13, 60.0);
+		locFunc_Low->SetParameters(10.0, 0.5, 0.1, 60.0);
 		locFunc_Low->Draw("SAME");
 	}
 
@@ -86,10 +86,10 @@
 		locHist_SC_TrackDeltaPhiVsZ_TimeBased->GetYaxis()->SetLabelSize(0.05);
 		locHist_SC_TrackDeltaPhiVsZ_TimeBased->Draw("COLZ");
 		TF1* locFunc_High = new TF1("SC_PhiCut_High_TB", "[0] + [1]*exp([2]*(x - [3]))", 30.0, 110.0);
-		locFunc_High->SetParameters(7.0, 0.1, 0.28, 78.0);
+		locFunc_High->SetParameters(8.0, 0.5, 0.1, 60.0);
 		locFunc_High->Draw("SAME");
 		TF1* locFunc_Low = new TF1("SC_PhiCut_Low_TB", "-1.0*([0] + [1]*exp([2]*(x - [3])))", 30.0, 110.0);
-		locFunc_Low->SetParameters(7.0, 0.1, 0.28, 78.0);
+		locFunc_Low->SetParameters(8.0, 0.5, 0.1, 60.0);
 		locFunc_Low->Draw("SAME");
 	}
 
