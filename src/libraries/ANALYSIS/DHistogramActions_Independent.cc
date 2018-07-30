@@ -367,8 +367,16 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 		CreateAndChangeTo_Directory("Tracking", "Tracking");
 		locHistName = "NumDCHitsPerTrack";
 		dHist_NumDCHitsPerTrack = GetOrCreate_Histogram<TH1I>(locHistName, ";# Track Hits", 50, 0.5, 50.5);
+		locHistName = "NumPossDCHitsPerTrack";
+		dHist_NumPossDCHitsPerTrack = GetOrCreate_Histogram<TH1I>(locHistName, ";# Possible Track Hits", 50, 0.5, 50.5);
+		locHistName = "TrackHitFraction";
+		dHist_TrackHitFraction = GetOrCreate_Histogram<TH1I>(locHistName, ";# Track Hits/# Possible Track Hits", 50, 0.0, 1.0);
 		locHistName = "NumDCHitsPerTrackVsTheta";
 		dHist_NumDCHitsPerTrackVsTheta = GetOrCreate_Histogram<TH2I>(locHistName, ";#theta#circ;# Track Hits", dNum2DThetaBins, dMinTheta, dMaxTheta, 46, 4.5, 50.5);
+		locHistName = "NumPossDCHitsPerTrackVsTheta";
+		dHist_NumPossDCHitsPerTrackVsTheta = GetOrCreate_Histogram<TH2I>(locHistName, ";#theta#circ;# Possible Track Hits", dNum2DThetaBins, dMinTheta, dMaxTheta, 46, 4.5, 50.5);
+		locHistName = "TrackHitFractionVsTheta";
+		dHist_TrackHitFractionVsTheta = GetOrCreate_Histogram<TH2I>(locHistName, ";#theta#circ;# Track Hits/# Possible Track Hits", dNum2DThetaBins, dMinTheta, dMaxTheta, 50, 0.0, 1.0);
 		locHistName = "TrackingFOM_WireBased";
 		dHist_TrackingFOM_WireBased = GetOrCreate_Histogram<TH1I>(locHistName, ";Confidence Level", dNumFOMBins, 0.0, 1.0);
 		locHistName = "TrackingFOM";
@@ -665,11 +673,17 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			int locCharge = (locTrackTimeBased->charge() > 0.0) ? 1 : -1;
 			double locTheta = locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi();
 			double locP = locTrackTimeBased->momentum().Mag();
+			int locPossibleHits = locTrackTimeBased->potential_cdc_hits_on_track + locTrackTimeBased->potential_fdc_hits_on_track;
+			double locTrackHitFraction = (locTrackTimeBased->Ndof + 5)/(double)locPossibleHits;
 
 			dHistMap_PVsTheta_TimeBased[locCharge]->Fill(locTheta, locP);
 			dHist_NumDCHitsPerTrack->Fill(locTrackTimeBased->Ndof + 5);
+			dHist_NumPossDCHitsPerTrack->Fill(locPossibleHits);
+			dHist_TrackHitFraction->Fill(locTrackHitFraction);
 			dHist_NumDCHitsPerTrackVsTheta->Fill(locTheta, locTrackTimeBased->Ndof + 5);
-
+			dHist_NumPossDCHitsPerTrackVsTheta->Fill(locTheta, locPossibleHits);
+			dHist_TrackHitFractionVsTheta->Fill(locTheta, locTrackHitFraction);
+			
 			dHist_TrackingFOM->Fill(locTrackTimeBased->FOM);
 			dHist_TrackingFOMVsTheta->Fill(locTheta, locTrackTimeBased->FOM);
 			dHist_TrackingFOMVsP->Fill(locP, locTrackTimeBased->FOM);
@@ -684,7 +698,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 				if(locTrackTimeBased->FOM > dGoodTrackFOM)
 					dHist_CDCRingVsTheta_TimeBased_GoodTrackFOM->Fill(locTheta, *locIterator);
 			}
-
+			
 			//FDC
 			set<int> locFDCPlanes;
 			locParticleID->Get_FDCPlanes(locTrackTimeBased->dFDCPlanes, locFDCPlanes);
@@ -1765,9 +1779,12 @@ void DHistogramAction_DetectorPID::Initialize(JEventLoop* locEventLoop)
 			//CDC
 			CreateAndChangeTo_Directory("CDC", "CDC");
 
-			locHistName = string("dEdXVsP_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC dE/dx (keV/cm)");
+			locHistName = string("dEdXVsP_Int_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC dE/dx [Integral-based] (keV/cm)");
 			dHistMap_dEdXVsP[SYS_CDC][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
+			locHistName = string("dEdXVsP_Amp_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC dE/dx [Amplitude-based] (keV/cm)");
+			dHistMap_dEdXVsP[SYS_CDC_AMP][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
 
 			gDirectory->cd("..");
 
@@ -1891,9 +1908,13 @@ void DHistogramAction_DetectorPID::Initialize(JEventLoop* locEventLoop)
 			//CDC
 			CreateAndChangeTo_Directory("CDC", "CDC");
 
-			locHistName = string("DeltadEdXVsP_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);CDC #Delta(dE/dX) (keV/cm)");
+			locHistName = string("DeltadEdXVsP_Int_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);CDC #Delta(dE/dX) [Integral-based] (keV/cm)");
 			dHistMap_DeltadEdXVsP[SYS_CDC][locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltadEdxBins, dMinDeltadEdx, dMaxDeltadEdx);
+
+			locHistName = string("DeltadEdXVsP_Amp_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);CDC #Delta(dE/dX) [Amplitude-based] (keV/cm)");
+			dHistMap_DeltadEdXVsP[SYS_CDC_AMP][locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltadEdxBins, dMinDeltadEdx, dMaxDeltadEdx);
 
 /*
 			//Uncomment when ready!
@@ -2093,10 +2114,16 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 			if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
 			{
 				dHistMap_dEdXVsP[SYS_CDC][locCharge]->Fill(locP, locTrackTimeBased->ddEdx_CDC*1.0E6);
+				dHistMap_dEdXVsP[SYS_CDC_AMP][locCharge]->Fill(locP, locTrackTimeBased->ddEdx_CDC_amp*1.0E6);
 				if(dHistMap_DeltadEdXVsP[SYS_CDC].find(locPID) != dHistMap_DeltadEdXVsP[SYS_CDC].end())
 				{
 					double locProbabledEdx = locParticleID->GetMostProbabledEdx_DC(locP, locChargedTrackHypothesis->mass(), locTrackTimeBased->ddx_CDC, true);
 					dHistMap_DeltadEdXVsP[SYS_CDC][locPID]->Fill(locP, (locTrackTimeBased->ddEdx_CDC - locProbabledEdx)*1.0E6);
+				}
+				if(dHistMap_DeltadEdXVsP[SYS_CDC_AMP].find(locPID) != dHistMap_DeltadEdXVsP[SYS_CDC_AMP].end())
+				{
+					double locProbabledEdx = locParticleID->GetMostProbabledEdx_DC(locP, locChargedTrackHypothesis->mass(), locTrackTimeBased->ddx_CDC_amp, true);
+					dHistMap_DeltadEdXVsP[SYS_CDC_AMP][locPID]->Fill(locP, (locTrackTimeBased->ddEdx_CDC_amp - locProbabledEdx)*1.0E6);
 				}
 			}
 			if(locTrackTimeBased->dNumHitsUsedFordEdx_FDC > 0)

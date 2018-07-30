@@ -20,18 +20,19 @@ else:
 	#bms_osname = os.environ['BMS_OSNAME']
 	bms_osname = env['OSNAME']
 	bms_split = bms_osname.split('gcc')
-	versions = bms_split[1].split('.')
-	if int(versions[0]) >= 4 and int(versions[1]) >= 8 or int(versions[0]) >= 5:
-		env.PrependUnique(FORTRANFLAGS = ['-fno-aggressive-loop-optimizations'])
+	if len(bms_split) >= 2 : 
+		versions = bms_split[1].split('.')
+		if int(versions[0]) >= 4 and int(versions[1]) >= 8 or int(versions[0]) >= 5:
+			env.PrependUnique(FORTRANFLAGS = ['-fno-aggressive-loop-optimizations'])
 
-	SConscript(dirs=['gelhad', 'hitutil', 'utilities'], exports='env osname', duplicate=0)
+		SConscript(dirs=['gelhad', 'hitutil', 'utilities'], exports='env osname', duplicate=0)
 
-	env.AppendUnique(LIBS      = ['hddsGeant3', 'gelhad', 'hitutil'])
+		env.AppendUnique(LIBS      = ['hddsGeant3', 'gelhad', 'hitutil'])
 
-	sbms.AddCERNLIB(env)
-	sbms.AddDANA(env)
-	sbms.AddROOT(env)
+		sbms.AddCERNLIB(env)
+		sbms.AddDANA(env)
+		sbms.AddROOT(env)
 
-	env.AppendUnique(CPPPATH = '#libraries/HDDM')
+		env.AppendUnique(CPPPATH = '#libraries/HDDM')
 
-	sbms.executables(env)
+		sbms.executables(env)

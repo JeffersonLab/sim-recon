@@ -239,6 +239,9 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
         locFcalShowerPropertiesList().setSumV(fcalshowers[i]->getSumV());
         locFcalShowerPropertiesList().setE1E9(fcalshowers[i]->getE1E9());
         locFcalShowerPropertiesList().setE9E25(fcalshowers[i]->getE9E25());
+        hddm_r::FcalShowerNBlocksList locFcalShowerNBlocksList = fcal().addFcalShowerNBlockses(1);
+	locFcalShowerNBlocksList().setNumBlocks(fcalshowers[i]->getNumBlocks());
+
     }
             
 
@@ -351,11 +354,29 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		fit().setE35(errors(2,4));
 		fit().setE44(errors(3,3));
 		fit().setE45(errors(3,4));
-		fit().setE55(errors(4,4));
+		fit().setE55(errors(4,4));	
+
+		hddm_r::TrackFlagsList myflags = tra().addTrackFlagses(1);
+		myflags().setFlags(tracks[i]->flags);
 
 		hddm_r::HitlayersList locHitLayers = tra().addHitlayerses(1);
 		locHitLayers().setCDCrings(tracks[i]->dCDCRings);
 		locHitLayers().setFDCplanes(tracks[i]->dFDCPlanes);
+
+		vector<const DCDCTrackHit*> locCDCHits;
+		tracks[i]->Get(locCDCHits);
+		vector<const DFDCPseudo*> locFDCHits;
+		tracks[i]->Get(locFDCHits);
+
+		hddm_r::ExpectedhitsList locExpectedHits = tra().addExpectedhitses(1);
+		//locExpectedHits().setMeasuredCDChits(locCDCHits.size());
+		//locExpectedHits().setMeasuredFDChits(locFDCHits.size());
+		locExpectedHits().setMeasuredCDChits(tracks[i]->measured_cdc_hits_on_track);
+		locExpectedHits().setMeasuredFDChits(tracks[i]->measured_fdc_hits_on_track);
+		//locExpectedHits().setMeasuredCDChits(tracks[i]->cdc_hit_usage.total_hits);
+		//locExpectedHits().setMeasuredFDChits(tracks[i]->fdc_hit_usage.total_hits);
+		locExpectedHits().setExpectedCDChits(tracks[i]->potential_cdc_hits_on_track);
+		locExpectedHits().setExpectedFDChits(tracks[i]->potential_fdc_hits_on_track);
 
 		hddm_r::McmatchList locMCMatches = tra().addMcmatchs(1);
 		locMCMatches().setIthrown(tracks[i]->dMCThrownMatchMyID);

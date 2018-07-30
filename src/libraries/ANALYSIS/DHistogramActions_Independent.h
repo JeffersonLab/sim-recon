@@ -221,7 +221,11 @@ class DHistogramAction_Reconstruction : public DAnalysisAction
 		TH2I *dHist_TAGHRFDeltaTVsCounter;
 
 		TH1I* dHist_NumDCHitsPerTrack;
+		TH1I* dHist_NumPossDCHitsPerTrack;
+		TH1I* dHist_TrackHitFraction;
 		TH2I* dHist_NumDCHitsPerTrackVsTheta;
+		TH2I* dHist_NumPossDCHitsPerTrackVsTheta;
+		TH2I* dHist_TrackHitFractionVsTheta;
 		TH1I* dHist_TrackingFOM;
 		TH1I* dHist_TrackingFOM_WireBased;
 		TH2I* dHist_TrackingFOMVsTheta;
@@ -389,6 +393,9 @@ class DHistogramAction_DetectorPID : public DAnalysisAction
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			// used for indexing into maps
+			SYS_CDC_AMP = static_cast<DetectorSystem_t>(SYS_CDC + SYS_FDC);
 		}
 
 		DHistogramAction_DetectorPID(string locActionUniqueString) :
@@ -401,6 +408,9 @@ class DHistogramAction_DetectorPID : public DAnalysisAction
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			// used for indexing into maps
+			SYS_CDC_AMP = static_cast<DetectorSystem_t>(SYS_CDC + SYS_FDC);
 		}
 
 		DHistogramAction_DetectorPID(void) :
@@ -413,6 +423,9 @@ class DHistogramAction_DetectorPID : public DAnalysisAction
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			// used for indexing into maps
+			SYS_CDC_AMP = static_cast<DetectorSystem_t>(SYS_CDC + SYS_FDC);
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
@@ -426,6 +439,7 @@ class DHistogramAction_DetectorPID : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
+		DetectorSystem_t SYS_CDC_AMP;
 		vector<Particle_t> dFinalStatePIDs;
 
 		//int is charge: -1, 0, 1

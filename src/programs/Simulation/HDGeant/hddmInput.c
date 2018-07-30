@@ -153,11 +153,52 @@ int loadInput (int override_run_number, int myInputRunNo)
    reactCount = reacts->mult;
    for (ir = 0; ir < reactCount; ir++)
    {
-      s_Vertices_t* verts;
-      int vertCount, iv;
       s_Reaction_t* react = &reacts->in[ir];
       s_Beam_t* beam = react->beam;
       s_Target_t* target = react->target;
+      s_Vertices_t* verts = react->vertices;
+      int vertCount = verts->mult;
+      s_Vertex_t* vert;
+      float zero = 0;
+      float v0[4];
+      int iv;
+
+      if (vertCount == 0)
+      {
+         continue;
+      }
+
+      vert = &verts->in[0];
+      v0[0] = vert->origin->vx;
+      v0[1] = vert->origin->vy;
+      v0[2] = vert->origin->vz;
+      v0[3] = vert->origin->t;
+      if ((v0[0] == 0) && (v0[1] == 0) && (v0[2] == 0))
+      {
+         v0[0] = 1;
+         v0[1] = 1;
+         v0[2] = TARGET_CENTER;
+         while (v0[0]*v0[0] + v0[1]*v0[1] > 0.25)
+         {
+            int len = 3;
+            grndm_(v0,&len);
+            v0[0] -= 0.5;
+            v0[1] -= 0.5;
+            v0[2] -= 0.5;
+         }
+         v0[0] *= BEAM_DIAMETER;
+         v0[1] *= BEAM_DIAMETER;
+         v0[2] *= TARGET_LENGTH;
+         v0[2] += TARGET_CENTER;
+         v0[3] = (v0[3] == 0)? settofg_(v0,&zero) * 1e9 : 0;
+      }
+      else
+      {
+         v0[3] = (v0[3] == 0)? settofg_(v0,&zero) * 1e9 : 0;
+         v0[0] = 0;
+         v0[1] = 0;
+         v0[2] = 0;
+      }
 
       if (beam != NULL && beam != (s_Beam_t*)&hddm_s_nullTarget)
       {
@@ -189,66 +230,22 @@ int loadInput (int override_run_number, int myInputRunNo)
          target_momentum[3] = 0;
       }
 
-      verts = react->vertices;
-      vertCount = verts->mult;
       for (iv = 0; iv < vertCount; iv++)
       {
-         float v[3];
-         float time0;
          int ntbeam = 0;
          int nttarg = 0;
          int nubuf = 0;
          float ubuf;
          int nvtx;
+         float v[4];
          s_Products_t* prods;
          int prodCount, ip;
-         s_Vertex_t* vert = &verts->in[iv];
-         v[0] = vert->origin->vx;
-         v[1] = vert->origin->vy;
-         v[2] = vert->origin->vz;
-         if ((v[0] == 0) && (v[1] == 0) && (v[2] == 0))
-         {
-            v[0] = 1;
-            v[1] = 1;
-            v[2] = TARGET_CENTER;
-            while (v[0]*v[0] + v[1]*v[1] > 0.25)
-            {
-               int len = 3;
-               grndm_(v,&len);
-               v[0] -= 0.5;
-               v[1] -= 0.5;
-               v[2] -= 0.5;
-            }
-    // kludge to include air and FDC gas in addition to plastic target
-    /*
-       int done=0;
-       while (!done){
-         int len=2;
-         float myrand[2];
-         float maxweight=1.2;
-         float myweight=0.001205;
-         grndm_(myrand,&len);
- 
-         v[2]=-336.7+953.1*myrand[0];
-         if (v[2]<-336.3825) myweight=1.2;
-         if (v[2]>64.9 && v[2]<65.1) myweight=1.0;
-         if ((v[2]>174.4&&v[2]<188.4) || (v[2]>232.6 && v[2]<246.6)
-             || (v[2]>291.2&&v[2]<305.2) || (v[2]>329.5 && v[2]<343.5))
-            myweight=0.001753;
-  
-         if (myweight/maxweight>myrand[1]) done=1;
-       }
-    */
-            v[0] *= BEAM_DIAMETER;
-            v[1] *= BEAM_DIAMETER;
-            v[2] *= TARGET_LENGTH;
-            v[2] += TARGET_CENTER;
-            vert->origin->vx = v[0];
-            vert->origin->vy = v[1];
-            vert->origin->vz = v[2];
-         }
-         time0 = vert->origin->t;
-         vert->origin->t = settofg_(v,&time0) * 1e9;
+         vert = &verts->in[iv];
+         v[0] = vert->origin->vx += v0[0];
+         v[1] = vert->origin->vy += v0[1];
+         v[2] = vert->origin->vz += v0[2];
+         v[3] = vert->origin->t += v0[3];
+         settofg_(v, &v[3]);
          gsvert_(v, &ntbeam, &nttarg, &ubuf, &nubuf, &nvtx);
          prods = vert->products;
          prodCount = prods->mult;

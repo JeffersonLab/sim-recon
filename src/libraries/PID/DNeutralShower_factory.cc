@@ -170,7 +170,7 @@ double DNeutralShower_factory::getFCALQuality( const DFCALShower* fcalShower, do
   double flightTime = fcalShower->getTime() - rfTime;
   
   vector< double > mvaInputs( 8 );
-  mvaInputs[0] = numHitsFromShower( fcalShower );
+  mvaInputs[0] = fcalShower->getNumBlocks();
   mvaInputs[1] = fcalShower->getE9E25();
   mvaInputs[2] = fcalShower->getE1E9();
   mvaInputs[3] = fcalShower->getSumU();
@@ -180,23 +180,4 @@ double DNeutralShower_factory::getFCALQuality( const DFCALShower* fcalShower, do
   mvaInputs[7] = fcalShower->getTime() - ( rfTime + fcalShower->getTimeTrack() );
   
   return dFCALClassifier->GetMvaValue( mvaInputs );
-}
-
-unsigned int
-DNeutralShower_factory::numHitsFromShower( const DFCALShower* shower ) const {
-
-  vector< const DFCALHit* > allHits;  
-  vector< const DFCALCluster* > clusterVec;
-  shower->Get( clusterVec );
-
-  // I don't think there should ever be more than one cluster
-  // associated with a shower, but I will code this anyway....
-  for( unsigned int i = 0; i < clusterVec.size(); ++i ){
-    
-    vector< const DFCALHit* > hits;
-    clusterVec[i]->Get( hits );
-    allHits.insert( allHits.end(), hits.begin(), hits.end() );
-  }
-
-  return allHits.size();
 }

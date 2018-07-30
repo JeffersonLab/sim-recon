@@ -45,8 +45,8 @@ jerror_t JEventProcessor_imaging::init(void)
 {
   gDirectory->mkdir("Vertexes")->cd();
 
-  TwoTrackXYZ= new TH3I("TwoTrackXYZ","z vs y vs x",200,-10,10,
-			200,-10,10,140,30,100);
+  TwoTrackXYZ= new TH3I("TwoTrackXYZ","z vs y vs x",400,-10,10,
+			400,-10,10,140,30,100);
   TwoTrackXYZ->SetXTitle("x (cm)");
   TwoTrackXYZ->SetYTitle("y (cm)");
   TwoTrackXYZ->SetZTitle("z (cm)");
@@ -70,6 +70,23 @@ jerror_t JEventProcessor_imaging::init(void)
   DocaPull=new TH1F("DocaPull","#deltad/#sigma(#deltad)",100,0.,5);
   TwoTrackProb=new TH1F("TwoTrackProb","vertex probability",100,0,1.);
 
+  TwoTrackZFit=new TH1F("TwoTrackZFit","z for r<0.5 cm",1000,0,200);
+  TwoTrackZFit->SetXTitle("z [cm]");
+
+  TwoTrackPocaCutFit=new TH2F("TwoTrackPocaCutFit","2track POCA,doca cut",4000,0,400,650,0,65);
+  TwoTrackPocaCutFit->SetXTitle("z (cm)");
+  TwoTrackPocaCutFit->SetYTitle("r (cm)"); 
+
+  TwoTrackXYFit_at_65cm=new TH2F("TwoTrackXYFit_at_65cm","y vs x near 65 cm",400,-5,5,400,-5,5);
+  TwoTrackXYFit_at_65cm->SetXTitle("x [cm]");
+  TwoTrackXYFit_at_65cm->SetYTitle("y [cm]"); 
+
+  TwoTrackXYZFit= new TH3I("TwoTrackXYZFit","z vs y vs x",400,-10,10,
+			   400,-10,10,140,30,100);
+  TwoTrackXYZFit->SetXTitle("x (cm)");
+  TwoTrackXYZFit->SetYTitle("y (cm)");
+  TwoTrackXYZFit->SetZTitle("z (cm)");
+  
   gDirectory->cd("../");
 
   return NOERROR;
@@ -95,6 +112,13 @@ jerror_t JEventProcessor_imaging::brun(JEventLoop *eventLoop, int32_t runnumber)
 
   FIT_VERTEX=true;
   gPARMS->SetDefaultParameter("IMAGING:FIT_VERTEX",FIT_VERTEX, "Turn on/off vertex fitting");
+  FIT_CL_CUT=0.01;
+  gPARMS->SetDefaultParameter("IMAGING:FIT_CL_CUT",FIT_CL_CUT, "CL cut for vertex fit"); 
+  TRACK_CL_CUT=1e-4;
+  gPARMS->SetDefaultParameter("IMAGING:TRACK_CL_CUT",TRACK_CL_CUT, "CL cut for tracks");
+  DOCA_CUT=1.0; 
+  gPARMS->SetDefaultParameter("IMAGING:DOCA_CUT",DOCA_CUT, "Maximum doca between tracks");
+
   
   return NOERROR;
 }
@@ -128,11 +152,11 @@ jerror_t JEventProcessor_imaging::evnt(JEventLoop *loop, uint64_t eventnumber)
  
   for (unsigned int i=0;i<tracks.size();i++){
     const DTrackTimeBased *track1=tracks[i]->Get_BestTrackingFOM()->Get_TrackTimeBased();
-    if (TMath::Prob(track1->chisq,track1->Ndof)>0.01){
+    if (TMath::Prob(track1->chisq,track1->Ndof)>TRACK_CL_CUT){
       for (unsigned int j=i+1;j<tracks.size();j++){
 	const DTrackTimeBased *track2=tracks[j]->Get_BestTrackingFOM()->Get_TrackTimeBased();
 
-	if (TMath::Prob(track2->chisq,track2->Ndof)>0.01){
+	if (TMath::Prob(track2->chisq,track2->Ndof)>TRACK_CL_CUT){
 	  // Make sure there are enough DReferenceTrajectory objects
 	  unsigned int locNumInitialReferenceTrajectories = rtv.size();
 	  while(rtv.size()<=num_used_rts){
@@ -169,35 +193,31 @@ jerror_t JEventProcessor_imaging::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  DKinematicData kd1=*track1,kd2=*track2;
 	  rt1->IntersectTracks(rt2,&kd1,&kd2,pos,doca,var_doca,vertex_chi2,FIT_VERTEX);
 	  // rt1->IntersectTracks(rt2,NULL,NULL,pos,doca,var_doca,vertex_chi2);
-	  if (FIT_VERTEX){
-	    TwoTrackChi2->Fill(vertex_chi2);
-	    vertex_prob=TMath::Prob(vertex_chi2,1);
-	    TwoTrackProb->Fill(vertex_prob);
-	  }
+	  TwoTrackDoca->Fill(doca);
 	  DocaPull->Fill(doca/sqrt(var_doca));
+	  if (doca<DOCA_CUT){
+	    TwoTrackPocaCut->Fill(pos.z(),pos.Perp());
+	    TwoTrackXYZ->Fill(pos.x(),pos.y(),pos.z());
+	    if (pos.z()>64.5 && pos.z()<65.5){
+	      TwoTrackXY_at_65cm->Fill(pos.x(),pos.y());
+	    }
+	    if (pos.Perp()<0.5){
+	      TwoTrackZ->Fill(pos.z());
+	    }
 
-	  if (vertex_prob>0.1)
-	    {  
-	      
-	    TwoTrackDoca->Fill(doca);
-	    //DVector3 dir1=kd1.momentum();
-	    //dir1.SetMag(1.);
-	    //DVector3 dir2=kd2.momentum();
-	    //dir2.SetMag(1.);
-	    //TwoTrackRelCosTheta->Fill(dir1.Dot(dir2));
-	    if (FIT_VERTEX?doca<0.1:doca<1.)
-	      {
-	      double phi=pos.Phi();
-	      if (phi<-M_PI) phi+=2.*M_PI;
-	      if (phi>M_PI) phi-=2.*M_PI;
-	   
-	      TwoTrackPocaCut->Fill(pos.z(),pos.Perp());
-	      TwoTrackXYZ->Fill(pos.x(),pos.y(),pos.z());
-	      if (pos.z()>64.5 && pos.z()<65.5){
-		TwoTrackXY_at_65cm->Fill(pos.x(),pos.y());
-	      }
-	      if (pos.Perp()<0.5){
-		TwoTrackZ->Fill(pos.z());
+	    if (FIT_VERTEX){
+	      TwoTrackChi2->Fill(vertex_chi2);
+	      vertex_prob=TMath::Prob(vertex_chi2,1);
+	      TwoTrackProb->Fill(vertex_prob);
+	      if (vertex_prob>FIT_CL_CUT){  
+		TwoTrackPocaCutFit->Fill(pos.z(),pos.Perp());
+		TwoTrackXYZFit->Fill(pos.x(),pos.y(),pos.z());
+		if (pos.z()>64.5 && pos.z()<65.5){
+		  TwoTrackXYFit_at_65cm->Fill(pos.x(),pos.y());
+		}
+		if (pos.Perp()<0.5){
+		  TwoTrackZFit->Fill(pos.z());
+		}
 	      }
 	    }
 	  }
