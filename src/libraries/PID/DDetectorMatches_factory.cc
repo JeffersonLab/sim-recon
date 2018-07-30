@@ -167,7 +167,7 @@ void DDetectorMatches_factory::MatchToDIRC(const DParticleID* locParticleID, con
 	double locInputStartTime = locTrackTimeBased->t0();
 	shared_ptr<DDIRCMatchParams> locDIRCMatchParams;
 	shared_ptr<DDIRCLutPhotons> locDIRCLutPhotons;
-	if(locParticleID->DIRC_LUT(extrapolations, locDIRCHits, locInputStartTime, locTrackTimeBased->mass(), locDIRCMatchParams, locDIRCLutPhotons))
+	if(locParticleID->Cut_MatchDIRC(extrapolations, locDIRCHits, locInputStartTime, locTrackTimeBased->mass(), locDIRCMatchParams, locDIRCLutPhotons))
 	locDetectorMatches->Add_Match(locTrackTimeBased, locDIRCLutPhotons, locDIRCMatchParams);
 }
 
