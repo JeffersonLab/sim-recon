@@ -50,9 +50,21 @@ jerror_t JEventProcessor_ST_online_efficiency::init(void)
 	//  ... fill historgrams or trees ...
 	// japp->RootUnLock();
 	//
-  // USE_SC_TIME = 0 in order to Not reconstruct tracks with start counter time
+   // Do not reconstruct tracks with start counter time
   gPARMS->SetParameter("TRKFIT:USE_SC_TIME",false);
-  
+  int USE_SC_TIME = 0;
+  if(gPARMS->Exists("TRKFIT:USE_SC_TIME"))
+    gPARMS->GetParameter("TRKFIT:USE_SC_TIME", USE_SC_TIME);
+    
+  //cout << "USE_SC_TIME = " << USE_SC_TIME << endl;
+  // Warning message if sc time is used in track reconstruction
+  if (USE_SC_TIME == 0)
+    {
+      cout << "=========================================================================="<< endl;
+      cout << "TRKFIT: USE_SC_TIME = 0; WARNING SC TIME WILL NOT BE USED IN TRACK FITTING"<< endl;
+      cout << "This is required in ST_online_efficiency plugin                           "<< endl;
+      cout << "=========================================================================="<< endl;
+    }
   // Create root folder for ST and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("st_efficiency")->cd();
@@ -172,7 +184,7 @@ jerror_t JEventProcessor_ST_online_efficiency::evnt(JEventLoop *eventLoop, uint6
       double z_v = vertex.z();
       double r_v = vertex.Perp();
       bool z_vertex_cut = fabs(z_target_center - z_v) <= 15.0;
-      bool r_vertex_cut = r_v < 0.3;
+      bool r_vertex_cut = r_v < 1.0;
       // applied vertex cut
       if (!z_vertex_cut) continue;
       if (!r_vertex_cut) continue;

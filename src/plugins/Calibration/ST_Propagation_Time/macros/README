@@ -1,0 +1,14 @@
+This is the prpagation time correction plugin which is using the 
+CCDB table:  propagation_time_corr
+
+In order to get new set of constants follow the following steps:
+1) Run the plugin over your selected data and get the hd_root.root file
+2) Run SC_PTC.C plugin in order to get the mean value of the time vz z(mid point of each z interval).
+3) Plot the mean value of the time vs Z using SC_PTC_Plot.C macro.
+4) The macro in step 3 will do three line fits for the  three specified 
+ ranges and write the constants on PTC_1DFits.txt
+5) write these constant to the table propagation_time_corr
+6) Time resolution can be calculated from this plugin using Resolution.C
+7) Time resolution vs Z can be calculated using  SC_PTC_RvsZ.C, and ploted by using  SC_PTC_ResolvsZPlot.C.
+
+There are couple of macros were used in older versions of this calibration. I will keep them for some time.

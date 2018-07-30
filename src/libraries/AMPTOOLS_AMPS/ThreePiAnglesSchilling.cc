@@ -13,7 +13,7 @@
 #include "AMPTOOLS_AMPS/clebschGordan.h"
 #include "AMPTOOLS_AMPS/wignerD.h"
 
-#include <CobremsGeneration.hh>
+#include <AMPTOOLS_MCGEN/CobremsGeneration.hh>
 
 ThreePiAnglesSchilling::ThreePiAnglesSchilling( const vector< string >& args ) :
     UserAmplitude< ThreePiAnglesSchilling >( args )

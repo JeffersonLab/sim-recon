@@ -45,9 +45,21 @@ jerror_t JEventProcessor_ST_ZEff::init(void)
   int NoBins_z = 240;
   double z_lower_limit = 38.5;
   double z_upper_limit = 98.5;
-  // USE_SC_TIME = 0 in order to Not reconstruct tracks with start counter time
+  // Do not reconstruct tracks with start counter time
   gPARMS->SetParameter("TRKFIT:USE_SC_TIME",false);
-  
+  int USE_SC_TIME = 0;
+  if(gPARMS->Exists("TRKFIT:USE_SC_TIME"))
+    gPARMS->GetParameter("TRKFIT:USE_SC_TIME", USE_SC_TIME);
+    
+  //cout << "USE_SC_TIME = " << USE_SC_TIME << endl;
+  // Warning message if sc time is used in track reconstruction
+  if (USE_SC_TIME == 0)
+    {
+      cout << "=========================================================================="<< endl;
+      cout << "TRKFIT: USE_SC_TIME = 0; WARNING SC TIME WILL NOT BE USED IN TRACK FITTING"<< endl;
+      cout << "This is required in ST_ZEff plugin which calculate SC efficiency          "<< endl;
+      cout << "=========================================================================="<< endl;
+    }
   // Create root folder for ST and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("st_efficiency")->cd();
@@ -141,6 +153,9 @@ jerror_t JEventProcessor_ST_ZEff::brun(JEventLoop *eventLoop, int32_t runnumber)
   // Propagation Time constant
   if(eventLoop->GetCalib("START_COUNTER/propagation_time_corr", propagation_time_corr))
       jout << "Error loading /START_COUNTER/propagation_time_corr !" << endl;
+  // Propagation Time fit Boundaries
+  if(eventLoop->GetCalib("START_COUNTER/PTC_Boundary", PTC_Boundary))
+    jout << "Error loading /START_COUNTER/PTC_Boundary !" << endl;
 
   return NOERROR;
 }
@@ -149,6 +164,7 @@ jerror_t JEventProcessor_ST_ZEff::brun(JEventLoop *eventLoop, int32_t runnumber)
 //------------------
 jerror_t JEventProcessor_ST_ZEff::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
+  //cout << USE_SC_TIME << endl;
   //cout << " *********************** Event number" << eventnumber << "**************"<<endl;
 	// Here's an example:
 	//
@@ -274,7 +290,17 @@ jerror_t JEventProcessor_ST_ZEff::evnt(JEventLoop *eventLoop, uint64_t eventnumb
       sc_pos_eoss = sc_pos[sc_index][1].z();   // End of straight section
       sc_pos_eobs = sc_pos[sc_index][11].z();  // End of bend section
       sc_pos_eons = sc_pos[sc_index][12].z();  // End of nose section
-      
+
+      // Read the constants from CCDB
+      incpt_ss   = propagation_time_corr[sc_index][0];
+      slope_ss   = propagation_time_corr[sc_index][1];
+      incpt_bs   = propagation_time_corr[sc_index][2];
+      slope_bs   = propagation_time_corr[sc_index][3];
+      incpt_ns   = propagation_time_corr[sc_index][4];
+      slope_ns   = propagation_time_corr[sc_index][5];
+      //Read fit boundary from CCDB
+      Bound1 = PTC_Boundary[0][0];
+      Bound2 = PTC_Boundary[1][0];
       for (uint32_t i = 0; i < sc_track_position.size(); i++)
 	{
 	  //double locSCzIntersection = IntersectionPoint.z();
@@ -306,10 +332,7 @@ jerror_t JEventProcessor_ST_ZEff::evnt(JEventLoop *eventLoop, uint64_t eventnumb
 			  double FlightTime = locBestSCHitMatchParams->dFlightTime; 
 			  //St time corrected for the flight time
 			  double st_corr_FlightTime =  st_hits[j]->t - FlightTime;
-			  		   
-			  double incpt_ss   = propagation_time_corr[sc_index][0];
-			  double slope_ss   = propagation_time_corr[sc_index][1];
-			   
+			  			   
 			  double pathlength = locSCzIntersection - sc_pos_soss;
 			  double corr_time = st_corr_FlightTime  - (incpt_ss + (slope_ss *  pathlength));
 			  SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  corr_time);
@@ -353,9 +376,6 @@ jerror_t JEventProcessor_ST_ZEff::evnt(JEventLoop *eventLoop, uint64_t eventnumb
 			  double st_corr_FlightTime =  st_hits[j]->t - FlightTime;
 			  double SS_Length = sc_pos_eoss - sc_pos_soss;// same for along z or along the paddle
 			  
-			  double incpt_bs   = propagation_time_corr[sc_index][2];
-			  double slope_bs   = propagation_time_corr[sc_index][3];
-			  
 			  double path_bs = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;
 			  double corr_time_bs=  st_corr_FlightTime  - (incpt_bs + (slope_bs *  path_bs));
 			  
@@ -398,16 +418,24 @@ jerror_t JEventProcessor_ST_ZEff::evnt(JEventLoop *eventLoop, uint64_t eventnumb
 			  double SS_Length = sc_pos_eoss - sc_pos_soss;// same for along z or along the paddle
 			  //St time corrected for the flight time
 			  double st_corr_FlightTime =  st_hits[j]->t - FlightTime;
-			  
-			  double incpt_ns   = propagation_time_corr[sc_index][4];
-			  double slope_ns   = propagation_time_corr[sc_index][5];
-			  
 			  //NS efficiency
 			  double path_ns = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;
-			  double corr_time_ns=  st_corr_FlightTime  - (incpt_ns + (slope_ns *  path_ns));
-			  SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
-			  
-			  double t_diff  =corr_time_ns - t0; 
+			  if (path_ns <= Bound1)
+			    {       
+			      Corr_Time_ns=  st_corr_FlightTime  - (incpt_ss + (slope_ss *  path_ns));
+			      SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
+			    }
+			  else if ((Bound1 < path_ns)&&(path_ns <= Bound2))
+			    {
+			      Corr_Time_ns = st_corr_FlightTime - (incpt_bs + (slope_bs *  path_ns));
+			      SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
+			    }
+			  else
+			    {
+			      Corr_Time_ns = st_corr_FlightTime - (incpt_ns + (slope_ns *  path_ns));
+			      SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
+			    }
+			  double t_diff  =Corr_Time_ns - t0; 
 			  //NS Accidentals
 			  if (!((-10 < t_diff) && (t_diff <10)) && (-20 < t_diff) && (t_diff < 20))
 			    {  

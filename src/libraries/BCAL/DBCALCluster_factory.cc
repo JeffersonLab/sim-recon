@@ -148,7 +148,8 @@ DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	for( vector<DBCALCluster*>::iterator clust = clusters.begin();
 			clust != clusters.end();
 			++clust ){
-
+		
+		if( isnan((**clust).t()) == 1 || isnan((**clust).phi()) == 1 || isnan((**clust).theta()) == 1 ) continue;
 		// put in an energy threshold for clusters
 		if( (**clust).E() < 5*k_MeV ) {
 			delete *clust;
