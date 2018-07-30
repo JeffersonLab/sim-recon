@@ -7,7 +7,7 @@ using namespace std;
 #include <ctype.h>
 
 #include <typeinfo>
-#include "CobremsGeneration.hh"
+#include "AMPTOOLS_MCGEN/CobremsGeneration.hh"
 #include "TFile.h"
 #include "TH1D.h"
 

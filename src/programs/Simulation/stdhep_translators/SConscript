@@ -1,0 +1,15 @@
+
+import os
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+if os.getenv('CERN') == None:
+	print '==== CANNOT BUILD stdhep_translators WITHOUT CERN ===='
+else:
+	sbms.AddHDDM(env)
+	sbms.AddCERNLIB(env)
+	sbms.executables(env)
+

@@ -31,6 +31,9 @@
     clus2GMass->SetFillColor( kBlue );
     c1->cd( 1 );
     clus2GMass->Draw();
+    TLine *line_pi0Mass=new TLine(0.1349766,0,0.1349766,clus2GMass->GetMaximum());
+    line_pi0Mass->SetLineColor(kRed);
+    line_pi0Mass->Draw("same");
   }
   
   if( clusPhi ){

@@ -28,6 +28,7 @@
 #include <TGLabel.h>
 #include <TTimer.h>
 
+class hdv_mainframe;
 class trk_mainframe;
 class hdv_optionsframe;
 class hdv_debugerframe;

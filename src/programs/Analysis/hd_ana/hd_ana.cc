@@ -23,6 +23,7 @@ int main(int narg, char *argv[])
 	// Run though all events, calling our event processor's methods
 	app.Run(NULL, 1);
 	
+	if( app.GetExitCode() ) cerr << "Exit code: " << app.GetExitCode() << endl;
 	return app.GetExitCode();
 }
 

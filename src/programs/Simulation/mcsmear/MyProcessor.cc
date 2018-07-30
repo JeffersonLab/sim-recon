@@ -182,12 +182,10 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
         }
 
         std::map<string, float> parms;
-        jcalib->Get("CDC/cdc_parms", parms);
-        hddm_s_merger::set_cdc_min_delta_t_ns(parms.at("CDC_TWO_HIT_RESOL"));
         jcalib->Get("TOF/tof_parms", parms);
         hddm_s_merger::set_ftof_min_delta_t_ns(parms.at("TOF_TWO_HIT_RESOL"));
         jcalib->Get("FDC/fdc_parms", parms);
-        hddm_s_merger::set_fdc_min_delta_t_ns(parms.at("FDC_TWO_HIT_RESOL"));
+        hddm_s_merger::set_fdc_wires_min_delta_t_ns(parms.at("FDC_TWO_HIT_RESOL"));
         jcalib->Get("START_COUNTER/start_parms", parms);
         hddm_s_merger::set_stc_min_delta_t_ns(parms.at("START_TWO_HIT_RESOL"));
         jcalib->Get("BCAL/bcal_parms", parms);
@@ -205,14 +203,115 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
 #ifdef HAVE_RCDB
 	// Pull configuration parameters from RCDB
 	config->ParseRCDBConfigFile(locRunNumber);
+
+	const double fadc250_period_ns(4.);
+	const double fadc125_period_ns(8.);
+
+	// hits merging / truncation parameters for the CDC
+	hddm_s_merger::set_cdc_max_hits(config->readout["CDC"].at("NPEAK"));
+	double cdc_ie = config->readout["CDC"].at("IE");
+	double cdc_pg = config->readout["CDC"].at("PG");
+	double cdc_gate = (cdc_ie + cdc_pg) * fadc125_period_ns;
+	hddm_s_merger::set_cdc_integration_window_ns(cdc_gate);
+
+	// hits merging / truncation parameters for the FDC
+	hddm_s_merger::set_fdc_wires_max_hits(config->readout["FDC"].at("NHITS"));
+	double fdc_width = config->readout["FDC"].at("WIDTH");
+	hddm_s_merger::set_fdc_wires_min_delta_t_ns(fdc_width + 5.);
+	hddm_s_merger::set_fdc_strips_max_hits(config->readout["FDC"].at("NPEAK"));
+	double fdc_ie = config->readout["FDC"].at("IE");
+	double fdc_pg = config->readout["FDC"].at("PG");
+	double fdc_gate = (fdc_ie + fdc_pg) * fadc125_period_ns;
+	hddm_s_merger::set_fdc_strips_integration_window_ns(fdc_gate);
+
+	// hits merging / truncation parameters for the STC
+	hddm_s_merger::set_stc_adc_max_hits(config->readout["ST"].at("NPEAK"));
+	hddm_s_merger::set_stc_tdc_max_hits(config->readout["ST"].at("NHITS"));
+	double stc_width = config->readout["ST"].at("WIDTH");
+	hddm_s_merger::set_stc_min_delta_t_ns(stc_width + 5.);
+	double stc_nsa = config->readout["ST"].at("NSA");
+	double stc_nsb = config->readout["ST"].at("NSB");
+	double stc_gate = (stc_nsa + stc_nsb) * fadc250_period_ns;
+	hddm_s_merger::set_stc_integration_window_ns(stc_gate);
+
+	// hits merging / truncation parameters for the BCAL
+	hddm_s_merger::set_bcal_adc_max_hits(config->readout["BCAL"].at("NPEAK"));
+	hddm_s_merger::set_bcal_tdc_max_hits(config->readout["BCAL"].at("NHITS"));
+	double bcal_width = config->readout["BCAL"].at("WIDTH");
+	hddm_s_merger::set_bcal_min_delta_t_ns(bcal_width + 5.);
+	double bcal_nsa = config->readout["BCAL"].at("NSA");
+	double bcal_nsb = config->readout["BCAL"].at("NSB");
+	double bcal_gate = (bcal_nsa + bcal_nsb) * fadc250_period_ns;
+	hddm_s_merger::set_bcal_integration_window_ns(bcal_gate);
+
+	// hits merging / truncation parameters for the TOF
+	hddm_s_merger::set_ftof_adc_max_hits(config->readout["TOF"].at("NPEAK"));
+	hddm_s_merger::set_ftof_tdc_max_hits(config->readout["TOF"].at("NHITS"));
+	double ftof_width = config->readout["TOF"].at("WIDTH");
+	hddm_s_merger::set_ftof_min_delta_t_ns(ftof_width + 5.);
+	double tof_nsa = config->readout["TOF"].at("NSA");
+	double tof_nsb = config->readout["TOF"].at("NSB");
+	double tof_gate = (tof_nsa + tof_nsb) * fadc250_period_ns;
+	hddm_s_merger::set_ftof_integration_window_ns(tof_gate);
+
+	// hits merging / truncation parameters for the FCAL
+	hddm_s_merger::set_fcal_max_hits(config->readout["FCAL"].at("NPEAK"));
+	double fcal_nsa = config->readout["FCAL"].at("NSA");
+	double fcal_nsb = config->readout["FCAL"].at("NSB");
+	double fcal_gate = (fcal_nsa + fcal_nsb) * fadc250_period_ns;
+	hddm_s_merger::set_fcal_integration_window_ns(fcal_gate);
+
+	// hits merging / truncation parameters for the CCAL
+	hddm_s_merger::set_ccal_max_hits(config->readout["FCAL"].at("NPEAK"));
+	hddm_s_merger::set_ccal_integration_window_ns(fcal_gate);
+
+	// hits merging / truncation parameters for the PS
+	hddm_s_merger::set_ps_max_hits(config->readout["PS"].at("NPEAK"));
+	double ps_nsa = config->readout["PS"].at("NSA");
+	double ps_nsb = config->readout["PS"].at("NSB");
+	double ps_gate = (ps_nsa + ps_nsb) * fadc250_period_ns;
+	hddm_s_merger::set_ps_integration_window_ns(ps_gate);
+	hddm_s_merger::set_psc_adc_max_hits(config->readout["PSC"].at("NPEAK"));
+	hddm_s_merger::set_psc_tdc_max_hits(config->readout["PSC"].at("NHITS"));
+	double psc_width = config->readout["PSC"].at("WIDTH");
+	hddm_s_merger::set_psc_min_delta_t_ns(psc_width + 5.);
+	double psc_nsa = config->readout["PSC"].at("NSA");
+	double psc_nsb = config->readout["PSC"].at("NSB");
+	double psc_gate = (psc_nsa + psc_nsb) * fadc250_period_ns;
+	hddm_s_merger::set_psc_integration_window_ns(psc_gate);
+
+	// hits merging / truncation parameters for the TAGM/TAGH
+	hddm_s_merger::set_tag_adc_max_hits(config->readout["TAGM"].at("NPEAK"));
+	hddm_s_merger::set_tag_tdc_max_hits(config->readout["TAGM"].at("NHITS"));
+	double tag_width = config->readout["TAGM"].at("WIDTH");
+	hddm_s_merger::set_tag_min_delta_t_ns(tag_width + 5.);
+	double tag_nsa = config->readout["TAGM"].at("NSA");
+	double tag_nsb = config->readout["TAGM"].at("NSB");
+	double tag_gate = (tag_nsa + tag_nsb) * fadc250_period_ns;
+	hddm_s_merger::set_tag_integration_window_ns(tag_gate);
+
+	// hits merging / truncation parameters for the TPOL
+	hddm_s_merger::set_tpol_max_hits(config->readout["TPOL"].at("NPEAK"));
 #endif  // HAVE_RCDB
 
     // fast forward any merger input files over skipped events
     std::map<hddm_s::istream*,hddm_s::streamposition>::iterator iter;
     for (iter = start2merge.begin(); iter != start2merge.end(); ++iter) {
         hddm_s::HDDM record2;
-        for (int i=0; i < skip2merge[iter->first]; ++i)
-            *iter->first >> record2;
+        for (int i=0; i < skip2merge[iter->first]; ++i) {
+            if (!(*iter->first >> record2)) {
+                //pthread_mutex_lock(&input_file_mutex);
+                //input_file_mutex_last_owner = pthread_self();
+                iter->first->setPosition(start2merge.at(iter->first));
+                if (!(*iter->first >> record2)) {
+                    //pthread_mutex_unlock(&input_file_mutex);
+                    std::cerr << "Trying to merge from empty input file, "
+                              << "cannot continue!" << std::endl;
+                    exit(-1);
+                }
+                //pthread_mutex_unlock(&input_file_mutex);
+            }
+        }
         skip2merge[iter->first] = 0;
     }
 
@@ -247,37 +346,38 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, uint64_t eventnumber)
       }
       for (int i=0; i < count; ++i) {
          hddm_s::HDDM record2;
-         *iter->first >> record2;
+         if (!(*iter->first >> record2)) {
+            //pthread_mutex_lock(&input_file_mutex);
+            //input_file_mutex_last_owner = pthread_self();
+            iter->first->setPosition(start2merge.at(iter->first));
+            if (!(*iter->first >> record2)) {
+               //pthread_mutex_unlock(&input_file_mutex);
+               std::cerr << "Trying to merge from empty input file, "
+                         << "cannot continue!" << std::endl;
+               exit(-1);
+            }
+            //pthread_mutex_unlock(&input_file_mutex);
+         }
          hddm_s_merger::set_t_shift_ns(0);
          hddm_s::RFsubsystemList RFtimes = record2.getRFsubsystems();
          hddm_s::RFsubsystemList::iterator RFiter;
          for (RFiter = RFtimes.begin(); RFiter != RFtimes.end(); ++RFiter)
             if (RFiter->getJtag() == "TAGH")
                hddm_s_merger::set_t_shift_ns(-RFiter->getTsync());
-         if (iter->first->eof()) {
-            pthread_mutex_lock(&input_file_mutex);
-            input_file_mutex_last_owner = pthread_self();
-            if (iter->first->eof())
-               iter->first->setPosition(start2merge.at(iter->first));
-            *iter->first >> *record;
-            if (iter->first->eof()) {
-               pthread_mutex_unlock(&input_file_mutex);
-               std::cerr << "Trying to merge from empty input file, "
-                         << "cannot continue!" << std::endl;
-               exit(-1);
-            }
-            pthread_mutex_unlock(&input_file_mutex);
-         }
          *record += record2;
       }
    }
 
+   // Apply DAQ truncation to hit lists
+   if (config->APPLY_HITS_TRUNCATION)
+      hddm_s_merger::truncate_hits(*record);
+
    // Write event to output file
-   pthread_mutex_lock(&output_file_mutex);
-   output_file_mutex_last_owner = pthread_self();
+   //pthread_mutex_lock(&output_file_mutex);
+   //output_file_mutex_last_owner = pthread_self();
    *fout << *record;
    Nevents_written++;
-   pthread_mutex_unlock(&output_file_mutex);
+   //pthread_mutex_unlock(&output_file_mutex);
 
    return NOERROR;
 }

@@ -424,6 +424,14 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       return Extract_DCereHit(record, 
                      dynamic_cast<JFactory<DCereHit>*>(factory), tag);
 
+   if (dataClassName == "DTPOLHit")
+      return Extract_DTPOLHit(record,
+                     dynamic_cast<JFactory<DTPOLHit>*>(factory), tag);
+
+   if (dataClassName == "DTPOLTruthHit")
+      return Extract_DTPOLTruthHit(record,
+                     dynamic_cast<JFactory<DTPOLTruthHit>*>(factory), tag);
+
    return OBJECT_NOT_AVAILABLE;
 }
 
@@ -1206,12 +1214,18 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
    
    if (factory == NULL)
        return OBJECT_NOT_AVAILABLE;
-   if (tag != "" && tag != "TRUTH")
+
+   // Since we are writing out CDC hits with the new "Calib" tag by default
+   // assume that is what we are reading in, so that we don't support the
+   // default tag anymore
+   // sdobbs -- 3/13/2018
+   //if (tag != "" && tag != "TRUTH" && tag != "Calib")
+   if (tag != "TRUTH" && tag != "Calib")
       return OBJECT_NOT_AVAILABLE;
    
    vector<DCDCHit*> data;
 
-   if (tag == "") {
+   if ( tag == "" || tag == "Calib" ) {
       vector<const DCDCHit*> locTruthHits;
       locEventLoop->Get(locTruthHits, "TRUTH");
 
@@ -1220,21 +1234,30 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDD
 		for(auto& locTruthHit : locTruthHits)
 			locTruthHitMap[std::make_pair(locTruthHit->ring, locTruthHit->straw)].push_back(locTruthHit);
 
-      const hddm_s::CdcStrawHitList &hits = record->getCdcStrawHits();
-      hddm_s::CdcStrawHitList::iterator iter;
-      int locIndex = 0;
-      for (iter = hits.begin(); iter != hits.end(); ++iter) {
-         DCDCHit *hit = new DCDCHit;
-         hit->ring   = iter->getRing();
-         hit->straw  = iter->getStraw();
-         hit->q      = iter->getQ();
-         hit->t      = iter->getT();
-         if(iter->getCdcDigihits().size() > 0) {
-             hit->amp  = iter->getCdcDigihit().getPeakAmp();
-         }
-         hit->d      = 0.; // initialize to zero to avoid any NaN
-         hit->itrack = 0;  // track information is in TRUTH tag
-         hit->ptype  = 0;  // ditto
+        const hddm_s::CdcStrawHitList &hits = record->getCdcStrawHits();
+        hddm_s::CdcStrawHitList::iterator iter;
+        int locIndex = 0;
+        for (iter = hits.begin(); iter != hits.end(); ++iter) {
+            DCDCHit *hit = new DCDCHit;
+            hit->ring   = iter->getRing();
+            hit->straw  = iter->getStraw();
+            hit->q      = iter->getQ();
+            hit->t      = iter->getT();
+            if(iter->getCdcDigihits().size() > 0) {
+                hit->amp  = iter->getCdcDigihit().getPeakAmp();
+            }
+	    else{  
+	      // for generated events (not folded-in background events) for which we
+	      // have no digi hits return q
+	      hit->amp=hit->q;
+	    }
+            hit->QF     = 0;
+            if(iter->getCdcHitQFs().size() > 0) {
+                hit->QF  = iter->getCdcHitQF().getQF();
+            }            
+            hit->d      = 0.; // initialize to zero to avoid any NaN
+            hit->itrack = 0;  // track information is in TRUTH tag
+            hit->ptype  = 0;  // ditto
 
 			//match hit between truth & recon
 			auto& locPotentialTruthHits = locTruthHitMap[std::make_pair(hit->ring, hit->straw)];
@@ -2550,6 +2573,87 @@ jerror_t DEventSourceHDDM::Extract_DPSCTruthHit(hddm_s::HDDM *record,
    return NOERROR;
 }
 
+//------------------
+// Etract_DTPOLHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DTPOLHit(hddm_s::HDDM *record,
+                                   JFactory<DTPOLHit>* factory, string tag)
+{
+   if (factory == NULL)
+      return OBJECT_NOT_AVAILABLE;
+   if (tag != "")
+      return OBJECT_NOT_AVAILABLE;
+
+   vector<DTPOLHit*> data;
+
+   if (tag == "")
+   {
+      const hddm_s::TpolHitList &hits = record->getTpolHits();
+      hddm_s::TpolHitList::iterator iter;
+      for (iter = hits.begin(); iter != hits.end(); ++iter)
+      {
+         DTPOLHit *hit = new DTPOLHit;
+         hit->sector = iter->getSector();
+         hit->ring = iter->getRing();
+         hit->dE = iter->getDE();
+         hit->t = iter->getT();
+
+         data.push_back(hit);
+      }
+   }
+   else if (tag == "Truth")
+   {
+      const hddm_s::TpolTruthHitList &truthHits = record->getTpolTruthHits();
+      hddm_s::TpolTruthHitList::iterator iter;
+      for (iter = truthHits.begin(); iter != truthHits.end(); ++iter)
+      {
+         DTPOLHit *hit = new DTPOLHit;
+         hit->sector = iter->getSector();
+         hit->t = iter->getT();
+
+         data.push_back(hit);
+      }
+   }
+
+   factory->CopyTo(data);
+
+   return NOERROR;
+}
+
+//------------------------
+// Extract_DTPOLTruthHit
+//------------------------
+jerror_t DEventSourceHDDM::Extract_DTPOLTruthHit(hddm_s::HDDM *record,                                                                      JFactory<DTPOLTruthHit>* factory, string tag)
+{
+   if (factory == NULL)
+      return OBJECT_NOT_AVAILABLE;
+   if (tag != "")
+      return OBJECT_NOT_AVAILABLE;
+
+   vector<DTPOLTruthHit*> data;
+
+   const hddm_s::TpolTruthPointList &points = record->getTpolTruthPoints();
+   hddm_s::TpolTruthPointList::iterator iter;
+   for (iter = points.begin(); iter != points.end(); ++iter)
+   {
+      DTPOLTruthHit *hit = new DTPOLTruthHit;
+      hit->dEdx = iter->getDEdx();
+      hit->primary = iter->getPrimary();
+      hit->track = iter->getTrack();
+      hit->ptype = iter->getPtype();
+      hit->r = iter->getR();
+      hit->phi = iter->getPhi();
+      hit->t = iter->getT();
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      hit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
+
+      data.push_back(hit);
+   }
+
+   factory->CopyTo(data);
+
+   return NOERROR;
+}
 
 Particle_t DEventSourceHDDM::IDTrack(float locCharge, float locMass) const
 {

@@ -12,6 +12,7 @@
 using std::vector;
 
 #include <TMatrixFSym.h>
+#include <TMatrix.h>
 
 #include <HDGEOMETRY/DGeometry.h>
 #include <DVector3.h>
@@ -102,12 +103,17 @@ class DReferenceTrajectory{
 		swim_step_t* FindPlaneCrossing(const DVector3 &origin, DVector3 norm,int first_i=0, DetectorSystem_t detector=SYS_NULL) const;
 		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0,const TMatrixFSym *cov=NULL, double smax=2000.0, const DCoordinateSystem *wire=NULL);
 		void FastSwim(const DVector3 &pos, const DVector3 &mom, double q,double smax=2000.0, double zmin=-100.,double zmax=1000.0);
-
+		void FastSwimForHitSelection(const DVector3 &pos, const DVector3 &mom, double q);
 
 		void FastSwim(const DVector3 &pos, const DVector3 &mom, 
 			      DVector3 &last_pos, DVector3 &last_mom,
 			      double q,double smax=2000.0,
 			      const DCoordinateSystem *wire=NULL);
+		void FastSwim(const DVector3 &pos, const DVector3 &mom, 
+			      DVector3 &last_pos, DVector3 &last_mom,double q,
+			      const DVector3 &origin,const DVector3 &dir,
+			      double smax=2000.0
+			      );
 
 		int InsertSteps(const swim_step_t *start_step, double delta_s, double step_size=0.02); 
 		jerror_t GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s=NULL,double *t=NULL,double *var_t=NULL,DetectorSystem_t detector=SYS_NULL) const;	
@@ -164,7 +170,9 @@ class DReferenceTrajectory{
 		jerror_t IntersectTracks(const DReferenceTrajectory *rt2,
 					 DKinematicData *track1_kd,
 					 DKinematicData *track2_kd,
-					 DVector3 &pos, double &doca, double &var_doca) const;
+					 DVector3 &pos, double &doca, 
+					 double &var_doca, double &vertex_chi2,
+					 bool DoFitVertex=false) const;
 		jerror_t PropagateCovariance(double ds,double q,
 					     double mass_sq,const DVector3 &mom,
 					     const DVector3 &pos,const DVector3 &B,
@@ -174,6 +182,13 @@ class DReferenceTrajectory{
 					 DVector3 &pos2,DVector3 &mom2,
 					 double ds,double q2,
 					 double &doca) const;
+
+		void FitVertex(const DVector3 &pos1,const DVector3 &mom1,
+			       const DVector3 &pos2,const DVector3 &mom2,
+			       const TMatrixFSym &cov1,
+			       const TMatrixFSym &cov2,
+			       DVector3 &pos,double &vertex_chi2) const;
+
 
 		swim_step_t *swim_steps;
 		int Nswim_steps;

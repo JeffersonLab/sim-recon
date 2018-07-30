@@ -80,7 +80,14 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	dHist_CosThetakin_CosThetagen = new TH2I("CosThetakin_CosThetagen", "; Cos#Theta Gen; Cos#Theta Kin", 50, -1, 1, 50, -1., 1.);
 	dHist_phigen_Phigen = new TH2I("phigen_Phigen", "; #Phi Gen; #phi Gen", 90, -180., 180, 90,-180,180);
 	dHist_phikin_Phikin = new TH2I("phikin_Phikin", "; #Phi Kin; #phi Kin", 90, -180., 180, 90,-180,180);
+	dHist_phimeas_phigen = new TH2I("phimeas_phigen", "; #phi Gen ; #phi Meas", 90, -180., 180, 90,-180,180);
 	dHist_phikin_phigen = new TH2I("phikin_phigen", "; #phi Gen ; #phi Kin", 90, -180., 180, 90,-180,180);
+	dHist_Phikin_Phigen = new TH2I("Phikin_Phigen", "; #Phi Gen ; #Phi Kin", 90, -180., 180, 90,-180,180);
+	dHist_Phimeas_Phigen = new TH2I("Phimeas_Phigen", "; #Phi Gen ; #Phi Meas", 90, -180., 180, 90,-180,180);
+	dHist_Delta_phi = new TH2I("Delta_phi", "; #phi ; #Delta #phi", 90, -180., 180, 90,-180,180);
+	dHist_Delta_Phi = new TH2I("Delta_Phi", "; #Phi ; #Delta #Phi", 90, -180., 180, 90,-180,180);
+	dHist_Delta_phimeas = new TH2I("Delta_phimeas", "; #phi ; #Delta #phi Meas", 90, -180., 180, 90,-180,180);
+	dHist_Delta_Phimeas = new TH2I("Delta_Phimeas", "; #Phi ; #Delta #Phi Meas", 90, -180., 180, 90,-180,180);
 	dHist_CosTheta = new TH1I("CosTheta", "; Cos#Theta", 100, -1., 1.);
 	dHist_CosThetadiff = new TH1I("CosThetadiff", "; Cos#Theta diff Kin-Gen", 50, -0.5, 0.5);
 	dHist_Phigen = new TH1I("Phigen", ";Phigen (degrees)", 360,-180,180);
@@ -109,8 +116,8 @@ void DSelector_Z2pi_trees::Init(TTree *locTree)
 	fMaxPion_dEdx->SetParameters(4.0, 2.0, 2.5);
 	dMinKinFitCL = 5.73303e-7; //5.73303e-7;
 	dMaxKinFitChiSq = 5.0;
-	dMinBeamEnergy = 8.4;
-	dMaxBeamEnergy = 9.0;
+	dMinBeamEnergy = 5.5;
+	dMaxBeamEnergy = 6.0;
 	dMin2piMass = 0.2;
 	dMax2piMass = 0.6;
 	dMinMissingMassSquared = -0.1;
@@ -397,8 +404,9 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 
 		cout << " Passed beam energy cut " << endl;
 
-		// Cut on Missing mass
-		if((locMissingMassSquared < dMinMissingMassSquared ) || (locMissingMassSquared >  dMaxMissingMassSquared)){
+		// Cut on Missing mass 
+		if((locMissingMassSquared < dMinMissingMassSquared ) || (locMissingMassSquared >  dMaxMissingMassSquared)){  // measured
+		// if((locMissingP4.M2() < dMinMissingMassSquared ) || (locMissingP4.M2() >  dMaxMissingMassSquared)){   // kinfit
 			dComboWrapper->Set_IsComboCut(true);    
 			continue; 
 		}
@@ -486,11 +494,20 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		cout << "PiMinus Thrown P4.E=" << locPiMinusP4_Thrown.E() << " Kinfit P4.E=" << locPiMinusP4.E() << " P4 Measured =" << locPiMinusP4_Measured.E() << endl << endl;
 
 
+		if ( locBeamP4_Measured.Z() < 0 || locPiPlusP4_Measured.Z() < 0 || locPiMinusP4_Measured.Z() < 0 ||
+                     locPiPlusP4.Z() < 0 || locPiMinusP4.Z() < 0 ) {
+			dComboWrapper->Set_IsComboCut(true);
+			cout << "*** Negative pz ***" << endl;
+			continue;
+		}
+		cout << " Passed Negative pz cut " << endl;
+
+
                 // Thrown (generated) variables
 		// calculate kinematic and angular variables
 		double tgen = (dThrownBeam->Get_P4() - loc2piP4_Thrown).M2();    // use beam and 2pi momenta
 		TLorentzRotation resonanceBoost( -loc2piP4_Thrown.BoostVector() );   // boost into 2pi frame
-		TLorentzVector beam_res = resonanceBoost * locBeamP4;
+		TLorentzVector beam_res = resonanceBoost * dThrownBeam->Get_P4();
 		TLorentzVector recoil_res = resonanceBoost * locPb208P4_Thrown;
 		TLorentzVector p1_res = resonanceBoost * locPiPlusP4_Thrown;
 		TLorentzVector p2_res = resonanceBoost * locPiMinusP4_Thrown;
@@ -574,6 +591,10 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 		if(psimeas < -3.14159) psimeas += 2*3.14159;
 		if(psimeas > 3.14159) psimeas -= 2*3.14159;
 
+		double Delta_phi = phikin - phigen;
+		double Delta_Phi = Phikin - Phigen;
+		double Delta_phimeas = phimeas - phigen;
+		double Delta_Phimeas = Phimeas - Phigen;
 
 		map<Particle_t, set<Int_t> > locUsedThisCombo_Angles;
 		locUsedThisCombo_Angles[Unknown].insert(locBeamID); //beam
@@ -593,7 +614,14 @@ Bool_t DSelector_Z2pi_trees::Process(Long64_t locEntry)
 			dHist_CosThetakin_CosThetagen->Fill(CosThetagen, CosThetakin);
 			dHist_phikin_Phikin->Fill(Phikin*180./3.14159,phikin*180./3.14159);
 			dHist_phigen_Phigen->Fill(Phigen*180./3.14159,phigen*180./3.14159);
+			dHist_phimeas_phigen->Fill(phigen*180./3.14159,phimeas*180./3.14159);
 			dHist_phikin_phigen->Fill(phigen*180./3.14159,phikin*180./3.14159);
+			dHist_Phimeas_Phigen->Fill(Phigen*180./3.14159,Phimeas*180./3.14159);
+			dHist_Phikin_Phigen->Fill(Phigen*180./3.14159,Phikin*180./3.14159);
+			dHist_Delta_phi->Fill(phigen*180./3.14159,Delta_phi*180./3.14159);
+			dHist_Delta_Phi->Fill(Phigen*180./3.14159,Delta_Phi*180./3.14159);
+			dHist_Delta_phimeas->Fill(phigen*180./3.14159,Delta_phimeas*180./3.14159);
+			dHist_Delta_Phimeas->Fill(Phigen*180./3.14159,Delta_Phimeas*180./3.14159);
 			dHist_phigen->Fill(phigen*180./3.14159);
 			dHist_Phigen->Fill(Phigen*180./3.14159);
 			dHist_phikin->Fill(phikin*180./3.14159);

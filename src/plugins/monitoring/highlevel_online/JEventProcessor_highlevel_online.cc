@@ -175,6 +175,8 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dTimingCutMap[Positron][SYS_BCAL] = 2.5;
 	dTimingCutMap[Positron][SYS_FCAL] = 3.0;
 
+	japp->RootWriteLock();
+
 	// All histograms go in the "highlevel" directory
 	TDirectory *main = gDirectory;
 
@@ -220,7 +222,7 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 
 	dHist_BCALVsFCAL_TrigBit1 = new TH2I("BCALVsFCAL_TrigBit1","TRIG BIT 1;E (FCAL) (count);E (BCAL) (count)", 200, 0., 10000, 200, 0., 50000);
 	
-	dHist_L1bits_gtp = new TH1I("L1bits_gtp", "L1 trig bits from GTP;Trig. bit (1-32)", 32, 0.5, 32.5);
+	dHist_L1bits_gtp = new TH1I("L1bits_gtp", "L1 trig bits from GTP;Trig. bit (1-32)", 34, 0.5, 34.5);
 	dHist_L1bits_fp  = new TH1I("L1bits_fp", "L1 trig bits from FP;Trig. bit (1-32)", 32, 0.5, 32.5);
 
 	/****************************************************** NUM RECONSTRUCTED OBJECTS *****************************************************/
@@ -276,7 +278,7 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	dpip_pim_pi0 = new TH1I("PiPlusPiMinusPiZero", "#pi^{+}#pi^{-}#pi^{o} inv. mass w/ identified proton;#pi^{+}#pi^{-}#pi^{o} inv. mass (GeV)", 200, 0.035, 2.0);
 	dptrans = new TH1I("PiPlusPiMinusPiZeroProton_t", ";#pi^{+}#pi^{-}#pi^{o}p transverse momentum(GeV)", 500, 0.0, 1.0);
 	
-	dbeta_vs_p = new TH2I("BetaVsP", "#beta vs. p (best FOM all charged tracks);p (GeV);#beta", 200, 0.0, 2.0, 100, 0.0, 1.1);
+	dbeta_vs_p = new TH2I("BetaVsP", "#beta vs. p (best FOM all charged tracks);p (GeV);#beta", 200, 0.0, 2.0, 100, 0.0, 1.2);
 
 	/*************************************************************** F1 TDC - fADC time ***************************************************************/
 
@@ -321,6 +323,8 @@ jerror_t JEventProcessor_highlevel_online::init(void)
 	// back to main dir
 	main->cd();
   
+	japp->RootUnLock();
+ 
 	return NOERROR;
 }
 
@@ -714,6 +718,9 @@ jerror_t JEventProcessor_highlevel_online::evnt(JEventLoop *locEventLoop, uint64
 			if(locgtpTrigBits[bit-1]) dHist_L1bits_gtp->Fill(bit);
 			if(locfpTrigBits[bit-1] ) dHist_L1bits_fp->Fill(bit);
 		}
+		
+		// Keep counts of events with any physics trigger as bit 33
+		if( locgtpTrigBits[1-1] | locgtpTrigBits[3-1] ) dHist_L1bits_gtp->Fill(33);
 
 		// #triggers: total
 		if(locL1Trigger->trig_mask > 0)

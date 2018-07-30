@@ -2,6 +2,7 @@
 // hnamepath: /HLDetectorTiming/TRACKING/TAGH - RFBunch Time
 // hnamepath: /HLDetectorTiming/TRACKING/TAGM - RFBunch 1D Time
 // hnamepath: /HLDetectorTiming/TRACKING/Tagger - RFBunch 1D Time
+// hnamepath: /HLDetectorTiming/TRACKING/SC - RF Time vs. Sector
 
 {
 	//Goto Path
@@ -13,7 +14,8 @@
 	//Get Histograms
     TH1I* Tagger_RF_1D = (TH1I*)gDirectory->Get("TRACKING/Tagger - RFBunch 1D Time");
     TH2I* TAGM_RF_1D = (TH2I*)gDirectory->Get("TRACKING/TAGM - RFBunch 1D Time");
-    TH2I* TAGH_RF_2D   = (TH2I*)gDirectory->Get("TRACKING/TAGH - RFBunch Time");
+    //TH2I* TAGH_RF_2D   = (TH2I*)gDirectory->Get("TRACKING/TAGH - RFBunch Time");
+    TH2I* TAGH_RF_2D   = (TH2I*)gDirectory->Get("TRACKING/SC - RF Time vs. Sector");
     TH2I* TAGM_RF_2D   = (TH2I*)gDirectory->Get("TRACKING/TAGM - RFBunch Time");
 
 	//Get/Make Canvas

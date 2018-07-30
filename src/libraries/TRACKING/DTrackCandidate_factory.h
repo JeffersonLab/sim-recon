@@ -108,7 +108,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		    vector<const DCDCTrackHit *>&cdchits,
 		    vector<int> &forward_matches);
   void MatchMethod6(DTrackCandidate *can, 
-		    vector<const DFDCSegment *>&segments,
+		    vector<const DFDCPseudo *>&fdchits,
 		    vector<unsigned int>&used_cdc_hits,  
 		    unsigned int &num_unmatched_cdcs
 		    );
@@ -128,8 +128,15 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		     DHelicalFit &fit2,const DFDCSegment *segment1,
 		     const DFDCSegment *segment2);
   bool MatchMethod12(DTrackCandidate *srccan,vector<int> &forward_matches,
-		     int &num_fdc_cands_remaining);
-
+		     int &num_fdc_cands_remaining);  
+  bool MatchMethod13(unsigned int src_index,const DTrackCandidate *srccan, 
+		     const DFDCSegment *segment,
+		     vector<const DTrackCandidate*>&cands,
+		     vector<int> &forward_matches);
+  bool TryToFlipDirection(vector<const DSCHit *>&scihits,
+			  DVector3 &mom,DVector3 &pos) const;
+  bool MatchStraySegments(vector<int> &forward_matches,
+			  int &num_fdc_cands_remaining);
  
  private:
   const DMagneticFieldMap *bfield;

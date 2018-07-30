@@ -123,9 +123,6 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
          // Get gain constant per block
          int channelnum = fcalGeom->channel(iter->getRow(), iter->getColumn()); 
          double FCAL_gain = fcal_config->FCAL_GAINS.at(channelnum);
-
-         // Smear the energy and timing of the hit
-         double sigma = fcal_config->FCAL_PHOT_STAT_COEF/sqrt(titer->getE());
               
          double E = titer->getE();
          if(fcal_config->FCAL_ADD_LIGHTGUIDE_HITS) {
@@ -136,13 +133,19 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
              }
          }
          // Apply constant scale factor to MC energy. 06/22/2016 A. Subedi
-         E *= fcal_config->FCAL_MC_ESCALE * (1.0 + gDRandom.SampleGaussian(sigma)); 
+         E *= fcal_config->FCAL_MC_ESCALE; 
          
-         
-         // Smear the time by 200 ps (fixed for now) 7/2/2009 DL
-         double t = titer->getT() + gDRandom.SampleGaussian(fcal_config->FCAL_TSIGMA); 
-         // Apply a single block threshold. 
+         double t = titer->getT(); 
 
+         if(config->SMEAR_HITS) {
+         	// Smear the energy and timing of the hit
+         	double sigma = fcal_config->FCAL_PHOT_STAT_COEF/sqrt(titer->getE());
+
+			t += gDRandom.SampleGaussian(fcal_config->FCAL_TSIGMA);
+			E *= (1.0 + gDRandom.SampleGaussian(sigma));
+		 }
+		 
+         // Apply a single block threshold. 
          // Scale threshold by gains         
          if (E >= fcal_config->FCAL_BLOCK_THRESHOLD * FCAL_gain ){
                hddm_s::FcalHitList hits = iter->addFcalHits();

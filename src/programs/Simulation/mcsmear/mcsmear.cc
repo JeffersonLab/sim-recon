@@ -53,6 +53,7 @@ using namespace jana;
 // being set every time mcsmear is run.
 DRandom2 gDRandom(0); // declared extern in DRandom2.h
 
+const mcsmear_config_t *mcsmear_config;
 
 //-----------
 // main
@@ -61,6 +62,7 @@ int main(int narg,char* argv[])
 {
    mcsmear_config_t *config = new mcsmear_config_t();
    ParseCommandLineArguments(narg, argv, config);
+   mcsmear_config = config;
 
    // Create DApplication object
    DApplication dapp(narg, argv);
@@ -69,12 +71,15 @@ int main(int narg,char* argv[])
    TFile *hfile = new TFile("smear.root","RECREATE","smearing histograms");  // note: not used for anything right now
 
    MyProcessor myproc(config);   
-   dapp.Run(&myproc);
-   
+   jerror_t error_code = dapp.Run(&myproc);
+
    hfile->Write();
    hfile->Close();
 
-   return 0;
+   if(error_code != NOERROR) 
+       return static_cast<int>(error_code);
+   else
+       return 0;
 }
 
 //-----------
@@ -97,6 +102,7 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
           case 'd': config->DROP_TRUTH_HITS=true;                break;
           case 'D': config->DUMP_RCDB_CONFIG=true;               break;
           case 'e': config->APPLY_EFFICIENCY_CORRECTIONS=false;  break;
+          case 'm': config->APPLY_HITS_TRUNCATION=false;         break;
           case 'E': config->FCAL_ADD_LIGHTGUIDE_HITS=true;       break;
 
 	      // BCAL parameters
@@ -110,8 +116,9 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
       }
       else {
          std::string filename(ptr);
-         size_t colon = filename.find_first_of(":");
-         if (colon != filename.npos) {
+         size_t slash = filename.find_last_of("/");
+         size_t colon = filename.find_last_of(":");
+         if (colon != filename.npos && (slash == filename.npos || colon > slash)) {
             double wgt = std::stod(filename.substr(colon + 1));
             size_t plus = filename.substr(colon + 1).find_first_of("+");
             size_t decimal = filename.substr(colon + 1, plus).find_first_of(".");

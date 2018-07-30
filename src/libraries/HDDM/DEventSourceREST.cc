@@ -410,7 +410,6 @@ jerror_t DEventSourceREST::Extract_DRFTime(hddm_r::HDDM *record,
 			locTime -= locBeamBunchPeriod;
 		while(locTime < -0.5*locBeamBunchPeriod)
 			locTime += locBeamBunchPeriod;
-
 		DRFTime *locRFTime = new DRFTime;
 		locRFTime->dTime = locTime;
 		locRFTime->dTimeVariance = 0.0;
@@ -799,6 +798,30 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
 	  }
 	  shower->ExyztCovariance = covariance;
 
+      // MVA classifier output - this information is being calculated in DNeutralShower now!
+      //const hddm_r::FcalShowerClassificationList& locFcalShowerClassificationList = iter->getFcalShowerClassifications();
+      //hddm_r::FcalShowerClassificationList::iterator locFcalShowerClassificationIterator = locFcalShowerClassificationList.begin();
+      //if(locFcalShowerClassificationIterator != locFcalShowerClassificationList.end()) {
+	  //        shower->setClassifierOutput(locFcalShowerClassificationIterator->getClassifierOuput());
+      //}
+
+      // shower shape and other parameters.  used e.g. as input to MVA classifier
+      const hddm_r::FcalShowerPropertiesList& locFcalShowerPropertiesList = iter->getFcalShowerPropertiesList();
+      hddm_r::FcalShowerPropertiesList::iterator locFcalShowerPropertiesIterator = locFcalShowerPropertiesList.begin();
+      if(locFcalShowerPropertiesIterator != locFcalShowerPropertiesList.end()) {
+	          shower->setDocaTrack(locFcalShowerPropertiesIterator->getDocaTrack());
+	          shower->setTimeTrack(locFcalShowerPropertiesIterator->getTimeTrack());
+	          shower->setSumU(locFcalShowerPropertiesIterator->getSumU());
+	          shower->setSumV(locFcalShowerPropertiesIterator->getSumV());
+	          shower->setE1E9(locFcalShowerPropertiesIterator->getE1E9());
+	          shower->setE9E25(locFcalShowerPropertiesIterator->getE9E25());
+      }
+
+      const hddm_r::FcalShowerNBlocksList& locFcalShowerNBlocksList = iter->getFcalShowerNBlockses();
+      hddm_r::FcalShowerNBlocksList::iterator locFcalShowerNBlocksIterator = locFcalShowerNBlocksList.begin();
+      if(locFcalShowerNBlocksIterator != locFcalShowerNBlocksList.end()) {
+	shower->setNumBlocks(locFcalShowerNBlocksIterator->getNumBlocks());
+      }      
       data.push_back(shower);
    }
 
@@ -840,6 +863,7 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
       shower->y = iter->getY();
       shower->z = iter->getZ();
       shower->t = iter->getT();
+      shower->Q = 0;    // Fix this to zero for now, can add to REST if it's ever used in higher-level analyses
       TMatrixFSym covariance(5);
 	  covariance(0,0) = iter->getEerr()*iter->getEerr();
 	  covariance(1,1) = iter->getXerr()*iter->getXerr();
@@ -900,6 +924,24 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 		{
 			for(; locBcalClusterIterator != locBcalClusterList.end(); ++locBcalClusterIterator)
 				shower->N_cell = locBcalClusterIterator->getNcell();
+		}
+
+		const hddm_r::BcalLayersList& locBcalLayersList = iter->getBcalLayerses();
+		hddm_r::BcalLayersList::iterator locBcalLayersIterator = locBcalLayersList.begin();
+		if(locBcalLayersIterator == locBcalLayersList.end()) {
+		        shower->E_L2 = 0.;
+		        shower->E_L3 = 0.;
+		        shower->E_L4 = 0.;
+			shower->rmsTime = -1;
+		}
+		else //should only be 1
+		{
+			for(; locBcalLayersIterator != locBcalLayersList.end(); ++locBcalLayersIterator) {
+				shower->rmsTime = locBcalLayersIterator->getRmsTime();
+				shower->E_L2 = locBcalLayersIterator->getE_L2();
+				shower->E_L3 = locBcalLayersIterator->getE_L3();
+				shower->E_L4 = locBcalLayersIterator->getE_L4();
+            }
 		}
 
       data.push_back(shower);
@@ -992,6 +1034,31 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       (*loc7x7ErrorMatrix)(6, 6) = fit.getT0err()*fit.getT0err();
 
 		// Hit layers
+      const hddm_r::ExpectedhitsList& locExpectedhitsList = iter->getExpectedhitses();
+	   hddm_r::ExpectedhitsList::iterator locExpectedhitsIterator = locExpectedhitsList.begin();
+		if(locExpectedhitsIterator == locExpectedhitsList.end())
+		{
+			tra->potential_cdc_hits_on_track = 0;
+			tra->potential_fdc_hits_on_track = 0;
+			tra->measured_cdc_hits_on_track = 0;
+			tra->measured_fdc_hits_on_track = 0;
+			//tra->cdc_hit_usage.total_hits = 0;
+			//tra->fdc_hit_usage.total_hits = 0;
+		}
+		else //should only be 1
+		{
+			for(; locExpectedhitsIterator != locExpectedhitsList.end(); ++locExpectedhitsIterator)
+			{
+				tra->potential_cdc_hits_on_track = locExpectedhitsIterator->getExpectedCDChits();
+				tra->potential_fdc_hits_on_track = locExpectedhitsIterator->getExpectedFDChits();
+				tra->measured_cdc_hits_on_track = locExpectedhitsIterator->getMeasuredCDChits();
+				tra->measured_fdc_hits_on_track = locExpectedhitsIterator->getMeasuredFDChits();
+				//tra->cdc_hit_usage.total_hits = locExpectedhitsIterator->getMeasuredCDChits();
+				//tra->fdc_hit_usage.total_hits = locExpectedhitsIterator->getMeasuredFDChits();
+			}
+		}
+		
+		// Expected number of hits
       const hddm_r::HitlayersList& locHitlayersList = iter->getHitlayerses();
 	   hddm_r::HitlayersList::iterator locHitlayersIterator = locHitlayersList.begin();
 		if(locHitlayersIterator == locHitlayersList.end())
@@ -1034,7 +1101,17 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          tra->ddEdx_FDC = diter->getDEdxFDC();
          tra->ddEdx_CDC = diter->getDEdxCDC();
          tra->ddx_FDC = diter->getDxFDC();
-         tra->ddx_CDC = diter->getDxCDC();
+         tra->ddx_CDC = diter->getDxCDC();  
+	 const hddm_r::CDCAmpdEdxList &el2 = diter->getCDCAmpdEdxs();
+	 hddm_r::CDCAmpdEdxList::iterator diter2 = el2.begin();
+	 if (diter2 != el2.end()){
+	   tra->ddx_CDC_amp= diter2->getDxCDCAmp();
+	   tra->ddEdx_CDC_amp = diter2->getDEdxCDCAmp();
+	 }
+	 else{
+	   tra->ddx_CDC_amp=tra->ddx_CDC;
+	   tra->ddEdx_CDC_amp=tra->ddEdx_CDC;
+	 }
       }
       else {
          tra->dNumHitsUsedFordEdx_FDC = 0;
@@ -1042,7 +1119,9 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          tra->ddEdx_FDC = 0.0;
          tra->ddEdx_CDC = 0.0;
          tra->ddx_FDC = 0.0;
-         tra->ddx_CDC = 0.0;
+         tra->ddx_CDC = 0.0; 
+	 tra->ddEdx_CDC_amp = 0.0;
+         tra->ddx_CDC_amp = 0.0;
       }
 
       data.push_back(tra);

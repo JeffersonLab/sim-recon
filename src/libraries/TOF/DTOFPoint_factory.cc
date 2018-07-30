@@ -22,6 +22,10 @@ bool Compare_TOFSpacetimeHitMatches_Distance(const DTOFPoint_factory::tof_spacet
 	return (locTOFSpacetimeHitMatch1.delta_r < locTOFSpacetimeHitMatch2.delta_r);
 };
 
+bool Compare_TOFPoint_Time(const DTOFPoint *locTOFPoint1, const DTOFPoint *locTOFPoint2) {
+  return locTOFPoint1->t < locTOFPoint2->t;
+}
+
 //------------------
 // brun
 //------------------
@@ -161,6 +165,11 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	set<tof_spacetimehit_t*>::iterator locSetIterator = locUnusedTOFSpacetimeHits.begin();
 	for(; locSetIterator != locUnusedTOFSpacetimeHits.end(); ++locSetIterator)
 		Create_UnMatchedTOFPoint(*locSetIterator);
+
+	// make sure all the hits are sorted by time (why not?)
+	// this helps with reproducibiliy problems...
+	std::sort(_data.begin(), _data.end(), Compare_TOFPoint_Time);
+
 
 	return NOERROR;
 }

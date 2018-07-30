@@ -58,15 +58,15 @@ jerror_t JEventProcessor_ST_Tresolution::init(void)
 
   h2_CorrectedTime_z = new TH2I*[NCHANNELS];
   // All my Calculations in 2015 were using the binning below
-  int NoBins_time = 100;
-  int NoBins_z = 300;
-  double time_lower_limit = -5.0;      
-  double time_upper_limit = 5.0;
+  int NoBins_time = 200;
+  int NoBins_z = 60;
+  double time_lower_limit = -10.0;      
+  double time_upper_limit = 10.0;
   double z_lower_limit = 0.0;
   double z_upper_limit = 60.0;
   for (Int_t i = 0; i < NCHANNELS; i++)
     { 
-      h2_CorrectedTime_z[i] = new TH2I(Form("h2_CorrectedTime_z_%i", i+1), "Corrected Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
+      h2_CorrectedTime_z[i] = new TH2I(Form("h2_CorrectedTime_z_%i", i+1), "Corrected Time vs. Path length along the paddle; Path length along the paddle (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
     }
 
   // cd back to main directory
@@ -127,6 +127,10 @@ jerror_t JEventProcessor_ST_Tresolution::brun(JEventLoop *eventLoop, int32_t run
   // Propagation Time constant
   if(eventLoop->GetCalib("START_COUNTER/propagation_time_corr", propagation_time_corr))
     jout << "Error loading /START_COUNTER/propagation_time_corr !" << endl;
+
+  // Propagation Time fit Boundaries
+  if(eventLoop->GetCalib("START_COUNTER/PTC_Boundary", PTC_Boundary))
+    jout << "Error loading /START_COUNTER/PTC_Boundary !" << endl;
 
   // set some parameters
   trackingFOMCut = 0.0027;  // 3 sigma cut
@@ -256,6 +260,11 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
       double slope_bs   = propagation_time_corr[sc_index][3];
       double incpt_ns   = propagation_time_corr[sc_index][4];
       double slope_ns   = propagation_time_corr[sc_index][5];
+      //Read fit boundary from CCDB
+      double Bound1 = PTC_Boundary[0][0];
+      double Bound2 = PTC_Boundary[1][0];
+      //cout << "Bound1 = " << Bound1 << endl;
+      //cout << "Bound2 = " << Bound2 << endl;
       ///////////////////////////////////////
       //Calculate the path along the paddle
       /////////////////////////////////////
@@ -283,7 +292,7 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
       {
           //double path_bs = SS_Length + Radius * asin((locSCzIntersection - sc_pos_eoss)/Radius);
           double path_bs = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;
-          double Corr_Time_bs =  st_corr_FlightTime  - (incpt_bs + (slope_bs *  path_bs));
+          double Corr_Time_bs =  st_corr_FlightTime  - (incpt_ss + (slope_ss *  path_bs));
           double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_bs);
           h2_CorrectedTime_z[sc_index]->Fill(path_bs,Corr_Time_bs - SC_RFShiftedTime);
       }
@@ -292,9 +301,25 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
       { 
           //double path_ns = SS_Length + BS_Length +((locSCzIntersection - sc_pos_eobs)/cos(theta));
           double path_ns = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;
-          double Corr_Time_ns =  st_corr_FlightTime  - (incpt_ns + (slope_ns *  path_ns));
-          double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
-          h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
+	  if (path_ns <= Bound1)
+	    {
+	      double Corr_Time_ns =  st_corr_FlightTime  - (incpt_ss + (slope_ss *  path_ns));
+	      double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
+	      h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
+	    }
+	  else if ((Bound1 < path_ns)&&(path_ns <= Bound2))
+	    {
+	      double Corr_Time_ns =  st_corr_FlightTime  - (incpt_bs + (slope_bs *  path_ns));
+	      double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
+	      h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
+	    }
+	  else
+	    {
+	      double Corr_Time_ns =  st_corr_FlightTime  - (incpt_ns + (slope_ns *  path_ns));
+	      double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
+	      h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
+	    }
+
       }
       japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 

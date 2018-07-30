@@ -28,6 +28,10 @@
                 tzcorr="float" Ezcorr="float"
                 lunit="cm" tunit="ns" Eunit="GeV">
 	   <fcalCorrelations maxOccurs="1" minOccurs="0" Excorr="float" Eycorr="float" Etcorr="float" txcorr="float" tycorr="float"/>
+       <fcalShowerClassification minOccurs="0" classifierOuput="float"/>
+       <fcalShowerProperties minOccurs="0" maxOccurs="1" docaTrack="float" timeTrack="float" sumU="float" sumV="float"
+                             E1E9="float" E9E25="float"/>
+       <fcalShowerNBlocks minOccurs="0" numBlocks="int"/>
     </fcalShower>
     <bcalShower minOccurs="0" maxOccurs="unbounded" jtag="string"
                 x="float" y="float" z="float" t="float" E="float"
@@ -39,6 +43,7 @@
       <width minOccurs="0" maxOccurs="1" sigLong="float" sigTrans="float" sigTheta="float"/>
 	   <bcalCluster maxOccurs="1" minOccurs="0" ncell="int"/>
 	   <bcalCorrelations maxOccurs="1" minOccurs="0" Excorr="float" Eycorr="float" Etcorr="float" txcorr="float" tycorr="float"/>
+	   <bcalLayers minOccurs="0" maxOccurs="1" E_L2="float" E_L3="float" E_L4="float" rmsTime="float"/>
     </bcalShower>
     <chargedTrack minOccurs="0" maxOccurs="unbounded" jtag="string"
                 ptype="Particle_t" candidateId="int">
@@ -51,13 +56,17 @@
                                         e33="float" e34="float" e35="float"
                                                     e44="float" e45="float"
                                                                 e55="float"
-                punit="GeV/c" lunit="cm" tunit="ns"/>
+		punit="GeV/c" lunit="cm" tunit="ns"/>
+      <trackFlags maxOccurs="1" minOccurs="0" flags="int"/>
       <hitlayers maxOccurs="1" minOccurs="0" CDCrings="int" FDCplanes="int"/>
+      <expectedhits maxOccurs="1" minOccurs="0" expectedCDChits="int" expectedFDChits="int" measuredCDChits="int" measuredFDChits="int"/>
       <mcmatch maxOccurs="1" minOccurs="0" ithrown="int" numhitsmatch="int"/> <!-- ithrown is DMCThrown::myid -->
       <dEdxDC minOccurs="0"
               NsampleFDC="int" dxFDC="float" dEdxFDC="float"
               NsampleCDC="int" dxCDC="float" dEdxCDC="float"
-              lunit="cm" dEdx_unit="GeV/cm"/>
+              lunit="cm" dEdx_unit="GeV/cm">
+	<CDCAmpdEdx dxCDCAmp="float" dEdxCDCAmp="float" minOccurs="0"/>
+      </dEdxDC>
     </chargedTrack>
     <startHit maxOccurs="unbounded" minOccurs="0" jtag="string"
               sector="int" t="float" dE="float"

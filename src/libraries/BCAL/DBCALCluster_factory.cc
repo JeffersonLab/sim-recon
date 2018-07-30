@@ -148,7 +148,8 @@ DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 	for( vector<DBCALCluster*>::iterator clust = clusters.begin();
 			clust != clusters.end();
 			++clust ){
-
+		
+		if( isnan((**clust).t()) == 1 || isnan((**clust).phi()) == 1 || isnan((**clust).theta()) == 1 ) continue;
 		// put in an energy threshold for clusters
 		if( (**clust).E() < 5*k_MeV ) {
 			delete *clust;
@@ -211,12 +212,12 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 	   ++trk ){
 	DVector3 track_pos(0.0, 0.0, 0.0);
 	double point_r = (**pt).r();
+	double point_z = (**pt).z();
 	vector<DTrackFitter::Extrapolation_t>extrapolations=(*trk)->extrapolations.at(SYS_BCAL);
 	if (fitter->ExtrapolateToRadius(point_r,extrapolations,track_pos)){
 	  double dPhi=track_pos.Phi()-(**pt).phi();
 	  if (dPhi<-M_PI) dPhi+=2.*M_PI;
 	  if (dPhi>M_PI) dPhi-=2.*M_PI;
-	  double point_z = (**pt).z();
 	  double point_theta_global = fabs(atan2(point_r,point_z + m_z_target_center ));  // convert point z-position origin to global frame to match tracks origin
 	  double dTheta = fabs(point_theta_global - track_pos.Theta());
 	  matched_dphi=0.175+0.175*exp(-0.8*extrapolations[0].momentum.Mag());
@@ -236,7 +237,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
 	  if(overlap_charged( **clust,*pt, tracked_phi ) ){
 	    usedPoints.push_back( *pt );
 	    int point_q = 1;
-	    (**clust).addPoint( *pt, point_q  );
+	    (**clust).addPoint( *pt, point_q );
 	    points.erase( pt );
 	    usedPoint = true;
 	    break;
@@ -274,8 +275,9 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points , vector< c
     // recycle through points that were added to a cluster and check if they
     // were added to their closest cluster. If they weren't then we remove 
     // the point from its original cluster and add it to its closest cluster.
-    
-    merge( clusters );
+  
+    double point_reatten_E = 0.;  
+    merge( clusters, point_reatten_E );
     // lower the threshold to look for new seeds if none of 
     // the existing points were used as new clusters or assigned
     // to existing clusters
@@ -394,7 +396,7 @@ DBCALCluster_factory::recycle_points( vector<const DBCALPoint*> usedPoints, vect
 }	
 
 void
-DBCALCluster_factory::merge( vector<DBCALCluster*>& clusters ) const {
+DBCALCluster_factory::merge( vector<DBCALCluster*>& clusters, double point_reatten_E ) const {
 
 	if( clusters.size() <= 1 ) return;
 
@@ -402,31 +404,125 @@ DBCALCluster_factory::merge( vector<DBCALCluster*>& clusters ) const {
 
 	bool stillMerging = true;
 
+	float low_z_lim = -100.;
+	float high_z_lim = 500.;
+
 	while( stillMerging ){
 
 		stillMerging = false;
 		for( vector<DBCALCluster*>::iterator hClust = clusters.begin();
-				hClust != clusters.end() - 1;
-				++hClust ){
+			hClust != clusters.end() - 1;
+			++hClust ){
+
+			vector<const DBCALPoint*>hClust_points=(**hClust).points();
 
 			for( vector<DBCALCluster*>::iterator lClust = hClust + 1;
-					lClust != clusters.end();
-					++lClust ){
+				lClust != clusters.end();
+				++lClust ){
 
+				vector<const DBCALPoint*>lClust_points=(**lClust).points();
+				vector<const DBCALPoint*>hClust_points=(**hClust).points();
+			
 				if( overlap( **hClust, **lClust ) ){
 
-					if( (**lClust).Q() == 1 && (**hClust).Q() == 0) {		
-						(**lClust).mergeClust(**hClust);
-						delete *hClust;
-						clusters.erase( hClust );
-					}
-					
-					else {
-                                                (**hClust).mergeClust(**lClust);
-                                                delete *lClust;
-                                                clusters.erase( lClust );
-                                        }
+					point_reatten_E = 0.;
 
+					if (hClust_points.size() == 1) {
+
+						for( unsigned int i = 0 ; i < hClust_points.size() ; i++){
+
+							if (hClust_points[i]->z() > low_z_lim && hClust_points[i]->z() < high_z_lim) point_reatten_E = 0.;
+							else {
+							      int channel_calib = 16*(hClust_points[i]->module()-1)+4*(hClust_points[i]->layer()-1)+hClust_points[i]->sector()-1;
+
+							      double fibLen = m_BCALGeom->GetBCAL_length();
+	
+							      double point_z = hClust_points[i]->z();
+							      double zLocal = point_z + m_z_target_center - m_BCALGeom->GetBCAL_center();
+
+							      double dUp = 0.5 * fibLen + zLocal;
+							      double dDown = 0.5 * fibLen - zLocal;
+							      if (dUp>fibLen)   dUp=fibLen;
+							      if (dUp<0)        dUp=0;
+							      if (dDown>fibLen) dDown=fibLen;
+							      if (dDown<0)      dDown=0;
+
+							      double lambda = attenuation_parameters[channel_calib][0];
+							      double attUp = exp( -dUp / lambda );
+							      double attDown = exp( -dDown / lambda );
+
+							      double US_unatten_E = hClust_points[i]->E_US()*attUp;
+							      double DS_unatten_E = hClust_points[i]->E_DS()*attDown;
+	
+							      double zLocal_clust = m_BCALGeom->GetBCAL_inner_rad()/tan((**lClust).theta()) + m_z_target_center - m_BCALGeom->GetBCAL_center();
+							      double dUp_clust = 0.5 * fibLen + zLocal_clust;
+							      double dDown_clust = 0.5 * fibLen - zLocal_clust;
+
+							     double attUp_clust = exp( -dUp_clust / lambda );
+							     double attDown_clust = exp( -dDown_clust / lambda );
+
+							     double US_reattn_E = US_unatten_E/attUp_clust;
+							     double DS_reattn_E = DS_unatten_E/attDown_clust;
+							     point_reatten_E = 0.5 * ( US_reattn_E + DS_reattn_E);
+
+							}
+						}
+					}
+
+	                                if (lClust_points.size() == 1) {
+
+                                                for( unsigned int i = 0 ; i < lClust_points.size() ; i++){
+
+                                                        if (lClust_points[i]->z() > low_z_lim && lClust_points[i]->z() < high_z_lim) point_reatten_E = 0.;
+                                                        else{
+                                                              int channel_calib = 16*(lClust_points[i]->module()-1)+4*(lClust_points[i]->layer()-1)+lClust_points[i]->sector()-1;
+
+                                                              double fibLen = m_BCALGeom->GetBCAL_length();
+
+                                                              double point_z = lClust_points[i]->z();
+                                                              double zLocal = point_z + m_z_target_center - m_BCALGeom->GetBCAL_center();
+
+                                                              double dUp = 0.5 * fibLen + zLocal;
+                                                              double dDown = 0.5 * fibLen - zLocal;
+                                                              if (dUp>fibLen)   dUp=fibLen;
+                                                              if (dUp<0)        dUp=0;
+                                                              if (dDown>fibLen) dDown=fibLen;
+                                                              if (dDown<0)      dDown=0;
+
+                                                              double lambda = attenuation_parameters[channel_calib][0];
+                                                              double attUp = exp( -dUp / lambda );
+                                                              double attDown = exp( -dDown / lambda );
+
+                                                              double US_unatten_E = lClust_points[i]->E_US()*attUp;
+                                                              double DS_unatten_E = lClust_points[i]->E_DS()*attDown;
+
+                                                              double zLocal_clust = m_BCALGeom->GetBCAL_inner_rad()/tan((**hClust).theta()) + m_z_target_center - m_BCALGeom->GetBCAL_center();
+                                                              double dUp_clust = 0.5 * fibLen + zLocal_clust;
+                                                              double dDown_clust = 0.5 * fibLen - zLocal_clust;
+
+                                                             double attUp_clust = exp( -dUp_clust / lambda );
+                                                             double attDown_clust = exp( -dDown_clust / lambda );
+
+                                                             double US_reattn_E = US_unatten_E/attUp_clust;
+                                                             double DS_reattn_E = DS_unatten_E/attDown_clust;
+                                                             point_reatten_E = 0.5 * ( US_reattn_E + DS_reattn_E);
+
+                                                        }
+                                                }
+                                       } 
+                                        
+						if( (**lClust).Q() == 1 && (**hClust).Q() == 0) {
+	                                                (**lClust).mergeClust(**hClust, point_reatten_E);
+        	                                        delete *hClust;
+                	                                clusters.erase( hClust );
+                        	                }
+        
+						else {
+							(**hClust).mergeClust(**lClust, point_reatten_E);
+                                                	delete *lClust;
+                                                	clusters.erase( lClust );
+						}
+                                        
 					// now iterators are invalid and we need to bail out of loops
 					stillMerging = true;
 					break;
@@ -515,7 +611,7 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
         double lowE_y_intercept = 0.;
 
 	int connected = 0;
-	double z_match = 50.;
+//	double z_match = 50.;
 	double slope_match = 0.01;
 	double intercept_match = 1.8;
 	double deltaPhi_match = 0.2;
@@ -523,7 +619,6 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
 	int lowE_global_sector = 0;
 	int highE_global_sector = 0;
 	int lowE_point_layer = 0;
-	double lowE_point_z = 0.;
 
         for(unsigned int i = 0 ; i < lowE_points.size() ; i ++){
 		// adjust the points phi position to be close to the cluster phi position at the 0/2pi phi boundary
@@ -542,7 +637,6 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
                 if(lowE_points.size()==1) {
 			lowE_global_sector = 4*(lowE_points[i]->module()-1) + lowE_points[i]->sector();
 			lowE_point_layer = lowE_points[i]->layer();  
-			lowE_point_z = lowE_points[i]->z();   
   		}
 	 }
        
@@ -560,7 +654,7 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
                 highE_summed_zphi += highE_points[i]->z()*highE_points[i]->phi();
                 highE_summed_z_sq += highE_points[i]->z()*highE_points[i]->z();
         	highE_global_sector = 4*(highE_points[i]->module()-1) + highE_points[i]->sector();
-		if( lowE_point_layer == highE_points[i]->layer() && fabs(lowE_point_z - highE_points[i]->z()) < z_match && ( lowE_global_sector+1 == highE_global_sector || lowE_global_sector-1 == highE_global_sector ) ) connected = 1; // clustesr that contain only a single point won't have any fit parameters and will make it hard for them to merge, this connected int will force a merge if a single point cluster is connected to a cluster without any points adjacent to it.
+		if(lowE_points.size()==1 && lowE_point_layer == highE_points[i]->layer() && ( lowE_global_sector+1 == highE_global_sector || lowE_global_sector-1 == highE_global_sector ) ) connected = 1; // clustesr that contain only a single point won't have any fit parameters and will make it hard for them to merge, this connected int will force a merge if a single point cluster is connected to a cluster without any points adjacent to it.
 	}
 
 	// calculate slopes and intercepts of the 2 clusters direction and if one of the clusters is matched to a track then we will require their fit parameter quantities
@@ -579,12 +673,13 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
 	highE_points.clear();
 	lowE_points.clear();
 
+
 	// If both clusters trying to merge together were NOT matched to a track then use neutral clusterizer merging critera of theta and phi matching.
 	// If EITHER of the 2 clusters trying to merge together were amtched to a track then use the information about the direction of the cluster for merging.
 
 	if (highEClust.Q() == 0 && lowEClust.Q() == 0 ) return theta_match && phi_match && time_match;
-	
-	else return ( ( delta_slope < slope_match && delta_intercept < intercept_match && deltaPhi < deltaPhi_match) || connected == 1 ) ;
+
+	else return ( ( delta_slope < slope_match && delta_intercept < intercept_match && deltaPhi < deltaPhi_match ) || connected == 1 ) ;
 
 
 }
@@ -676,6 +771,8 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
 	// order based on phi and then take the minimum of the difference
 	// and the difference with 2pi added to the smallest
 
+	float phiCut = 0.65417;
+
 	vector<const DBCALPoint*> assoc_points;
 	assoc_points = (clust).points();
 
@@ -753,6 +850,8 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
 	//very loose cuts to make sure the two hits are in time
 	bool time_match = fabs(clust.t() - point->t()) < m_timeCut;
 
+        bool phi_match = fabs( clust.phi() - point->phi() ) < phiCut;
+
 	double clust_z = clust.rho()*cos(clust.theta());
 
 	//double c1 = C1_parm->Eval(clust_z);
@@ -777,10 +876,10 @@ DBCALCluster_factory::overlap_charged( const DBCALCluster& clust,
 	// These distributions are tighter in the phihat direction than along thetahat. For more details
 	// on how the selection criteria for cluster,point overlap function go to logbook entry 3396018.	
 
-	if(BCALCLUSTERVERBOSE>0) cout << "(m,l,s) = (" <<point->module()<<","<<point->layer()<<","<<point->sector()<<")" <<  " sep = " << sep << "sep1 = " << sep_term1 << " sep2 = " << sep_term2 << " inclusion value = " << inclusion_val << " inclusion val1= " << inclusion_val1 << " inclusion val2= " << inclusion_val2<< " time match = " << time_match << " clust E = " << clust.E() << " point E = " << point->E() << " energy ratio = " << point->E()/(point->E()+clust.E()) <<  " clust theta = " << clust.theta()*180./3.14159 << " point theta = " << point->theta()*180./3.14159 << " sep rho*deltaTheta = " << ( rho * deltaTheta ) << endl;
+	if(BCALCLUSTERVERBOSE>1) cout << "(m,l,s) = (" <<point->module()<<","<<point->layer()<<","<<point->sector()<<")" <<  " sep = " << sep << "sep1 = " << sep_term1 << " sep2 = " << sep_term2 << " inclusion value = " << inclusion_val << " inclusion val1= " << inclusion_val1 << " inclusion val2= " << inclusion_val2<< " time match = " << time_match << " clust E = " << clust.E() << " point E = " << point->E() << " energy ratio = " << point->E()/(point->E()+clust.E()) <<  " clust theta = " << clust.theta()*180./3.14159 << " point theta = " << point->theta()*180./3.14159 << " sep rho*deltaTheta = " << ( rho * deltaTheta ) << endl;
 
 	if(sep>m_moliereRadius && sep<7.*m_moliereRadius &&sep_term2>=2.*m_moliereRadius){
-                return ((point->E()/(point->E()+clust.E())) < (inclusion_val1) ) && ((point->E()/(point->E()+clust.E())) < (inclusion_val2) ) && time_match ;
+                return ((point->E()/(point->E()+clust.E())) < (inclusion_val1) ) && ((point->E()/(point->E()+clust.E())) < (inclusion_val2) ) && time_match && phi_match;
         }
 
         else{

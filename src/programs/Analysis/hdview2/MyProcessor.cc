@@ -1059,7 +1059,7 @@ void MyProcessor::FillGraphics(void)
 	    AddKinematicDataTrack(trCand[n], color, 1.5);
 
 	    vector<const DCDCTrackHit*> cdctrackhits;
-	    trCand[n]->Get(cdctrackhits);
+	    trCand[n]->Get(cdctrackhits,"",1);
 	    for(unsigned int i=0; i<cdctrackhits.size(); i++){
 	      const DCDCWire *wire = cdctrackhits[i]->wire;
 	      DGraphicSet gset(color, kLine, 1.0);
@@ -1073,7 +1073,7 @@ void MyProcessor::FillGraphics(void)
 	      
 	    } // end loop of cdc hits of track candidate
 	    vector<const DFDCPseudo*> fdcpseudos;
-	    trCand[n]->Get(fdcpseudos);
+	    trCand[n]->Get(fdcpseudos,"",1);
 	    DGraphicSet gsetp(color, kMarker, 0.5);
 	    
 	    for(unsigned int i=0; i<fdcpseudos.size(); i++){
@@ -1107,7 +1107,7 @@ void MyProcessor::FillGraphics(void)
 	    AddKinematicDataTrack(trWB[n], color, 1.5);
 
 	    vector<const DCDCTrackHit*> cdctrackhits;
-	    trWB[n]->Get(cdctrackhits);
+	    trWB[n]->Get(cdctrackhits,"",1);
 	    for(unsigned int i=0; i<cdctrackhits.size(); i++){
 	      const DCDCWire *wire = cdctrackhits[i]->wire;
 	      DGraphicSet gset(color, kLine, 1.0);
@@ -1121,7 +1121,7 @@ void MyProcessor::FillGraphics(void)
 	      
 	    } // end loop of cdc hits of track candidate
 	    vector<const DFDCPseudo*> fdcpseudos;
-	    trWB[n]->Get(fdcpseudos);
+	    trWB[n]->Get(fdcpseudos,"",1);
 	    DGraphicSet gsetp(color, kMarker, 0.5);
 	    
 	    for(unsigned int i=0; i<fdcpseudos.size(); i++){
@@ -1155,7 +1155,7 @@ void MyProcessor::FillGraphics(void)
 	    AddKinematicDataTrack(trTB[n], color, 1.5);
 
 	    vector<const DCDCTrackHit*> cdctrackhits;
-	    trTB[n]->Get(cdctrackhits);
+	    trTB[n]->Get(cdctrackhits,"",1);
 	    for(unsigned int i=0; i<cdctrackhits.size(); i++){
 	      const DCDCWire *wire = cdctrackhits[i]->wire;
 	      DGraphicSet gset(color, kLine, 1.0);
@@ -1169,7 +1169,7 @@ void MyProcessor::FillGraphics(void)
 	      
 	    } // end loop of cdc hits of track candidate
 	    vector<const DFDCPseudo*> fdcpseudos;
-	    trTB[n]->Get(fdcpseudos);
+	    trTB[n]->Get(fdcpseudos,"",1);
 	    DGraphicSet gsetp(color, kMarker, 0.5);
 	    
 	    for(unsigned int i=0; i<fdcpseudos.size(); i++){

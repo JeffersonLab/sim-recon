@@ -17,6 +17,7 @@ using namespace std;
 #include "DReferenceTrajectory.h"
 #include "DTrackCandidate.h"
 #include "DMagneticFieldStepper.h"
+#include <TMatrix.h>
 #include "HDGEOMETRY/DRootGeom.h"
 #define ONE_THIRD 0.33333333333333333
 #define TWO_THIRD 0.66666666666666667
@@ -69,7 +70,8 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	gPARMS->SetDefaultParameter("TRK:MIN_STEP_SIZE" , MIN_STEP_SIZE, "Minimum step size in cm to take when swimming a track with adaptive step sizes");
 	gPARMS->SetDefaultParameter("TRK:MAX_STEP_SIZE" , MAX_STEP_SIZE, "Maximum step size in cm to take when swimming a track with adaptive step sizes");
 	gPARMS->SetDefaultParameter("TRK:MAX_SWIM_STEPS" , MAX_SWIM_STEPS, "Number of swim steps for DReferenceTrajectory to allocate memory for (when not using external buffer)");
-
+	gPARMS->SetDefaultParameter("TRK:DEBUG_LEVEL" , this->debug_level);
+	
 	// It turns out that the greatest bottleneck in speed here comes from
 	// allocating/deallocating the large block of memory required to hold
 	// all of the trajectory info. The preferred way of calling this is 
@@ -244,19 +246,29 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
 				    DVector3 &last_pos,DVector3 &last_mom,
 				    double q,double smax,
 				    const DCoordinateSystem *wire){
+  const DVector3 wire_origin=wire->origin;
+  const DVector3 wire_dir=wire->udir;
+  FastSwim(pos,mom,last_pos,last_mom,q,wire_origin,wire_dir,smax);
+}
+void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
+				    DVector3 &last_pos,DVector3 &last_mom,
+				    double q,
+				    const DVector3 &origin,
+				    const DVector3 &dir,double smax){
+
   DVector3 mypos(pos);
   DVector3 mymom(mom);
 
   // Initialize the stepper
   DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
   double s=0,doca=1000.,old_doca=1000.,dP_dx=0.;
-  double mass=GetMass();
+  //  double mass=GetMass();
   while (s<smax){
     // Save old value of doca
     old_doca=doca;
 
     // Adjust step size to take smaller steps in regions of high momentum loss
-    if(mass>0. && step_size<0.0 && geom){	
+    if(geom){	
       double KrhoZ_overA=0.0;
       double rhoZ_overA=0.0;
       double LogI=0.0;
@@ -269,35 +281,149 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
 		
 	if(my_step_size>MAX_STEP_SIZE)my_step_size=MAX_STEP_SIZE; // maximum step size in cm
 	if(my_step_size<MIN_STEP_SIZE)my_step_size=MIN_STEP_SIZE; // minimum step size in cm
-
+	
+	if (ploss_direction==kBackward) my_step_size*=-1.;
 	stepper.SetStepSize(my_step_size);
       }
     }
     // Swim to next
     double ds=stepper.Step(NULL);
-    s+=ds;
-
+    s+=fabs(ds);
     stepper.GetPosMom(mypos,mymom);
-    if (mass>0 && dP_dx<0.){
-      double ptot=mymom.Mag();
-      if (ploss_direction==kForward) ptot+=dP_dx*ds;
-      else ptot-=dP_dx*ds;
-      mymom.SetMag(ptot);
-      stepper.SetStartingParams(q, &mypos, &mymom);
-    }
+
+    // Take into account energy loss
+    double ptot=mymom.Mag();
+    //    if (ploss_direction==kForward) ptot+=dP_dx*ds;
+    //else ptot-=dP_dx*ds; 
+    ptot+=dP_dx*ds;
+
+    mymom.SetMag(ptot);
+    stepper.SetStartingParams(q, &mypos, &mymom);
     
-    // Break if we have passed the wire
-    DVector3 wirepos=wire->origin;
-    if (fabs(wire->udir.z())>0.){ // for CDC wires
-      wirepos+=((mypos.z()-wire->origin.z())/wire->udir.z())*wire->udir;
+    // Break if we have passed the line to which we are trying to find the doca
+    DVector3 linepos=origin;
+    if (fabs(dir.z())>0.){
+      linepos+=((mypos.z()-origin.z())/dir.z())*dir;
     }
-    doca=(wirepos-mypos).Mag();
+    doca=(linepos-mypos).Mag();
     if (doca>old_doca) break;
 
     // Store the position and momentum for this step
     last_pos=mypos;
     last_mom=mymom;
   }  
+}
+
+// Faster version of swimmer that only deals with the region inside the bore of
+// the magnet.  This is intended to be used with the hit selector, so is a 
+// paired-down version of the usual trajectory.
+void DReferenceTrajectory::FastSwimForHitSelection(const DVector3 &pos, const DVector3 &mom, double q){
+  DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
+  if(step_size>0.0)stepper.SetStepSize(step_size);
+
+  // Step until we leave the active tracking region
+  swim_step_t *swim_step = this->swim_steps;
+  Nswim_steps = 0;
+  double itheta02 = 0.0;
+  double itheta02s = 0.0;
+  double itheta02s2 = 0.0;
+  double X0sum=0.0;
+  swim_step_t *last_step=NULL;
+	
+  for(double s=0; fabs(s)<1000.; Nswim_steps++, swim_step++){
+       
+    if(Nswim_steps>=this->max_swim_steps){
+      if (debug_level>0){
+	jerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;
+      }
+      break;
+    }
+    
+    stepper.GetDirs(swim_step->sdir, swim_step->tdir, swim_step->udir);
+    stepper.GetPosMom(swim_step->origin, swim_step->mom);
+    swim_step->Ro = stepper.GetRo();
+    swim_step->s = s;
+    swim_step->t = 0.; // we do not need the time for our purpose...
+    
+    // Magnetic field at current position
+    bfield->GetField(swim_step->origin,swim_step->B);
+
+    //magnitude of momentum and beta
+    double p_sq=swim_step->mom.Mag2();
+    double one_over_beta_sq=1.+mass_sq/p_sq;
+
+    // Add material if geom is not NULL
+    double dP = 0.0;
+    double dP_dx=0.0;
+    if(geom){
+      double KrhoZ_overA=0.0;
+      double rhoZ_overA=0.0;
+      double LogI=0.0;
+      double X0=0.0;
+      jerror_t err = geom->FindMatALT1(swim_step->origin, swim_step->mom, KrhoZ_overA, rhoZ_overA,LogI, X0);
+      if(err == NOERROR){
+	if(X0>0.0){
+	  double p=sqrt(p_sq);
+	  double delta_s = s;
+	  if(last_step)delta_s -= last_step->s;
+	  double radlen = delta_s/X0;
+	  
+	  if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
+			      
+	    //  double theta0 = 0.0136*sqrt(one_over_beta_sq)/p*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
+	    //double theta02 = theta0*theta0;
+	    double factor=1.0+0.038*log(radlen);
+	    double theta02=1.8496e-4*factor*factor*radlen*one_over_beta_sq/p_sq;
+
+	    itheta02 += theta02;
+	    itheta02s += s*theta02;
+	    itheta02s2 += s*s*theta02;
+	    X0sum+=X0;
+	  }
+	  
+	  // Calculate momentum loss due to ionization
+	  dP_dx = dPdx(p, KrhoZ_overA, rhoZ_overA,LogI);
+	}
+      }
+      last_step = swim_step;
+    }
+    swim_step->itheta02 = itheta02;
+    swim_step->itheta02s = itheta02s;
+    swim_step->itheta02s2 = itheta02s2;
+    swim_step->invX0=Nswim_steps/X0sum;
+    
+    if(step_size<0.0){ // step_size<0 indicates auto-calculated step size
+      // Adjust step size to take smaller steps in regions of high momentum loss
+      double my_step_size = 0.0001/fabs(dP_dx);
+      if(my_step_size>MAX_STEP_SIZE)my_step_size=MAX_STEP_SIZE; // maximum step size in cm
+      if(my_step_size<MIN_STEP_SIZE)my_step_size=MIN_STEP_SIZE; // minimum step size in cm
+      
+      stepper.SetStepSize(my_step_size);
+    }
+
+    // Swim to next
+    double ds=stepper.FastStep(swim_step->B);
+  
+    // Calculate momentum loss due to the step we're about to take
+    dP = ds*dP_dx;
+  
+    // Adjust momentum due to ionization losses
+    if(dP!=0.0){
+      DVector3 pos, mom;
+      stepper.GetPosMom(pos, mom);
+      double ptot = mom.Mag() - dP; // correct for energy loss
+      if (ptot<0.005) {Nswim_steps++; break;}
+      mom.SetMag(ptot);
+      stepper.SetStartingParams(q, &pos, &mom);
+    }
+    s += ds;
+
+    double Rsq=swim_step->origin.Perp2();
+    double z=swim_step->origin.Z();
+    if (z>345. || z<17. || Rsq>60.*60.){
+      Nswim_steps++; break;
+    }
+  }
 }
 
 // Faster version of the swimmer that uses an alternate stepper and does not
@@ -432,7 +558,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
       DVector3 pos, mom;
       stepper.GetPosMom(pos, mom);
       double ptot = mom.Mag() - dP; // correct for energy loss
-      if (ptot<0) {Nswim_steps++; break;}
+      if (ptot<0.005) {Nswim_steps++; break;}
       mom.SetMag(ptot);
       stepper.SetStartingParams(q, &pos, &mom);
     }
@@ -457,6 +583,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
       index_at_fcal=Nswim_steps-1;
       hit_fcal=true;     
     }
+    
     
     // Exit the loop if we are already inside the volume of the BCAL
     // and the radius is decreasing
@@ -704,10 +831,10 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			  cout<<"N: " << Nswim_steps <<" x " << pos.x() <<" y " <<pos.y() <<" z " << pos.z() <<" r " << pos.Perp()<< " s " << s  << " p " << ptot << endl;
 			}
 			*/
-			if(ptot<0.0)ranged_out=true;
+			if(ptot<0.005)ranged_out=true;
 			if(dP<0.0 && ploss_direction==kForward)ranged_out=true;
 			if(dP>0.0 && ploss_direction==kBackward)ranged_out=true;
-			if(mom.Mag()==0.0)ranged_out=true;
+			//if(mom.Mag()==0.0)ranged_out=true;
 			if(ranged_out){
 				Nswim_steps++; // This will at least allow for very low momentum particles to have 1 swim step
 				break;
@@ -1387,9 +1514,6 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s,
 	    return numeric_limits<double>::quiet_NaN();
 	  }
 
-	  if (std::isnan(Ro))
-	    {
-	  }
 	}
 	
 	// Calculate distance along track ("s")
@@ -2566,7 +2690,7 @@ jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,
 // Find the mid-point of the line connecting the points of closest approach of the
 // trajectories of two tracks.  Return the positions, momenta, and error matrices 
 // at these points for the two tracks.
-jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, DKinematicData *track1_kd, DKinematicData *track2_kd, DVector3 &pos, double &doca, double &var_doca) const {
+jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, DKinematicData *track1_kd, DKinematicData *track2_kd, DVector3 &pos, double &doca, double &var_doca, double &vertex_chi2, bool DoFitVertex) const {
   const swim_step_t *swim_step1=this->swim_steps;
   const swim_step_t *swim_step2=rt2->swim_steps;
   
@@ -2585,6 +2709,7 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
   double q2=rt2->q;
   double mass_sq1=this->mass_sq;
   double mass_sq2=rt2->mass_sq;
+  vertex_chi2=0.;
   
   // Initialize the doca and traverse both particles' trajectories
   doca=1000.;
@@ -2594,7 +2719,7 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
     DVector3 pos2=swim_step2->origin;
     DVector3 diff=pos1-pos2;
     double new_doca=diff.Mag();
-    
+ 
     if (new_doca>doca){
       int prev_i=i-1;		   
       // positions and momenta of tracks at the center of the 
@@ -2632,7 +2757,7 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 	  // Compute the revised estimate for the doca
 	  diff=pos1-pos2;
 	  new_doca=diff.Mag();
-	  
+
 	  if(new_doca > doca){
 	    pos1=oldpos1;
 	    pos2=oldpos2;
@@ -2670,29 +2795,16 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
       // "Vertex" is mid-point of line connecting the positions of closest
       // approach of the two tracks
       pos=0.5*(pos1+pos2);
-
+          
       if((track1_kd != NULL) && (track2_kd != NULL)){
-	// Adjust flight times
-	double one_over_p1_sq=1./mom1.Mag2();
-	tflight1+=ds*sqrt(1.+mass_sq1*one_over_p1_sq)/SPEED_OF_LIGHT;
-				  
-	double one_over_p2_sq=1./mom2.Mag2();
-	tflight2+=ds*sqrt(1.+mass_sq2*one_over_p2_sq)/SPEED_OF_LIGHT;
-
-    *locCovarianceMatrix1 = cov1;
-    track1_kd->setErrorMatrix(locCovarianceMatrix1);
-	track1_kd->setMomentum(mom1);
-	track1_kd->setPosition(pos1);
-	track1_kd->setTime(track1_kd->time() + tflight1);
-
-    *locCovarianceMatrix2 = cov2;
-	track2_kd->setErrorMatrix(locCovarianceMatrix2);
-	track2_kd->setMomentum(mom2);
-	track2_kd->setPosition(pos2);
-	track2_kd->setTime(track2_kd->time() + tflight2);
-	
+	if (DoFitVertex){
+	  // Use lagrange multiplier method to try to find a better common 
+	  // vertex between the two tracks	
+	  FitVertex(pos1,mom1,pos2,mom2,cov1,cov2,pos,vertex_chi2);
+	}
 	// Compute the variance on the doca
 	diff=pos1-pos2;
+	if (DoFitVertex) doca=diff.Mag(); // update if necessary
 	double dx=diff.x();
 	double dy=diff.y();
 	double dz=diff.z();
@@ -2700,9 +2812,29 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 		  +dy*dy*(cov1(kY,kY)+cov2(kY,kY))
 		  +dz*dz*(cov1(kZ,kZ)+cov2(kZ,kZ))
 		  +2.*dx*dy*(cov1(kX,kY)+cov2(kX,kY))
-				    +2.*dx*dz*(cov1(kX,kZ)+cov2(kX,kZ))
+		  +2.*dx*dz*(cov1(kX,kZ)+cov2(kX,kZ))
 		  +2.*dy*dz*(cov1(kY,kZ)+cov2(kY,kZ)))
 	  /(doca*doca);
+
+	  
+	// Adjust flight times
+	double one_over_p1_sq=1./mom1.Mag2();
+	tflight1+=ds*sqrt(1.+mass_sq1*one_over_p1_sq)/SPEED_OF_LIGHT;
+				  
+	double one_over_p2_sq=1./mom2.Mag2();
+	tflight2+=ds*sqrt(1.+mass_sq2*one_over_p2_sq)/SPEED_OF_LIGHT;
+
+	*locCovarianceMatrix1 = cov1;
+	track1_kd->setErrorMatrix(locCovarianceMatrix1);
+	track1_kd->setMomentum(mom1);
+	track1_kd->setPosition(pos1);
+	track1_kd->setTime(track1_kd->time() + tflight1);
+
+	*locCovarianceMatrix2 = cov2;
+	track2_kd->setErrorMatrix(locCovarianceMatrix2);
+	track2_kd->setMomentum(mom2);
+	track2_kd->setPosition(pos2);
+	track2_kd->setTime(track2_kd->time() + tflight2);
       }      
       break;
     }
@@ -2831,3 +2963,160 @@ jerror_t DReferenceTrajectory::BrentsAlgorithm(DVector3 &pos1,DVector3 &mom1,
 }
 
 
+// Use lagrange multiplier method to find better approximation for the vertex
+// position given the track momenta and positions and the corresponding error
+// matrices.  See Frodesen, et al., Probability and Statistics in Particle 
+// Physics, pp 298-320.
+// Assumes we can ignore the magnetic field.
+void DReferenceTrajectory::FitVertex(const DVector3 &pos1,const DVector3 &mom1,
+				     const DVector3 &pos2,const DVector3 &mom2,
+				     const TMatrixFSym &cov1,
+				     const TMatrixFSym &cov2,
+				     DVector3 &pos,double &vertex_chi2) const{
+  // Vectors of measured quantities (eta0) and these quantities after adjustment
+  // based on constraints (eta)
+  TMatrix eta0(12,1),eta(12,1);
+  // Vectors of unmeasured quantities (common vertex {x,y,z})
+  TMatrix xi(3,1),xi_old(3,1);
+  TMatrix f(4,1); // vector representing constraint equations
+  TMatrix F_eta(4,12);  // Matrix of derivatives of f with respect to eta
+  TMatrix F_xi(4,3);  // Matrix of derivatives of f with respect to xi
+
+  // Initialize to guess we got from Brent's algorithm
+  xi(0,0)=pos.x();
+  xi(1,0)=pos.y();
+  xi(2,0)=pos.z();
+
+  // Initialize to the measured values
+  eta0(kX,0)=pos1.x();
+  eta0(kY,0)=pos1.y();
+  eta0(kZ,0)=pos1.z();
+  eta0(kPx,0)=mom1.x();
+  eta0(kPy,0)=mom1.y();
+  eta0(kPz,0)=mom1.z(); 
+  eta0(kX+6,0)=pos2.x();
+  eta0(kY+6,0)=pos2.y();
+  eta0(kZ+6,0)=pos2.z();
+  eta0(kPx+6,0)=mom2.x();
+  eta0(kPy+6,0)=mom2.y();
+  eta0(kPz+6,0)=mom2.z();
+
+  // Fill error matrix V from covariance matrices from the two tracks
+  TMatrix V(12,12);
+  for (int m=0;m<6;m++){
+    for (int n=0;n<6;n++){
+      V(m,n)=cov1(n,m);
+      V(m+6,n+6)=cov2(n,m);	  
+    }
+  }
+
+  // Start with the actual measurement
+  eta=eta0;
+  
+  // Define some matrices needed for some of the internal steps of the procedure
+  TMatrix LagMul(4,1);  //Lagrange multipliers
+  TMatrix r(4,1);  // r=f+F_eta*(eta0-eta)
+  TMatrix S(4,4),Sinv(4,4); // S=F_eta*S*F_eta^T
+      
+  if (debug_level>1){
+    cout << "Measured quantities:" <<endl;
+    eta.Print(); 
+    cout << "Covariance matrix for measured quantities:"<<endl;
+    V.Print();
+    cout << "Initial guess for common vertex position:"<<endl;
+    xi.Print();
+  }
+  // Iterate to find the minimum chi^2 
+  double chi2=1.e6,chi2_old=1e6;
+  for (int iter=0;iter<4;iter++){
+    chi2_old=chi2;
+    
+    double dx1=xi(0,0)-eta(kX,0);
+    double dy1=xi(1,0)-eta(kY,0);
+    double dz1=xi(2,0)-eta(kZ,0); 
+    double dx2=xi(0,0)-eta(kX+6,0);
+    double dy2=xi(1,0)-eta(kY+6,0);
+    double dz2=xi(2,0)-eta(kZ+6,0);
+    double px1=eta(kPx,0);
+    double py1=eta(kPy,0);
+    double pz1=eta(kPz,0);  
+    double px2=eta(kPx+6,0);
+    double py2=eta(kPy+6,0);
+    double pz2=eta(kPz+6,0);
+    
+    // Constraint equations
+    f(0,0)=pz1*dx1-px1*dz1;
+    f(1,0)=pz1*dy1-py1*dz1; 
+    f(2,0)=pz2*dx2-px2*dz2;
+    f(3,0)=pz2*dy2-py2*dz2;
+    
+    if (iter>0){
+      TMatrix LagMul_T(TMatrix::kTransposed,LagMul);
+      chi2=(LagMul_T*S*LagMul)(0,0);
+      LagMul_T*=2.;
+      chi2+=(LagMul_T*f)(0,0);
+
+      if (debug_level>0){
+	cout << "iter " << iter << " : chi2=" << chi2 <<  endl;
+	if (debug_level>1){
+	  cout << "Constraint equations:" << endl;
+	  f.Print();
+	  cout << "Unmeasured quantities:" << endl;
+	  xi.Print();
+	  cout << "Measured quantities:" << endl;
+	  eta.Print();
+	}
+      }
+
+      if (chi2>chi2_old) break;
+    }
+     
+    // Compute the Jacobian matrix for eta
+    F_eta(0,kX)=-pz1;
+    F_eta(0,kZ)=+px1;
+    F_eta(0,kPx)=-dz1;
+    F_eta(0,kPz)=+dx1;  
+    F_eta(1,kY)=-pz1;
+    F_eta(1,kZ)=+py1;
+    F_eta(1,kPy)=-dz1;
+    F_eta(1,kPz)=+dy1; 
+    F_eta(2,kX+6)=-pz2;
+    F_eta(2,kZ+6)=+px2;
+    F_eta(2,kPx+6)=-dz2;
+    F_eta(2,kPz+6)=+dx2;  
+    F_eta(3,kY+6)=-pz2;
+    F_eta(3,kZ+6)=+py2;
+    F_eta(3,kPy+6)=-dz2;
+    F_eta(3,kPz+6)=+dy2;
+    
+    // Compute the Jacobian matrix for xi
+    F_xi(0,0)=pz1;
+    F_xi(0,2)=-px1;
+    F_xi(1,1)=pz1;
+    F_xi(1,2)=-py1; 
+    F_xi(2,0)=pz2;
+    F_xi(2,2)=-px2;
+    F_xi(3,1)=pz2;
+    F_xi(3,2)=-py2;
+    
+    if (debug_level>1){	
+      cout << "Jacobian matrices for eta and xi" <<endl;
+      F_eta.Print();      
+      F_xi.Print();      
+    }
+        
+    TMatrix F_eta_T(TMatrix::kTransposed,F_eta);
+    TMatrix F_xi_T(TMatrix::kTransposed,F_xi);
+    
+    // Adjust xi, then the Lagrange multipliers, then eta for this iteration
+    xi_old=xi;
+    S=F_eta*V*F_eta_T;
+    Sinv=S.Invert();
+    r=f+F_eta*(eta0-eta);
+    xi=xi_old-(F_xi_T*Sinv*F_xi).Invert()*F_xi_T*Sinv*r;
+    LagMul=Sinv*(r+F_xi*(xi-xi_old));
+    eta=eta0-V*F_eta_T*LagMul;
+  }
+  pos.SetXYZ(xi_old(0,0),xi_old(1,0),xi_old(2,0));
+  vertex_chi2=chi2_old;
+} 

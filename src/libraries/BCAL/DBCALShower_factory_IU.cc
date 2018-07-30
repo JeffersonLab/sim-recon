@@ -26,13 +26,6 @@
 DBCALShower_factory_IU::DBCALShower_factory_IU(){
 	// defaults set to minimize probles if new values are not loaded
 	LOAD_CCDB_CONSTANTS = 1.;
-	energy_cutoff = 100;         ///< default to use linear part for all showers
-	linear_intercept = 1;        ///< default to make no change to energy
-	linear_slope = 0;            ///< default to make no change to energy
-	exponential_param0 = 1;      ///< default to make no change to energy
-	exponential_param1 = -10000; ///< default to make no change to energy
-	exponential_param2 = 0;      ///< default to make no change to energy
-	nonlin_form = 0;             ///< default to make no change to energy
         const_term = 1;              ///< default to make no change to energy
         first_term_scale_factor = 0; ///< default to make no change to energy
         first_exp_param0 = 1;        ///< default to make no change to energy
@@ -48,13 +41,6 @@ DBCALShower_factory_IU::DBCALShower_factory_IU(){
 	if (gPARMS){
 		gPARMS->SetDefaultParameter("BCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
 		/// use to set energy corrections on command line
-		gPARMS->SetDefaultParameter("BCAL:nonlin_form", nonlin_form );
-		gPARMS->SetDefaultParameter("BCAL:energy_cutoff", energy_cutoff);
-		gPARMS->SetDefaultParameter("BCAL:linear_slope", linear_slope);
-		gPARMS->SetDefaultParameter("BCAL:linear_intercept", linear_intercept);
-		gPARMS->SetDefaultParameter("BCAL:exponential_param0", exponential_param0);
-		gPARMS->SetDefaultParameter("BCAL:exponential_param1", exponential_param1);
-		gPARMS->SetDefaultParameter("BCAL:exponential_param2", exponential_param2);
 		gPARMS->SetDefaultParameter("BCAL:const_term", const_term);
                 gPARMS->SetDefaultParameter("BCAL:first_term_scale_factor", first_term_scale_factor);
                 gPARMS->SetDefaultParameter("BCAL:first_exp_param0", first_exp_param0);
@@ -76,19 +62,12 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
 
     //by default, energy correction parameters are obtained through ccdb
     if(LOAD_CCDB_CONSTANTS > 0.5){
-	        map<string, double> shower_calib;
                 map<string, double> shower_calib2;
 
-                map<string, double> nonlinear_form;
 
-                if(loop->GetCalib("BCAL/nonlinear_form", nonlinear_form)){
-                        jerr << " Error loading from CCDB\n";
-                } else {
-                        nonlin_form = nonlinear_form["nonlin_form"];
-                }
-
-                if(nonlin_form == 1){
-                        loop->GetCalib("BCAL/shower_calib2", shower_calib2);
+                if (loop->GetCalib("BCAL/shower_calib2", shower_calib2)){
+			jerr << " Error loading BCAL nonlinear correction parameters from CCDB\n";
+		} else {
                         const_term = shower_calib2["const_term"];
                         first_term_scale_factor = shower_calib2["first_term_scale_factor"];
                         first_exp_param0 = shower_calib2["first_exp_param0"];
@@ -98,34 +77,11 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
                         second_exp_scale_factor = shower_calib2["second_exp_scale_factor"];
                         second_exp_param0 = shower_calib2["second_exp_param0"];
                         second_exp_param1 = shower_calib2["second_exp_param1"];
-                } else if (nonlin_form == 1 && loop->GetCalib("BCAL/shower_calib2", shower_calib2)) {
-                        jerr << " Error loading BCAL Spring17 nonlinear shower energy correction parameters from CCDB\n";
-                }
-
-                if(nonlin_form == 0){
-                        loop->GetCalib("BCAL/shower_calib", shower_calib);
-                        energy_cutoff = shower_calib["energy_cutoff"];
-                        linear_intercept = shower_calib["linear_intercept"];
-                        linear_slope = shower_calib["linear_slope"];
-                        exponential_param0 = shower_calib["exponential_param0"];
-                        exponential_param1 = shower_calib["exponential_param1"];
-                        exponential_param2 = shower_calib["exponential_param2"];
-                } else if (nonlin_form == 0 && loop->GetCalib("BCAL/shower_calib", shower_calib)) {
-                        jerr << "Error loading BCAL Spring16 nonlinear shower energy correction parameters from CCDB\n";
-                }
+		}
 
 	}
 
-	if (nonlin_form == 0 && VERBOSE>0) {
-                printf("%20s = %f\n","energy_cutoff",energy_cutoff);
-                printf("%20s = %f\n","linear_intercept",linear_intercept);
-                printf("%20s = %f\n","linear_slope",linear_slope);
-                printf("%20s = %f\n","exponential_param0",exponential_param0);
-                printf("%20s = %f\n","exponential_param1",exponential_param1);
-                printf("%20s = %f\n","exponential_param2",exponential_param2);
-        }
-
-        if(nonlin_form == 1 && VERBOSE>0) {
+        if(VERBOSE>0) {
                 printf("%20s = %f\n","const_term",const_term);
                 printf("%20s = %f\n","first_term_scale_factor",first_term_scale_factor);
                 printf("%20s = %f\n","first_exp_param0",first_exp_param0);
@@ -137,7 +93,7 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
                 printf("%20s = %f\n","second_exp_param1",second_exp_param1);
          }
 	
-	jerror_t result = LoadCovarianceLookupTables();
+	jerror_t result = LoadCovarianceLookupTables(loop);
 	if (result!=NOERROR) return result;
 	
 	// load BCAL geometry
@@ -176,19 +132,24 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
   for( vector< const DBCALCluster* >::const_iterator clItr = clusters.begin();
        clItr != clusters.end();
       ++clItr ){
+
+    if( isnan((**clItr).t()) == 1 || isnan((**clItr).theta()) == 1 || isnan((**clItr).phi()) == 1 || isnan((**clItr).rho()) == 1 ) continue; 
    
     float cosTh = cos( (**clItr).theta() );
     float sinTh = sin( (**clItr).theta() );
     float cosPhi = cos( (**clItr).phi() );
     float sinPhi = sin( (**clItr).phi() );
     float rho = (**clItr).rho();
-	if (VERBOSE>2) printf("cluster:   E=%f  th=%f phi=%f rho=%f   t=%f\n",
+	if (VERBOSE>2) printf("%4lu cluster:   E=%10.6f  th=%10.6f phi=%10.6f rho=%10.6f   t=%10.6f\n",eventnumber,
 						  (**clItr).E(),(**clItr).theta()/3.14159265*180,(**clItr).phi()/3.14159265*180,(**clItr).rho(),(**clItr).t());
 
     DBCALShower* shower = new DBCALShower();
     
     shower->E_raw = (**clItr).E();
     shower->E_preshower = (**clItr).E_preshower();
+    shower->E_L2 = (**clItr).E_L2();
+    shower->E_L3 = (**clItr).E_L3();
+    shower->E_L4 = (**clItr).E_L4();
     shower->x = rho * sinTh * cosPhi;
     shower->y = rho * sinTh * sinPhi;
     shower->z = rho * cosTh + m_zTarget;
@@ -207,26 +168,25 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     shower->sigLong = (**clItr).sigRho();
     shower->sigTrans = (**clItr).sigPhi();
     shower->sigTheta = (**clItr).sigTheta();
+//    shower->sigTime = (**clItr).sigT();
+    shower->rmsTime = (**clItr).rmsTime();
 
     shower->N_cell = (**clItr).nCells();
     
-    // Spring2016 non-linear energy corrections can be found at https://logbooks.jlab.org/entry/3419524 and Spring2017 at https://logbooks.jlab.org/entry/3469359
+    // Non-linear energy corrections can be found at https://logbooks.jlab.org/entry/3469359
 
-    if(nonlin_form == 0 && shower->E_raw < energy_cutoff ) shower->E = shower->E_raw / (linear_intercept + linear_slope * shower->E_raw ) ;
-    if(nonlin_form == 0 &&  shower->E_raw >= energy_cutoff ) shower->E = shower->E_raw / (exponential_param0 - exp(exponential_param1 * shower->E_raw + exponential_param2));
-
-    if( nonlin_form == 1) shower->E = shower->E_raw / (const_term - first_term_scale_factor*exp(-first_exp_param0*shower->E_raw + first_exp_param1) - second_term_scale_factor/(second_exp_const_term + second_exp_scale_factor*exp(-second_exp_param0*shower->E_raw + second_exp_param1)));
+    shower->E = shower->E_raw / (const_term - first_term_scale_factor*exp(-first_exp_param0*shower->E_raw + first_exp_param1) - second_term_scale_factor/(second_exp_const_term + second_exp_scale_factor*exp(-second_exp_param0*shower->E_raw + second_exp_param1)));
 
 	// Get covariance matrix and uncertainties
 	FillCovarianceMatrix(shower);
 	if (VERBOSE>2) {
-		printf("shower:    E=%f   x=%f   y=%f   z=%f   t=%f\n",
+		printf("shower:    E=%10.6f   x=%10.6f   y=%10.6f   z=%10.6f   t=%10.6f\n",
 			   shower->E,shower->x,shower->y,shower->z,shower->t);
-		printf("shower:   dE=%f  dx=%f  dy=%f  dz=%f  dt=%f\n",
+		printf("shower:   dE=%10.6f  dx=%10.6f  dy=%10.6f  dz=%10.6f  dt=%10.6f\n",
 			   shower->EErr(),shower->xErr(),shower->yErr(),shower->zErr(),shower->tErr());
-		printf("shower:   Ex=%f  Ey=%f  Ez=%f  Et=%f  xy=%f\n",
+		printf("shower:   Ex=%10.6f  Ey=%10.6f  Ez=%10.6f  Et=%10.6f  xy=%10.6f\n",
 			   shower->EXcorr(),shower->EYcorr(),shower->EZcorr(),shower->ETcorr(),shower->XYcorr());
-		printf("shower:   xz=%f  xt=%f  yz=%f  yt=%f  zt=%f\n",
+		printf("shower:   xz=%10.6f  xt=%10.6f  yz=%10.6f  yt=%10.6f  zt=%10.6f\n\n",
 			   shower->XZcorr(),shower->XTcorr(),shower->YZcorr(),shower->YTcorr(),shower->ZTcorr());
 	}
 
@@ -254,7 +214,7 @@ DBCALShower_factory_IU::FillCovarianceMatrix(DBCALShower *shower){
 
 	float shower_E = shower->E;
 	float shower_r = sqrt(shower->x*shower->x + shower->y*shower->y);
-	float shower_theta = atan2(shower_r,shower->z);
+	float shower_theta = atan2(shower_r,shower->z-m_zTarget);
 	float thlookup = shower_theta/3.14159265*180;
 	float Elookup = shower_E;
 
@@ -263,7 +223,8 @@ DBCALShower_factory_IU::FillCovarianceMatrix(DBCALShower *shower){
 	if (Elookup>maxElookup) Elookup=maxElookup-0.0001; // move below edge, on edge doesn't work.
 	if (thlookup<minthlookup) thlookup=minthlookup;
 	if (thlookup>maxthlookup) thlookup=maxthlookup-0.0001;
-	if (VERBOSE>3) printf("(%f,%F)    limits (%f,%f)  (%f,%f)\n",Elookup,thlookup,minElookup,maxElookup,minthlookup,maxthlookup);
+	if (VERBOSE>3) printf("lookup (E,theta)=(%f,%F)    limits (%f,%f)  (%f,%f)\n",
+                          Elookup,thlookup,minElookup,maxElookup,minthlookup,maxthlookup);
 
 	DMatrixDSym ErphiztCovariance(5);
 	for (int i=0; i<5; i++) {
@@ -299,7 +260,8 @@ DBCALShower_factory_IU::FillCovarianceMatrix(DBCALShower *shower){
 
 
 jerror_t
-DBCALShower_factory_IU::LoadCovarianceLookupTables(){
+DBCALShower_factory_IU::LoadCovarianceLookupTables(JEventLoop *eventLoop){
+    // Note that there's no error checking that the lookup tables have been loaded correctly!!
 	std::thread::id this_id = std::this_thread::get_id();
 	stringstream idstring;
 	idstring << this_id;

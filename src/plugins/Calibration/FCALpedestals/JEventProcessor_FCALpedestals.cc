@@ -149,7 +149,7 @@ jerror_t JEventProcessor_FCALpedestals::evnt(JEventLoop *eventLoop,
     m_c = dHit.column ;   
     if( !m_fcalGeom->isBlockActive( m_r, m_c ) ) continue;
     m_chan = m_fcalGeom->channel( dHit.row, dHit.column );
-    m_pedestal = dHit.pedestal;
+    m_pedestal = dHit.pedestal / dHit.nsamples_pedestal;
 
     if( m_pedestal > 0 ) {
       pedestal[m_chan]->Fill(m_pedestal); 

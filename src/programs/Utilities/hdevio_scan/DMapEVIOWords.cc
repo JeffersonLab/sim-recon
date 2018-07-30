@@ -233,16 +233,33 @@ void DMapEVIOWords::ParseEvent(uint32_t *buff)
 	
 	// Check if this is EPICS data
 	if( evio_buffwords >= 4 ){
-		if( istart[1] == (0x60<<16) + (0xD<<8) + (0x1<<0) ){
-			if( istart[2] == (0x61<<24) + (0x1<<16) + (0x1<<0) ){
-				
-				// FILL HISTOGRAMS
-				// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-				daq_words_by_type->Fill(kEPICSheader, 3.0); // EVIO outer and segment headers + timestamp
-				daq_words_by_type->Fill(kEPICSdata, istart[0] - 3);
-				daq_words_by_type->Fill(kTotWords, istart[0]);
-				return; // no further parsing needed
-			}
+		if( ((istart[1]>>16)&0xFF) == 0x60 ){
+		
+			daq_words_by_type->Fill(kEPICSheader, 2.0);  // EVIO bank length and header word
+			daq_words_by_type->Fill(kTotWords, istart[0]);
+
+			// Loop over daughter banks
+			uint32_t *iptr = &istart[2];
+			while( iptr < iend ){
+
+				uint32_t bank_len =  (*iptr)&0xFFFF;
+				uint32_t tag      = ((*iptr)>>24)&0xFF;
+				iptr++;
+
+				if(tag == 0x61){
+					// timestamp bank (count as header)
+					daq_words_by_type->Fill(kEPICSheader, bank_len+1);
+				}else if(tag == 0x62){
+					// EPICS data value
+					daq_words_by_type->Fill(kEPICSdata, bank_len+1);
+				}else{
+					// Unknown tag
+				}
+
+				iptr = &iptr[bank_len];
+			}	
+
+			return; // no further parsing needed
 		}
 	}
 	

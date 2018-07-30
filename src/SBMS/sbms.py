@@ -632,24 +632,52 @@ def AddCCDB(env):
 		env.AppendUnique(LIBPATH = CCDB_LIBPATH)
 		env.AppendUnique(LIBS    = CCDB_LIBS)
 
+##################################
+# SQLite
+##################################
+def AddSQLite(env):
+	sqlitecpp_home = os.getenv('SQLITECPP_HOME')
+	if(sqlitecpp_home != None) :
+		env.Append(CPPDEFINES={'SQLITE_USE_LEGACY_STRUCT':'ON'})
+		SQLITECPP_CPPPATH = ["%s/include" % (sqlitecpp_home)]
+		env.AppendUnique(CPPPATH = SQLITECPP_CPPPATH)
+		SQLITECPP_LIBPATH = ["%s/lib" % (sqlitecpp_home)]
+		env.AppendUnique(LIBPATH = SQLITECPP_LIBPATH)
+		env.AppendUnique(LIBS    = 'SQLiteCpp')
+	sqlite_home = os.getenv('SQLITE_HOME')
+	if(sqlite_home != None) :
+		SQLITE_CPPPATH = ["%s/include" % (sqlite_home)]
+		env.AppendUnique(CPPPATH = SQLITE_CPPPATH)
+		SQLITE_LIBPATH = ["%s/lib" % (sqlite_home)]
+		env.AppendUnique(LIBPATH = SQLITE_LIBPATH)
+		AddSQLite.SQLITE_LINKFLAGS = "-Wl,-rpath=%s/lib" % (sqlite_home)
+		AddLinkFlags(env, AddSQLite.SQLITE_LINKFLAGS)
+	env.AppendUnique(LIBS = 'sqlite3')
 
 ##################################
 # RCDB
 ##################################
 def AddRCDB(env):
 	rcdb_home = os.getenv('RCDB_HOME')
-	env.Append(CPPDEFINES='RCDB_MYSQL')
-#	env.Append(CPPDEFINES='RCDB_SQLITE')
 	if(rcdb_home != None) :
-		env.AppendUnique(CXXFLAGS = ['-DHAVE_RCDB'])
-		RCDB_CPPPATH = ["%s/cpp/include" % (rcdb_home), "%s/cpp/include/SQLite" % (rcdb_home)]
-		RCDB_LIBPATH = "%s/cpp/lib" % (rcdb_home)
-		RCDB_LIBS = ["rcdb"]
-		env.AppendUnique(CPPPATH = RCDB_CPPPATH)
-		env.AppendUnique(LIBPATH = RCDB_LIBPATH)
-		env.AppendUnique(LIBS    = RCDB_LIBS)
-		AddMySQL(env)
+	
+		if os.getenv('SQLITECPP_HOME') == None:
+			print 'WARNING: Your RCDB_HOME environment variable is set but'
+			print 'your SQLITECPP_HOME is not. RCDB dependent code cannot'
+			print 'be built without SQLiteCpp.'
+			print '########## DISABLING RCDB SUPPORT ############'
+		else:
+			env.AppendUnique(CXXFLAGS = ['-DHAVE_RCDB'])
+			RCDB_CPPPATH = ["%s/cpp/include" % (rcdb_home)]
+			env.AppendUnique(CPPPATH = RCDB_CPPPATH)
 
+			# add MySQL
+			env.Append(CPPDEFINES={'RCDB_MYSQL':1})
+			AddMySQL(env)
+
+			# add SQlite
+			env.Append(CPPDEFINES={'RCDB_SQLITE':1})
+			AddSQLite(env)
 
 ##################################
 # EVIO
@@ -1049,11 +1077,10 @@ def AddAmpPlotter(env):
 # Cobrems
 ##################################
 def AddCobrems(env):
-	pyincludes = subprocess.Popen(["python-config", "--includes" ], stdout=subprocess.PIPE).communicate()[0]
-	cobrems_home = os.getenv('HALLD_HOME', 'sim-recon')
-	env.AppendUnique(CPPPATH = ["%s/src/libraries/AMPTOOLS_MCGEN" % (cobrems_home)])
-	env.AppendUnique(LIBPATH = ["%s/%s/lib" % (cobrems_home, env['OSNAME'])])
-	env.AppendUnique(LIBS    = 'AMPTOOLS_MCGEN')
-	env.AppendUnique(CCFLAGS = pyincludes.rstrip().split())
+	if os.getenv('AMPTOOLS') != None:
+		pyincludes = subprocess.Popen(["python-config", "--includes" ], stdout=subprocess.PIPE).communicate()[0]
+		env.AppendUnique(CXXFLAGS = ['-DHAVE_AMPTOOLS_MCGEN'])
+		env.AppendUnique(LIBS    = 'AMPTOOLS_MCGEN')
+		env.AppendUnique(CCFLAGS = pyincludes.rstrip().split())
 
 

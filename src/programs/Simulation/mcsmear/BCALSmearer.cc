@@ -59,28 +59,32 @@ void BCALSmearer::SmearEvent(hddm_s::HDDM *record)
     GetSiPMHits(record, SiPMHits, incident_particles);
 
     // Sampling fluctuations
-    ApplySamplingFluctuations(SiPMHits, incident_particles);
-
+	if(config->SMEAR_HITS)
+    	ApplySamplingFluctuations(SiPMHits, incident_particles);
+	
     // Merge hits associated with different incident particles
     MergeHits(SiPMHits, bcal_config->BCAL_TWO_HIT_RESO);
 
     // Poisson Statistics
-    ApplyPoissonStatistics(SiPMHits);
+	if(config->SMEAR_HITS) 
+    	ApplyPoissonStatistics(SiPMHits);
    
     // Place all hit cells into list indexed by fADC ID
     map<int, SumHits> bcalfADC;
     SortSiPMHits(SiPMHits, bcalfADC, bcal_config->BCAL_TWO_HIT_RESO);
 
     // Electronic noise/Dark hits Smearing
-    SimpleDarkHitsSmear(bcalfADC);
-   
+	if(config->SMEAR_HITS) 
+    	SimpleDarkHitsSmear(bcalfADC);
+    
     // Apply energy threshold to dismiss low-energy hits
     map<int, fADCHitList> fADCHits;
     map<int, TDCHitList> TDCHits;
     FindHits(bcal_config->BCAL_ADC_THRESHOLD_MEV, bcalfADC, fADCHits, TDCHits);
 
     // Apply time smearing to emulate the fADC resolution
-    ApplyTimeSmearing(bcal_config->BCAL_FADC_TIME_RESOLUTION, bcal_config->BCAL_TDC_TIME_RESOLUTION, fADCHits, TDCHits);
+	if(config->SMEAR_HITS) 
+    	ApplyTimeSmearing(bcal_config->BCAL_FADC_TIME_RESOLUTION, bcal_config->BCAL_TDC_TIME_RESOLUTION, fADCHits, TDCHits);
    
     // Copy hits into HDDM tree
     CopyBCALHitsToHDDM(fADCHits, TDCHits, record);
@@ -486,18 +490,30 @@ void BCALSmearer::ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<in
 
    if(bcal_config->NO_T_SMEAR) return;
 
+   // This is hardwired. Perhaps a future warrior would like to make it somehow work with CCDB?
+   double BCAL_TIMINGADCCOEFA = 0.055;
+   double BCAL_TIMINGADCCOEFB = 0.000;
+
    map<int, fADCHitList>::iterator it = fADCHits.begin();
    for(; it!=fADCHits.end(); it++){
       fADCHitList &hitlist = it->second;
       
       // upstream
       for(unsigned int i=0; i<hitlist.uphits.size(); i++){
-         hitlist.uphits[i].t += gDRandom.SampleGaussian(sigma_ns);
+         double EGeV = hitlist.uphits[i].E/1000;
+         double sqrtterm = BCAL_TIMINGADCCOEFA / sqrt(EGeV);
+         double linterm = BCAL_TIMINGADCCOEFB;
+         double sigma_ns_ADC = sqrt(sqrtterm*sqrtterm + linterm*linterm);
+         hitlist.uphits[i].t += gDRandom.SampleGaussian(sigma_ns_ADC);
       }
 
       // downstream
       for(unsigned int i=0; i<hitlist.dnhits.size(); i++){
-         hitlist.dnhits[i].t += gDRandom.SampleGaussian(sigma_ns);
+         double EGeV = hitlist.dnhits[i].E/1000;
+         double sqrtterm = BCAL_TIMINGADCCOEFA / sqrt(EGeV);
+         double linterm = BCAL_TIMINGADCCOEFB;
+         double sigma_ns_ADC = sqrt(sqrtterm*sqrtterm + linterm*linterm);
+         hitlist.dnhits[i].t += gDRandom.SampleGaussian(sigma_ns_ADC);
       }
    }
 

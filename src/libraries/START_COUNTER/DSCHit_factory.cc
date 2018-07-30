@@ -59,6 +59,11 @@ jerror_t DSCHit_factory::init(void)
     gPARMS->SetDefaultParameter("SC:USE_TIMEWALK_CORRECTION", USE_TIMEWALK_CORRECTION,
                                 "Flag to decide if timewalk corrections should be applied.");
 
+    REQUIRE_ADC_TDC_MATCH=true;
+    gPARMS->SetDefaultParameter("SC:REQUIRE_ADC_TDC_MATCH", 
+				REQUIRE_ADC_TDC_MATCH,
+                                "Flag to decide if a match between adc and tdc hits is required.");
+    
     /// set the base conversion scales
     a_scale    = 0.0001; 
     t_scale    = 0.0625;   // 62.5 ps/count
@@ -166,6 +171,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	loop->GetSingle(locTTabUtilities);
 
     char str[256];
+    vector<DSCHit *>temp_schits;
 
     for (unsigned int i = 0; i < digihits.size(); i++)  {
         const DSCDigiHit *digihit = digihits[i];
@@ -180,6 +186,11 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         // Throw away hits with firmware errors (post-summer 2016 firmware)
         if(CHECK_FADC_ERRORS && !locTTabUtilities->CheckFADC250_NoErrors(digihit->QF))
             continue;
+	if (digihit->pulse_time == 0 || digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
+	// Find the time from the pulse and apply calibration constants
+        double T = (double)digihit->pulse_time;
+	double t_fadc= t_scale * T - adc_time_offsets[digihit->sector-1] + t_base;
+	if (fabs(t_fadc) > HIT_TIME_WINDOW) continue;
 
         // Initialize pedestal to one found in CCDB, but override it
         // with one found in event if is available (?)
@@ -199,9 +210,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         if( (digihit->pedestal>0) && locTTabUtilities->CheckFADC250_PedestalOK(digihit->QF) ) {
             pedestal = (double)digihit->pedestal/nsamples_pedestal;
         }
-
-        // Subtract pedestal from pulse peak
-        if (digihit->pulse_time == 0 || digihit->pedestal == 0 || digihit->pulse_peak == 0) continue;
+        // Subtract pedestal from pulse peak      
         double pulse_peak = digihit->pulse_peak - pedestal;
 
         // Subtract pedestal from pulse integral
@@ -210,14 +219,12 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         //if ( ((double)digihit->pulse_integral) < ADC_THRESHOLD) continue; // Will comment out until this is set to something useful by default
 
-        double T = (double)digihit->pulse_time;
-
         DSCHit *hit = new DSCHit;
         // Sectors are numbered from 1-30
         hit->sector = digihit->sector;
 
         hit->dE = a_scale * a_gains[digihit->sector-1] * A;
-        hit->t_fADC = t_scale * T - adc_time_offsets[hit->sector-1] + t_base;
+        hit->t_fADC = t_fadc;
         hit->t_TDC = numeric_limits<double>::quiet_NaN();
 
         hit->has_TDC = false;
@@ -228,7 +235,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         hit->AddAssociatedObject(digihit);
 
-        _data.push_back(hit);
+        temp_schits.push_back(hit);
     }
     
 
@@ -259,14 +266,14 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    //   a reasonable time window so that when a hit is associated with
 	    //   a hit in the TDC and not the ADC it is a "decent" TDC hit
         if (fabs(T) < HIT_TIME_WINDOW) {
-            DSCHit *hit = FindMatch(digihit->sector, T);
+	  DSCHit *hit = FindMatch(temp_schits,digihit->sector, T);
             if (hit == nullptr) {
                 hit = new DSCHit;
                 hit->sector = digihit->sector;
                 hit->dE = 0.0;
                 hit->t_fADC= numeric_limits<double>::quiet_NaN();
                 hit->has_fADC=false;
-                _data.push_back(hit);
+                temp_schits.push_back(hit);
             }
 
             hit->has_TDC=true;
@@ -299,6 +306,18 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	}
 
+	for (unsigned int i=0;i<temp_schits.size();i++){
+	  if (REQUIRE_ADC_TDC_MATCH==false){
+	    _data.push_back(temp_schits[i]);
+	  }
+	  else if (temp_schits[i]->has_fADC && temp_schits[i]->has_TDC){
+	    _data.push_back(temp_schits[i]);
+	  }
+	  else delete temp_schits[i];
+	}
+
+	
+
 
     return NOERROR;
 }
@@ -306,15 +325,15 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 //------------------
 // FindMatch
 //------------------
-DSCHit* DSCHit_factory::FindMatch(int sector, double T)
+DSCHit* DSCHit_factory::FindMatch(vector<DSCHit*>&schits,int sector, double T)
 {
     DSCHit *best_match = nullptr;
 
     // Loop over existing hits (from fADC) and look for a match
     // in both the sector and the time.
-    for(unsigned int i = 0; i < _data.size(); i++)
+    for(unsigned int i = 0; i < schits.size(); i++)
     {
-        DSCHit *hit = _data[i];
+        DSCHit *hit = schits[i];
 
         if (! isfinite(hit->t_fADC))
 	  continue; // only match to fADC hits, not bachelor TDC hits

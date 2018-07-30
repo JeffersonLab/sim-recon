@@ -38,7 +38,7 @@ private:
   // these routines combine points and clusters together
 
   vector<DBCALCluster*> clusterize( vector< const DBCALPoint* > points, vector< const DBCALPoint* > usedPoints,  vector< const DBCALUnifiedHit* > hits, vector< const DTrackWireBased* > tracks ) const;
-  void merge( vector<DBCALCluster*>& clusters ) const;
+  void merge( vector<DBCALCluster*>& clusters, double point_reatten_E ) const;
 
   // This routine removes a point from its original cluster and adds it to its closest cluster if applicable.
   void recycle_points( vector<const DBCALPoint*> usedPoints, vector<DBCALCluster*>& clusters ) const; 
