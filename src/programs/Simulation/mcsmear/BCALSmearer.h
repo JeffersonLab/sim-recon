@@ -95,9 +95,9 @@ class bcal_config_t
 	double fADC_MinIntegral_Saturation[2][4];
 	double fADC_Saturation_Linear[2][4];
 	double fADC_Saturation_Quadratic[2][4];
-        float INTEGRAL_TO_PEAK;
-        float SIPM_NPIXELS;
-        float INTEGRAL_2V_PIXELS;   // number of pixels in integral for Peak=2V (4095 counts)
+        double integral_to_peak[2][4];     // ration of pulse integral to peak value (integral counts)
+	double sipm_npixels[2][4];         // number of pixels per sensor(s) 
+        double integral_2V_pixels[2][4];   // number of pixels in integral for Peak=2V (4095 counts)
 };
 
 

@@ -692,15 +692,15 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kUp);
 	    double integral = round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
-	    double pulse_peak = integral/bcal_config->INTEGRAL_TO_PEAK;
+	    double pulse_peak = integral/bcal_config->integral_to_peak[0][hitlist.sumlayer-1];
 	    if (!bcal_config->NO_SIPM_SATURATION) {
 	      double integral_true = integral;
-	      double pulse_peak_true = integral_true/bcal_config->INTEGRAL_TO_PEAK;    //  approximate value for now. Should retrieve from ccdb.  ES 5/11/2018
-	      double Mpixels = bcal_config->SIPM_NPIXELS*hitlist.sumlayer;
-	      double Npixels_true = round(bcal_config->INTEGRAL_2V_PIXELS*pulse_peak_true/4095.);
+	      double pulse_peak_true = integral_true/bcal_config->integral_to_peak[0][hitlist.sumlayer-1];
+	      double Mpixels = bcal_config->sipm_npixels[0][hitlist.sumlayer-1];
+	      double Npixels_true = round(bcal_config->integral_2V_pixels[0][hitlist.sumlayer-1]*pulse_peak_true/4095.);
 	      double Npixels_measured = round(Mpixels*(1-exp(-Npixels_true/Mpixels)));
-	      pulse_peak = round(4095*Npixels_measured/bcal_config->INTEGRAL_2V_PIXELS);
-	      integral = pulse_peak*bcal_config->INTEGRAL_TO_PEAK;
+	      pulse_peak = round(4095*Npixels_measured/bcal_config->integral_2V_pixels[0][hitlist.sumlayer-1]);
+	      integral = pulse_peak*bcal_config->integral_to_peak[0][hitlist.sumlayer-1];
 	    }
 	    // cout << "Layer=" << hitlist.sumlayer << " Mpixels=" << Mpixels << " Npixels_true=" << Npixels_true << " Npixels_measured=" << Npixels_measured 
             //      << " pulse_peak_true=" << pulse_peak_true << " pulse_peak=" << pulse_peak << " integral=" << integral << endl;
@@ -730,15 +730,15 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kDown);
 	    double integral = round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT);
-	    double pulse_peak = integral/bcal_config->INTEGRAL_TO_PEAK;
+	    double pulse_peak = integral/bcal_config->integral_to_peak[1][hitlist.sumlayer-1];
 	    if (!bcal_config->NO_SIPM_SATURATION) {
 	      double integral_true = integral;
-	      double pulse_peak_true = integral_true/bcal_config->INTEGRAL_TO_PEAK;    //  approximate value for now. Should retrieve from ccdb.  ES 5/11/2018
-	      double Mpixels = bcal_config->SIPM_NPIXELS*hitlist.sumlayer;
-	      double Npixels_true = round(bcal_config->INTEGRAL_2V_PIXELS*pulse_peak_true/4095.);
+	      double pulse_peak_true = integral_true/bcal_config->integral_to_peak[1][hitlist.sumlayer-1];
+	      double Mpixels = bcal_config->sipm_npixels[1][hitlist.sumlayer-1];
+	      double Npixels_true = round(bcal_config->integral_2V_pixels[1][hitlist.sumlayer-1]*pulse_peak_true/4095.);
 	      double Npixels_measured = round(Mpixels*(1-exp(-Npixels_true/Mpixels)));
-	      pulse_peak = round(4095*Npixels_measured/bcal_config->INTEGRAL_2V_PIXELS);
-	      integral = pulse_peak*bcal_config->INTEGRAL_TO_PEAK;
+	      pulse_peak = round(4095*Npixels_measured/bcal_config->integral_2V_pixels[1][hitlist.sumlayer-1]);
+	      integral = pulse_peak*bcal_config->integral_to_peak[1][hitlist.sumlayer-1];
 	    }
 	    // cout << "Layer=" << hitlist.sumlayer << " Mpixels=" << Mpixels << " Npixels_true=" << Npixels_true << " Npixels_measured=" << Npixels_measured 
             //      << " pulse_peak_true=" << pulse_peak_true << " pulse_peak=" << pulse_peak << " integral=" << integral << endl;
@@ -938,32 +938,16 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
 
 
     cout << "Get BCAL/SiPM_saturation parameters from CCDB..." << endl;
-   // load parameters for SiPM saturation
-   map<string,double> sipm_factors;
-   if (loop->GetCalib("/BCAL/SiPM_saturation", sipm_factors)) {
-       jout << "Error loading /BCAL/SiPM_saturation !" << endl;
-   }
-
-   if (sipm_factors.find("INTEGRAL_TO_PEAK") != sipm_factors.end()) {
-       INTEGRAL_TO_PEAK = sipm_factors["INTEGRAL_TO_PEAK"];
-   }
-   else {
-       jerr << "Unable to get INTEGRAL_TO_PEAK from /BCAL/SiPM_saturation !" << endl;
-   }
-
-   if (sipm_factors.find("SIPM_NPIXELS") != sipm_factors.end()) {
-     SIPM_NPIXELS = sipm_factors["SIPM_NPIXELS"];
-   }
-   else {
-       jerr << "Unable to get SIPM_NPIXELS from /BCAL/SiPM_saturation !" << endl;
-   }
-
-   if (sipm_factors.find("INTEGRAL_2V_PIXELS") != sipm_factors.end()) {
-     INTEGRAL_2V_PIXELS = sipm_factors["INTEGRAL_2V_PIXELS"];
-   }
-   else {
-       jerr << "Unable to get SIPM_NPIXELS from /BCAL/SiPM_saturation !" << endl;
-   }
+   std::vector<std::map<string,double> > saturation_SiPM_pars;
+   if(loop->GetCalib("/BCAL/SiPM_saturation", saturation_SiPM_pars))
+      jout << "Error loading /SiPM/SiPM_saturation !" << endl;
+   for (unsigned int i=0; i < saturation_SiPM_pars.size(); i++) {
+	   int end = (saturation_SiPM_pars[i])["END"];
+	   int layer = (saturation_SiPM_pars[i])["LAYER"] - 1;
+	   integral_to_peak[end][layer] = (saturation_SiPM_pars[i])["INTEGRAL_TO_PEAK"];
+	   sipm_npixels[end][layer] = (saturation_SiPM_pars[i])["SIPM_NPIXELS"];
+	   integral_2V_pixels[end][layer] = (saturation_SiPM_pars[i])["INTEGRAL_2V_PIXELS"];
+   } 
 
 
 }

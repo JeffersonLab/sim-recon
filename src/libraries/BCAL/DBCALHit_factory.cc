@@ -126,37 +126,16 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
    } 
 
    // load parameters for SiPM saturation
-   map<string,double> sipm_factors;
-   if (eventLoop->GetCalib("/BCAL/SiPM_saturation", sipm_factors))
-       jout << "Error loading /BCAL/SiPM_saturation !" << endl;
-
-   if (sipm_factors.find("INTEGRAL_TO_PEAK") != sipm_factors.end()) {
-       INTEGRAL_TO_PEAK = sipm_factors["INTEGRAL_TO_PEAK"];
-     if (PRINTCALIBRATION) {
-       jout << "DBCALHit_factory >> INTEGRAL_TO_PEAK= " << INTEGRAL_TO_PEAK << endl;
-     }
-   }
-   else
-       jerr << "Unable to get INTEGRAL_TO_PEAK from /BCAL/SiPM_saturation !" << endl;
-
-   if (sipm_factors.find("SIPM_NPIXELS") != scale_factors.end()) {
-     SIPM_NPIXELS = sipm_factors["SIPM_NPIXELS"];
-     if (PRINTCALIBRATION) {
-       jout << "DBCALHit_factory >>SIPM_NPIXELS = " << SIPM_NPIXELS << endl;
-     }
-   }
-   else
-       jerr << "Unable to get SIPM_NPIXELS from /BCAL/SiPM_saturation !" << endl;
-
-   if (sipm_factors.find("INTEGRAL_2V_PIXELS") != scale_factors.end()) {
-     INTEGRAL_2V_PIXELS = sipm_factors["INTEGRAL_2V_PIXELS"];
-     if (PRINTCALIBRATION) {
-       jout << "DBCALHit_factory >>INTEGRAL_2V_PIXELS = " << INTEGRAL_2V_PIXELS << endl;
-     }
-   }
-   else
-       jerr << "Unable to get SIPM_NPIXELS from /BCAL/SiPM_saturation !" << endl;
-
+   std::vector<std::map<string,double> > saturation_SiPM_pars;
+   if(eventLoop->GetCalib("/BCAL/SiPM_saturation", saturation_SiPM_pars))
+      jout << "Error loading /SiPM/SiPM_saturation !" << endl;
+   for (unsigned int i=0; i < saturation_SiPM_pars.size(); i++) {
+	   int end = (saturation_SiPM_pars[i])["END"];
+	   int layer = (saturation_SiPM_pars[i])["LAYER"] - 1;
+	   integral_to_peak[end][layer] = (saturation_SiPM_pars[i])["INTEGRAL_TO_PEAK"];
+	   sipm_npixels[end][layer] = (saturation_SiPM_pars[i])["SIPM_NPIXELS"];
+	   integral_2V_pixels[end][layer] = (saturation_SiPM_pars[i])["INTEGRAL_2V_PIXELS"];
+   } 
 
 
 
@@ -265,10 +244,10 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	// compute in double precision to prevent round off errors
 	if (CORRECT_SIPM_SATURATION) {
 	  double integral_pedsub_measured = integral_pedsub;
-	  double Npixels_measured = (INTEGRAL_2V_PIXELS/INTEGRAL_TO_PEAK)*(integral_pedsub_measured/4095.);
-	  double Mpixels = SIPM_NPIXELS*digihit->layer;
+	  double Npixels_measured = (integral_2V_pixels[digihit->end][digihit->layer-1]/integral_to_peak[digihit->end][digihit->layer-1])*(integral_pedsub_measured/4095.);
+	  double Mpixels = sipm_npixels[digihit->end][digihit->layer-1];
 	  double Npixels_true = Npixels_measured < Mpixels? -Mpixels*log(1 - Npixels_measured/Mpixels) : Mpixels;
-	  integral_pedsub = Npixels_true*4095*INTEGRAL_TO_PEAK/INTEGRAL_2V_PIXELS;
+	  integral_pedsub = Npixels_true*4095*integral_to_peak[digihit->end][digihit->layer-1]/integral_2V_pixels[digihit->end][digihit->layer-1];
 	}
 	hit_E = gain * integral_pedsub;
 
@@ -286,10 +265,10 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       int pulse_peak_pedsub=0;
       	if (CORRECT_SIPM_SATURATION) {
 	  double pulse_peak_pedsub_measured = (int)digihit->pulse_peak - (int)single_sample_ped;
-	  double Npixels_measured = INTEGRAL_2V_PIXELS*(pulse_peak_pedsub_measured/4095.);
-	  double Mpixels = SIPM_NPIXELS*digihit->layer;
+	  double Npixels_measured = integral_2V_pixels[digihit->end][digihit->layer-1]*(pulse_peak_pedsub_measured/4095.);
+	  double Mpixels = sipm_npixels[digihit->end][digihit->layer-1];
 	  double Npixels_true = Npixels_measured < Mpixels? -Mpixels*log(1 - Npixels_measured/Mpixels) : Mpixels;
-	  pulse_peak_pedsub = round(Npixels_true*4095/INTEGRAL_2V_PIXELS);
+	  pulse_peak_pedsub = round(Npixels_true*4095/integral_2V_pixels[digihit->end][digihit->layer-1]);
 	  // cout  << " event=" << eventnumber << " Layer=" << digihit->layer  << " pulse_peak_pedsub_measured=" << pulse_peak_pedsub_measured 
 	  //	    << " Npixels_measured=" << Npixels_measured << " Mpixels=" << Mpixels << " pulse_peak_pedsub=" << pulse_peak_pedsub 
 	  //	    << " Int/Peak Ratio=" << integral_pedsub/pulse_peak_pedsub << endl;

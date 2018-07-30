@@ -90,9 +90,9 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 	double fADC_MinIntegral_Saturation[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];
         double fADC_Saturation_Linear[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];
 	double fADC_Saturation_Quadratic[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];
-        float INTEGRAL_TO_PEAK;
-        float SIPM_NPIXELS;
-        float INTEGRAL_2V_PIXELS;   // number of pixels in integral for Peak=2V (4095 counts)
+        double integral_to_peak[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];     // ration of pulse integral to peak value (integral counts)
+	double sipm_npixels[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];         // number of pixels per sensor(s) 
+        double integral_2V_pixels[BCAL_NUM_ENDS][BCAL_NUM_LAYERS];   // number of pixels in integral for Peak=2V (4095 counts)
 };
 
 #endif // _DBCALHit_factory_
