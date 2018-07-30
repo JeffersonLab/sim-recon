@@ -637,12 +637,13 @@ def AddCCDB(env):
 ##################################
 def AddSQLite(env):
 	sqlitecpp_home = os.getenv('SQLITECPP_HOME')
-	env.Append(CPPDEFINES={'SQLITE_USE_LEGACY_STRUCT':'ON'})
-	SQLITECPP_CPPPATH = ["%s/include" % (sqlitecpp_home)]
-	env.AppendUnique(CPPPATH = SQLITECPP_CPPPATH)
-	SQLITECPP_LIBPATH = ["%s/lib" % (sqlitecpp_home)]
-	env.AppendUnique(LIBPATH = SQLITECPP_LIBPATH)
-	env.AppendUnique(LIBS    = 'SQLiteCpp')
+	if(sqlitecpp_home != None) :
+		env.Append(CPPDEFINES={'SQLITE_USE_LEGACY_STRUCT':'ON'})
+		SQLITECPP_CPPPATH = ["%s/include" % (sqlitecpp_home)]
+		env.AppendUnique(CPPPATH = SQLITECPP_CPPPATH)
+		SQLITECPP_LIBPATH = ["%s/lib" % (sqlitecpp_home)]
+		env.AppendUnique(LIBPATH = SQLITECPP_LIBPATH)
+		env.AppendUnique(LIBS    = 'SQLiteCpp')
 	sqlite_home = os.getenv('SQLITE_HOME')
 	if(sqlite_home != None) :
 		SQLITE_CPPPATH = ["%s/include" % (sqlite_home)]
@@ -659,17 +660,24 @@ def AddSQLite(env):
 def AddRCDB(env):
 	rcdb_home = os.getenv('RCDB_HOME')
 	if(rcdb_home != None) :
-		env.AppendUnique(CXXFLAGS = ['-DHAVE_RCDB'])
-		RCDB_CPPPATH = ["%s/cpp/include" % (rcdb_home)]
-		env.AppendUnique(CPPPATH = RCDB_CPPPATH)
- 
-		# add MySQL
-		env.Append(CPPDEFINES={'RCDB_MYSQL':1})
-		AddMySQL(env)
+	
+		if os.getenv('SQLITECPP_HOME') == None:
+			print 'WARNING: Your RCDB_HOME environment variable is set but'
+			print 'your SQLITECPP_HOME is not. RCDB dependent code cannot'
+			print 'be built without SQLiteCpp.'
+			print '########## DISABLING RCDB SUPPORT ############'
+		else:
+			env.AppendUnique(CXXFLAGS = ['-DHAVE_RCDB'])
+			RCDB_CPPPATH = ["%s/cpp/include" % (rcdb_home)]
+			env.AppendUnique(CPPPATH = RCDB_CPPPATH)
 
-		# add SQlite
-		env.Append(CPPDEFINES={'RCDB_SQLITE':1})
-		AddSQLite(env)
+			# add MySQL
+			env.Append(CPPDEFINES={'RCDB_MYSQL':1})
+			AddMySQL(env)
+
+			# add SQlite
+			env.Append(CPPDEFINES={'RCDB_SQLITE':1})
+			AddSQLite(env)
 
 ##################################
 # EVIO
@@ -1069,11 +1077,10 @@ def AddAmpPlotter(env):
 # Cobrems
 ##################################
 def AddCobrems(env):
-	pyincludes = subprocess.Popen(["python-config", "--includes" ], stdout=subprocess.PIPE).communicate()[0]
-	cobrems_home = os.getenv('HALLD_HOME', 'sim-recon')
-	env.AppendUnique(CPPPATH = ["%s/src/libraries/AMPTOOLS_MCGEN" % (cobrems_home)])
-	env.AppendUnique(LIBPATH = ["%s/%s/lib" % (cobrems_home, env['OSNAME'])])
-	env.AppendUnique(LIBS    = 'AMPTOOLS_MCGEN')
-	env.AppendUnique(CCFLAGS = pyincludes.rstrip().split())
+	if os.getenv('AMPTOOLS') != None:
+		pyincludes = subprocess.Popen(["python-config", "--includes" ], stdout=subprocess.PIPE).communicate()[0]
+		env.AppendUnique(CXXFLAGS = ['-DHAVE_AMPTOOLS_MCGEN'])
+		env.AppendUnique(LIBS    = 'AMPTOOLS_MCGEN')
+		env.AppendUnique(CCFLAGS = pyincludes.rstrip().split())
 
 

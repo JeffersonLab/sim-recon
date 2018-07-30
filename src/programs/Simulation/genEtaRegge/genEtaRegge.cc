@@ -1,4 +1,7 @@
 // Main program for generating eta events. 
+
+#if HAVE_AMPTOOLS_MCGEN
+
 #include "HDDM/hddm_s.h"
 #include "particleType.h"
 
@@ -16,7 +19,7 @@
 #include <string>
 using namespace std;
 
-#include <CobremsGeneration.hh>
+#include <AMPTOOLS_MCGEN/CobremsGeneration.hh>
 
 // Masses
 const double m_p=0.93827; // GeV
@@ -660,4 +663,20 @@ int main(int narg, char *argv[])
   return 0;
 }
 
+#else
+
+// ---- The following is compiled only if AMPTOOLS was not installed ----
+#include <iostream>
+
+int main(int narg, char *argv[])
+{
+	std::cerr << "This executable (genEtaRegge) was built without AMPTOOLS support." << std::endl;
+	std::cerr << "As such it is disabled. To use it, install AMPTOOLS and make sure" << std::endl;
+	std::cerr << "your AMPTOOLS environment variable is set to point to it and then" << std::endl;
+	std::cerr << "rebuild." << std::endl;
+
+	return 0;
+}
+
+#endif   // HAVE_AMPTOOLS_MCGEN
 

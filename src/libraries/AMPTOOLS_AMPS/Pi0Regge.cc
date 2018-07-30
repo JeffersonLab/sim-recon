@@ -11,7 +11,7 @@
 #include "IUAmpTools/Kinematics.h"
 #include "AMPTOOLS_AMPS/Pi0Regge.h"
 
-#include <CobremsGeneration.hh>
+#include <AMPTOOLS_MCGEN/CobremsGeneration.hh>
 
 Pi0Regge::Pi0Regge( const vector< string >& args ) :
 UserAmplitude< Pi0Regge >( args )
