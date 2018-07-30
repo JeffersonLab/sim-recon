@@ -53,12 +53,12 @@ jerror_t JEventProcessor_ST_ZEff::init(void)
     
   //cout << "USE_SC_TIME = " << USE_SC_TIME << endl;
   // Warning message if sc time is used in track reconstruction
-  if (USE_SC_TIME == 1)
+  if (USE_SC_TIME == 0)
     {
-      cout << "======================================================================"<< endl;
-      cout << "TRKFIT: USE_SC_TIME = 1; WARNING SC TIME WILL BE USED IN TRACK FITTING"<< endl;
-      cout << "This is not allowed in ST_ZEff plugin which calculate SC efficiency   "<< endl;
-      cout << "======================================================================"<< endl;
+      cout << "=========================================================================="<< endl;
+      cout << "TRKFIT: USE_SC_TIME = 0; WARNING SC TIME WILL NOT BE USED IN TRACK FITTING"<< endl;
+      cout << "This is required in ST_ZEff plugin which calculate SC efficiency          "<< endl;
+      cout << "=========================================================================="<< endl;
     }
   // Create root folder for ST and cd to it, store main dir
   TDirectory *main = gDirectory;
