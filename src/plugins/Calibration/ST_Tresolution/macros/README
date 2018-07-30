@@ -1,0 +1,5 @@
+In order to get the average start counter(SC) time resolution from ST_Tresolution plugin, run the plugin over your selected data and get the hd_root.root file.
+
+The macro Resolution.C calculate the SC time resolution after PTC when the RF is determined by a hit in the SC. This macro calculate the time resolution for each paddle and the average time resolution for the SC.
+
+Other macros were used in older versions. I will keep them for some time.
