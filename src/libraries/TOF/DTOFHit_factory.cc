@@ -76,6 +76,7 @@ jerror_t DTOFHit_factory::init(void)
   else 
     tdc_adc_time_offset = 0.;
   
+  // default values, will override from DTOFGeometry
   TOF_NUM_PLANES = 2;
   TOF_NUM_BARS = 44;
   
@@ -103,6 +104,9 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     eventLoop->Get( tofGeomVect );
     if(tofGeomVect.size()<1)  return OBJECT_NOT_AVAILABLE;
     const DTOFGeometry& tofGeom = *(tofGeomVect[0]);
+    
+    TOF_NUM_PLANES = tofGeom.Get_NPlanes();
+    TOF_NUM_BARS = tofGeom.Get_NBars();
     
     /// Read in calibration constants
     vector<double> raw_adc_pedestals;
@@ -217,6 +221,8 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     if(eventLoop->GetCalib("TOF/adc2E", raw_adc2E))
       jout << "Error loading /TOF/adc2E !" << endl;
 
+    // make sure we have one entry per channel
+	adc2E.resize(TOF_NUM_PLANES*TOF_NUM_BARS*2);
     for (unsigned int n=0; n<raw_adc2E.size(); n++){
       adc2E[n] = raw_adc2E[n];
     }
@@ -478,7 +484,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   
   // Apply calibration constants to convert pulse integrals to energy units
   for (unsigned int i=0;i<_data.size();i++){
-    int id=88*_data[i]->plane + 44*_data[i]->end + _data[i]->bar-1;
+    int id=2*TOF_NUM_BARS*_data[i]->plane + TOF_NUM_BARS*_data[i]->end + _data[i]->bar-1;
     _data[i]->dE *= adc2E[id];
     //cout<<id<<"   "<< adc2E[id]<<"      "<<_data[i]->dE<<endl;
   }
@@ -549,13 +555,13 @@ void DTOFHit_factory::FillCalibTable(tof_digi_constants_t &table, vector<double>
     // reset the table before filling it
     table.clear();
 
-    for(int plane=0; plane<tofGeom.NLAYERS; plane++) {
-        int plane_index=2*TOF_NUM_BARS*plane;
-        table.push_back( vector< pair<double,double> >(TOF_NUM_BARS) );
-        for(int bar=0; bar<TOF_NUM_BARS; bar++) {
+    for(int plane=0; plane<tofGeom.Get_NPlanes(); plane++) {
+        int plane_index=2*tofGeom.Get_NBars()*plane;
+        table.push_back( vector< pair<double,double> >(tofGeom.Get_NBars()) );
+        for(int bar=0; bar<tofGeom.Get_NBars(); bar++) {
             table[plane][bar] 
                 = pair<double,double>(raw_table[plane_index+bar],
-                        raw_table[plane_index+TOF_NUM_BARS+bar]);
+                        raw_table[plane_index+tofGeom.Get_NBars()+bar]);
             channel+=2;	      
         }
     }
@@ -743,7 +749,7 @@ return the_table.at(the_cell).second;
 }
 */
 double DTOFHit_factory::CalcWalkCorrIntegral(DTOFHit* hit){
-  int id=88*hit->plane+44*hit->end+hit->bar-1;
+  int id=2*TOF_NUM_BARS*hit->plane+TOF_NUM_BARS*hit->end+hit->bar-1;
   double A=hit->dE;
   double C0=timewalk_parameters[id][1];
   double C1=timewalk_parameters[id][1];
@@ -765,7 +771,7 @@ double DTOFHit_factory::CalcWalkCorrIntegral(DTOFHit* hit){
 
 double DTOFHit_factory::CalcWalkCorrAmplitude(DTOFHit* hit){
 
-  int id=88*hit->plane+44*hit->end+hit->bar-1;
+  int id=2*TOF_NUM_BARS*hit->plane+TOF_NUM_BARS*hit->end+hit->bar-1;
   double A  = hit->Amp;
   double C0 = timewalk_parameters_AMP[id][0];
   double C1 = timewalk_parameters_AMP[id][1];
@@ -796,7 +802,7 @@ double DTOFHit_factory::CalcWalkCorrAmplitude(DTOFHit* hit){
 
 double DTOFHit_factory::CalcWalkCorrNEW(DTOFHit* hit){
  
-  int id=88*hit->plane+44*hit->end+hit->bar-1;
+  int id=2*TOF_NUM_BARS*hit->plane+TOF_NUM_BARS*hit->end+hit->bar-1;
   double ADC=hit->dE;
   double A = timewalk_parameters_NEW[id][0];
   double B = timewalk_parameters_NEW[id][1];
@@ -821,7 +827,7 @@ double DTOFHit_factory::CalcWalkCorrNEW(DTOFHit* hit){
 
 double DTOFHit_factory::CalcWalkCorrNEWAMP(DTOFHit* hit){
  
-  int id=88*hit->plane+44*hit->end+hit->bar-1;
+  int id=2*TOF_NUM_BARS*hit->plane+TOF_NUM_BARS*hit->end+hit->bar-1;
   double ADC=hit->Amp;
   double loc = timewalk_parameters_NEWAMP[id][8];
   int offset = 0;

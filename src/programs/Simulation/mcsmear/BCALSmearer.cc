@@ -441,9 +441,9 @@ void BCALSmearer::SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
    double sigma4 = bcal_config->BCAL_LAYER4_SIGMA_SCALE*bcal_config->BCAL_MEV_PER_ADC_COUNT; 
 
    // Loop over all fADC readout cells
-   for(int imodule=1; imodule<=dBCALGeom->NBCALMODS; imodule++){
+   for(int imodule=1; imodule<=dBCALGeom->GetBCAL_Nmodules(); imodule++){
 
-      int n_layers = dBCALGeom->NBCALLAYSIN + dBCALGeom->NBCALLAYSOUT;
+      int n_layers = dBCALGeom->GetBCAL_Nlayers();
       for(int fADC_lay=1; fADC_lay<=n_layers; fADC_lay++){
          if(fADC_lay == 1) 
          	sigma = sigma1;
@@ -454,7 +454,9 @@ void BCALSmearer::SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
          else if(fADC_lay == 4) 
          	sigma = sigma4;
 
-         int n_sectors = (fADC_lay <= dBCALGeom->NBCALLAYSIN)? dBCALGeom->NBCALSECSIN : dBCALGeom->NBCALSECSOUT;
+		 // there's a constant number of sectors now...
+         //int n_sectors = (fADC_lay <= dBCALGeom->GetBCAL_NInnerLayers())? dBCALGeom->GetBCAL_NInnerSectors() : dBCALGeom->GetBCAL_NOuterSectors();
+		 int n_sectors = dBCALGeom->GetBCAL_Nsectors();
          for(int fADC_sec=1; fADC_sec<=n_sectors; fADC_sec++){
 
             // Use cellId(...) to convert fADC layer and sector into fADCId

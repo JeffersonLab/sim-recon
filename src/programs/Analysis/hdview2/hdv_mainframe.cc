@@ -82,7 +82,8 @@ static float TARGET_Zlen = 30.0;
 // when the program first starts. Create one of our own here.
 static DFCALGeometry *fcalgeom = new DFCALGeometry;
 // ditto for DTOFGeometry
-static DTOFGeometry *tofgeom = new DTOFGeometry;
+//static DTOFGeometry *tofgeom = new DTOFGeometry;
+static DTOFGeometry *tofgeom = NULL;
 
 static vector<vector <DFDCWire *> >fdcwires;
 
@@ -94,6 +95,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   //Get pointer to DGeometry object
   DApplication* dapp=dynamic_cast<DApplication*>(japp);
   const DGeometry *dgeom  = dapp->GetDGeometry(RUNNUMBER);
+  
+  tofgeom = new DTOFGeometry(dgeom);
   
   dgeom->GetFDCWires(fdcwires);
   

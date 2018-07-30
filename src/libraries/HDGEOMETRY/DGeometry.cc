@@ -1709,6 +1709,7 @@ bool DGeometry::GetDIRCZ(double &z_dirc) const
     return true;
   }
 }
+
 //---------------------------------
 // GetTOFZ
 //---------------------------------
@@ -1726,7 +1727,159 @@ bool DGeometry::GetTOFZ(vector<double> &z_tof) const
    z_tof.push_back(ForwardTOF[2] + forwardTOF[0][2] - FTOC[2]/2.0);
    z_tof.push_back(ForwardTOF[2] + forwardTOF[1][2] - FTOC[2]/2.0);
 
+	//cerr << "DGeometry::GetTOFZ() = " << z_tof[0] << " " << z_tof[1] << endl;
+
    return true;
+}
+
+//---------------------------------
+// GetTOFPaddleParameters
+//---------------------------------
+bool DGeometry::GetTOFPaddleParameters(map<string,double> &paddle_params) const
+{
+	vector<double> xyz_bar;
+
+	// load the number of bars in each area
+    int num_bars1 = 0;
+    if(!Get("//composition[@name='forwardTOF_bottom1']/mposY[@volume='FTOC']/@ncopy",num_bars1)) return false; 
+    int num_narrow_bars1 = 0;
+    if(!Get("//composition[@name='forwardTOF_bottom2']/mposY[@volume='FTOX']/@ncopy",num_narrow_bars1)) return false; 
+    int num_single_end_bars1 = 0;
+    if(!Get("//composition[@name='forwardTOF_north']/mposY[@volume='FTOH']/@ncopy",num_single_end_bars1)) return false;
+    int num_narrow_bars2 = 0;
+    if(!Get("//composition[@name='forwardTOF_top2']/mposY[@volume='FTOX']/@ncopy",num_narrow_bars2)) return false;
+    int num_bars2 = 0;
+    if(!Get("//composition[@name='forwardTOF_top1']/mposY[@volume='FTOC']/@ncopy",num_bars2)) return false;
+    int num_single_end_bars2 = 0;
+    if(!Get("//composition[@name='forwardTOF_south']/mposY[@volume='FTOH']/@ncopy",num_single_end_bars2)) return false;
+
+	int NLONGBARS = num_bars1 + num_bars2 + num_narrow_bars1 + num_narrow_bars2;
+	int NSHORTBARS = num_single_end_bars1 + num_single_end_bars2;
+	int FIRSTSHORTBAR = num_bars1 + num_narrow_bars1 + 1;
+	int LASTSHORTBAR = FIRSTSHORTBAR + NSHORTBARS/4;
+	
+	// load bar sizes
+	//Get("//composition[@name='forwardTOF_bottom1']/mposY[@volume='FTOC']/@X_Y_Z",xyz_bar);
+    if(!Get("//box[@name='FTOC' and sensitive='true']/@X_Y_Z", xyz_bar)) return false;
+	double LONGBARLENGTH = xyz_bar[0];
+	double BARWIDTH  = xyz_bar[1];
+	//Get("//composition[@name='forwardTOF_bottom1']/mposY[@volume='FTOH']/@X_Y_Z",xyz_bar);
+    if(!Get("//box[@name='FTOH' and sensitive='true']/@X_Y_Z", xyz_bar)) return false;
+	double SHORTBARLENGTH = xyz_bar[0];
+
+	
+	// load up the structure containing the parameters for the calling function
+	paddle_params["NLONGBARS"] = NLONGBARS;
+	paddle_params["NSHORTBARS"] = NSHORTBARS;
+	paddle_params["BARWIDTH"] = BARWIDTH;
+
+	paddle_params["LONGBARLENGTH"] = LONGBARLENGTH;
+	paddle_params["HALFLONGBARLENGTH"] = LONGBARLENGTH/2.;
+	paddle_params["SHORTBARLENGTH"] = SHORTBARLENGTH;
+	paddle_params["HALFSHORTBARLENGTH"] = SHORTBARLENGTH/2.;
+
+	paddle_params["FIRSTSHORTBAR"] = FIRSTSHORTBAR;
+	paddle_params["LASTSHORTBAR"] = LASTSHORTBAR;
+
+	//cout << "In DGeometry::GetTOFPaddleParameters() ..." << endl;
+	//for(auto el : paddle_params) {
+   	//	std::cout << el.first << " " << el.second << endl;
+	//}	
+	
+	return true;
+}
+
+
+//---------------------------------
+// GetTOFPaddlePerpPositions
+//---------------------------------
+bool DGeometry::GetTOFPaddlePerpPositions(vector<double> &y_tof) const
+{
+	// add in a dummy entry, since we are indexing by paddle number, which starts at 1
+	// maybe change this some day?
+	y_tof.push_back(0);
+	
+  	// Next fill array of bar positions within a plane
+  	// y_tof[barnumber] gives y position in the center of the bar. [currently barnumber = 1 - 46]
+  	double y0,dy;
+
+	// load the number of bars
+    int num_bars=1;   // start counting at 1
+    int num_bars1 = 0;
+    Get("//composition[@name='forwardTOF_bottom1']/mposY[@volume='FTOC']/@ncopy",num_bars1); 
+    int num_narrow_bars1 = 0;
+    Get("//composition[@name='forwardTOF_bottom2']/mposY[@volume='FTOX']/@ncopy",num_narrow_bars1); 
+    int num_single_end_bars1 = 0;
+    Get("//composition[@name='forwardTOF_north']/mposY[@volume='FTOH']/@ncopy",num_single_end_bars1); 
+    int num_narrow_bars2 = 0;
+    Get("//composition[@name='forwardTOF_top2']/mposY[@volume='FTOX']/@ncopy",num_narrow_bars2); 
+    int num_bars2 = 0;
+    Get("//composition[@name='forwardTOF_top1']/mposY[@volume='FTOC']/@ncopy",num_bars2); 
+    int num_single_end_bars2 = 0;
+    Get("//composition[@name='forwardTOF_south']/mposY[@volume='FTOH']/@ncopy",num_single_end_bars2); 
+	
+  	// First 19 long bars
+  	Get("//composition[@name='forwardTOF_bottom1']/mposY/@Y0",y0);
+  	Get("//composition[@name='forwardTOF_bottom1']/mposY/@dY",dy);
+  	vector<double>tof_bottom1;
+  	Get("//composition[@name='forwardTOF']/posXYZ[@volume='forwardTOF_bottom1']/@X_Y_Z",tof_bottom1);  
+  	for (unsigned int k=num_bars;k<num_bars+num_bars1;k++){
+    	y_tof.push_back(y0+tof_bottom1[1]+dy*double(k-1));
+  	}
+  	num_bars+=num_bars1;
+  
+  	// two narrow long bars
+  	Get("//composition[@name='forwardTOF_bottom2']/mposY/@Y0",y0);
+  	Get("//composition[@name='forwardTOF_bottom2']/mposY/@dY",dy);
+  	vector<double>tof_bottom2;
+  	Get("//composition[@name='forwardTOF']/posXYZ[@volume='forwardTOF_bottom2']/@X_Y_Z",tof_bottom2);  
+  	for (unsigned int k=num_bars;k<num_bars+num_narrow_bars1;k++){
+    	y_tof.push_back(y0+tof_bottom2[1]+dy*double(k-20));
+  	}
+  	num_bars+=num_narrow_bars1;
+
+  	// two short wide bars
+  	Get("//composition[@name='forwardTOF_north']/mposY/@Y0",y0);
+  	Get("//composition[@name='forwardTOF_north']/mposY/@dY",dy);
+  	vector<double>tof_north;
+  	Get("//composition[@name='forwardTOF']/posXYZ[@volume='forwardTOF_north']/@X_Y_Z",tof_north);  
+  	for (unsigned int k=num_bars;k<num_bars+num_single_end_bars1;k++){
+    	y_tof.push_back(y0+tof_north[1]+dy*double(k-22));
+  	}
+  	num_bars+=num_single_end_bars1;
+
+  	// two narrow long bars
+  	Get("//composition[@name='forwardTOF_top2']/mposY/@Y0",y0);
+  	Get("//composition[@name='forwardTOF_top2']/mposY/@dY",dy);
+  	vector<double>tof_top2;
+  	Get("//composition[@name='forwardTOF']/posXYZ[@volume='forwardTOF_top2']/@X_Y_Z",tof_top2);  
+  	for (unsigned int k=num_bars;k<num_bars+num_narrow_bars2;k++){
+    	y_tof.push_back(y0+tof_top2[1]+dy*double(k-24));
+  	}
+  	num_bars+=num_narrow_bars2;
+
+  	// Last 19 long bars
+  	Get("//composition[@name='forwardTOF_top1']/mposY/@Y0",y0);
+  	Get("//composition[@name='forwardTOF_top1']/mposY/@dY",dy);
+  	vector<double>tof_top1;
+  	Get("//composition[@name='forwardTOF']/posXYZ[@volume='forwardTOF_top1']/@X_Y_Z",tof_top1);  
+  	for (unsigned int k=num_bars;k<num_bars+num_bars2;k++){
+   	 	y_tof.push_back(y0+tof_top1[1]+dy*double(k-26));
+  	}
+  	num_bars+=num_bars2;
+
+	/*
+  	// two more short wide bars - IGNORE FOR NOW, ASSUME SAME Y AS OTHER SINGLE ENDED
+  	Get("//composition[@name='forwardTOF_south']/mposY/@Y0",y0);
+  	Get("//composition[@name='forwardTOF_south']/mposY/@dY",dy);
+  	vector<double>tof_south;
+  	Get("//composition[@name='forwardTOF']/posXYZ[@volume='forwardTOF_south']/@X_Y_Z",tof_south);  
+  	for (unsigned int k=45;k<47;k++){
+    	y_tof.push_back(y0+tof_south[1]+dy*double(k-45));
+  	}
+    */
+    
+	return true;
 }
 
 //---------------------------------
@@ -1785,6 +1938,8 @@ bool DGeometry::GetTargetLength(double &target_length) const
 bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
 				    vector<vector<DVector3> >&norm
 				    ) const{
+				    
+  JCalibration *jcalib = dapp->GetJCalibration(runnumber);
 
   // Check if Start Counter geometry is present
   vector<double> sc_origin;
@@ -1809,12 +1964,32 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
     //double ThetaY=sc_rot_angles[1]*M_PI/180.;
     double ThetaZ=sc_rot_angles[2]*M_PI/180.;
 
+	// Get overall alignment shifts from CCDB
+    map<string,double> sc_global_offsets;
+    if (jcalib->Get("START_COUNTER/global_alignment_parms",sc_global_offsets)==false) {
+   		// translations
+   		dx += sc_global_offsets["SC_ALIGN_X"];
+   		dy += sc_global_offsets["SC_ALIGN_Y"];
+   		z0 += sc_global_offsets["SC_ALIGN_Z"];
+
+		// rotations
+		ThetaX += sc_global_offsets["SC_ALIGN_ROTX"]*M_PI/180.;
+		ThetaY += sc_global_offsets["SC_ALIGN_ROTY"]*M_PI/180.;
+		ThetaZ += sc_global_offsets["SC_ALIGN_ROTZ"]*M_PI/180.;
+    }
+
     double num_paddles;
     Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
     double dSCdphi = M_TWO_PI/num_paddles;
     
     vector<vector<double> > sc_rioz;
     GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
+    
+    // Get individual paddle alignment parameters
+    vector< map<string,double> > sc_paddle_offsets;
+	bool loaded_paddle_offsets = false;
+    if (jcalib->Get("START_COUNTER/paddle_alignment_parms",sc_paddle_offsets)==false)
+    	loaded_paddle_offsets = true;
     
     // Create vectors of positions and normal vectors for each paddle
     for (unsigned int i=0;i<30;i++){
@@ -1843,6 +2018,19 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
 	ray.SetXYZ(x,y,sc_rioz[k][2]); 
 	ray.RotateX(ThetaX);
 	ray.RotateY(ThetaY);  
+	// Apply alignment parameters
+	if(loaded_paddle_offsets) {
+      // allow for a maximum extent of the paddle in z
+	  double max_z = sc_paddle_offsets[i]["SC_MAX_Z"];
+	  if(ray.Z() > max_z) {
+		ray.SetZ(max_z);
+	  }
+	  // allow for a modification of the bend angle of the paddle (18.5 deg from horizontal)
+	  // this should just be a perturbation around this angle, so assume a linear interpolation
+	  double delta_theta = sc_paddle_offsets[i]["SC_CURVE_THETA"];   // in degrees, r of curvature = 120 cm
+	  ray.SetX(ray.X()+delta_theta*1.65);   // 1 degree ~ 1.65 cm in x
+	  ray.SetY(ray.Y()-delta_theta*0.55);   // 1 degree ~ 0.55 cm in y
+	}
 	// Second point in the plane of the scintillator
 	DVector3 ray2(r,10.,sc_rioz[k][2]);
 	ray2.RotateZ(phi+0.5*dSCdphi*(1.+1./15.*((i>14)?29-i:i)));	
@@ -1851,7 +2039,7 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
 	// Compute normal vector to plane
 	DVector3 dir=(ray-oldray).Cross(ray2-oldray);
 	dir.SetMag(1.);
-	dirvec.push_back(dir);	
+	dirvec.push_back(dir);
 	posvec.push_back(DVector3(oldray.X()+dx,oldray.Y()+dy,oldray.Z()+z0));
       }
       posvec.push_back(DVector3(ray.X(),ray.Y(),ray.Z()+z0)); //SAVE THE ENDPOINT OF THE LAST PLANE

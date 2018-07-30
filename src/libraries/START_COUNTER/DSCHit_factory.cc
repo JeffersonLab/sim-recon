@@ -92,6 +92,21 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     }
     pthread_mutex_unlock(&print_mutex);
 
+    /// Load geometry - just need the number of sectors
+    DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+    if(!dapp)
+        jerr << "Cannot get DApplication from JEventLoop!" << endl;
+    DGeometry* locGeometry = dapp->GetDGeometry(runnumber);
+
+    // Get start counter geometry
+    vector<vector<DVector3> >sc_norm; 
+    vector<vector<DVector3> >sc_pos;
+    MAX_SECTORS=0;
+    if (locGeometry->GetStartCounterGeom(sc_pos, sc_norm))
+		MAX_SECTORS = sc_pos.size();
+	else
+		jerr << "Cannot load Start Counter geometry information!" << endl;
+		
     /// Read in calibration constants
     if(print_messages) jout << "In DSCHit_factory, loading constants..." << endl;
 

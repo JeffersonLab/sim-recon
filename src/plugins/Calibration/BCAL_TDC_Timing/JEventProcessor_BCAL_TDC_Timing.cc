@@ -727,7 +727,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
                float pulse_peak_min = min(thisADCHit_up->pulse_peak,thisADCHit_down->pulse_peak);
 
                double fibLen = dBCALGeom->GetBCAL_length();
-               double c_effective = dBCALGeom->C_EFFECTIVE;
+               double c_effective = dBCALGeom->GetBCAL_c_effective();
                double BCALtrackHitZ = trackHitZ - (dBCALGeom->GetBCAL_center() - fibLen/2); // position wrt BCAL front edge
                double barproptime_up   = BCALtrackHitZ / c_effective;
                double barproptime_down = (fibLen-BCALtrackHitZ) / c_effective;

@@ -20,10 +20,10 @@ DBCALGeometry::DBCALGeometry(int runnumber)
   /// End if groupings do not evenly divide SiPM cells
   bool goodGeometry=true;
 
-  if (NSUMSECSIN <= 0) goodGeometry=false;
-  if (4 % NSUMSECSIN != 0) goodGeometry=false;
-  if (NSUMSECSOUT <= 0) goodGeometry=false;
-  if (4 % NSUMSECSOUT != 0) goodGeometry=false;
+  //if (NSUMSECSIN <= 0) goodGeometry=false;
+  //if (4 % NSUMSECSIN != 0) goodGeometry=false;
+  //if (NSUMSECSOUT <= 0) goodGeometry=false;
+  //if (4 % NSUMSECSOUT != 0) goodGeometry=false;
 
   int totalLayersIn=0;
   for (int i=0;i<NBCALLAYSIN;i++) {
@@ -195,9 +195,11 @@ DBCALGeometry::fADC_sector( int SiPM_cellId ) const {
   int fADC_sector;
 
   if (cell_layer < BCALMID) {
-    fADC_sector = 1 + (cell_sector-1)/NSUMSECSIN;
+    //fADC_sector = 1 + (cell_sector-1)/NSUMSECSIN;
+    fADC_sector = 1 + (cell_sector-1);
   } else {
-    fADC_sector = 1 + (cell_sector-1)/NSUMSECSOUT;
+    //fADC_sector = 1 + (cell_sector-1)/NSUMSECSOUT;
+    fADC_sector = 1 + (cell_sector-1);
   }
 
   return fADC_sector;
@@ -234,10 +236,12 @@ DBCALGeometry::NSiPMs(int fADCId) const
 
 	if(fadc_lay <= NBCALLAYSIN){
 		// inner
-		return NSUMLAYSIN[fadc_lay-1]*NSUMSECSIN;
+		//return NSUMLAYSIN[fadc_lay-1]*NSUMSECSIN;
+		return NSUMLAYSIN[fadc_lay-1];
 	}else{
 		// outer
-		return NSUMLAYSOUT[fadc_lay-NBCALLAYSIN-1]*NSUMSECSOUT;
+		//return NSUMLAYSOUT[fadc_lay-NBCALLAYSIN-1]*NSUMSECSOUT;
+		return NSUMLAYSOUT[fadc_lay-NBCALLAYSIN-1];
 	}
 }
 

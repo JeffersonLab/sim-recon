@@ -33,44 +33,7 @@ public:
   
   enum End { kUpstream, kDownstream };
   
-  // =============================== CONSTANTS ================================
-  // PUBLIC ACCESS TO THESE IS DEPRECATED, PLEASE USE THE ACCESSOR FUNCTIONS
-  const int NBCALMODS=48;         ///< number of modules
-  // need accessors for as-built geometry (modules/layers/sectors)
-
-  //the distinction between inner layers and outer layers is important, since only the inner layers have TDC readout
-  const int NBCALLAYSIN=3;        ///< number of readout layers in inner BCAL (first 6 SiPM layers)
-  const int NBCALLAYSOUT=1;       ///< number of readout layers in outer BCAL (outer 4 SiPM layers)
-
-  // On each module there is a 10x4 (r/phi) array of SiPMs
-  // 1.2.3.4 summing configuration - This is used in the BCAL as built
-  vector<int> NSUMLAYSIN  = {1,2,3};    ///< number of radial SiPM layers summed for digitization in each inner readout layer
-  vector<int> NSUMLAYSOUT = {4};   ///< number of radial SiPM layers summed for digitization in each outer readout layer
-  const int NSUMSECSIN=1;         ///< for the inner layers, the number of SiPM that will be summed in the azimuthal direction
-  const int NSUMSECSOUT=1;        ///< for the outer layer(s), the number of SiPM that will be summed in the azimuthal direction
-  const int NBCALSECSIN=4/NSUMSECSIN;        ///<number of sectors in inner region
-  const int NBCALSECSOUT=4/NSUMSECSOUT;      ///<number of sectors in outer region
-
-  float m_radius[11] = { 64.3, 
-				  66.3,
-				  68.3,
-				  70.3,
-				  72.3,
-				  74.3,
-				  76.3,
-				  78.77,
-				  81.24,
-				  83.70,
-				  86.17};
-  
-  float ATTEN_LENGTH=520.;     ///< attenuation length
-  float C_EFFECTIVE=16.75;      ///< speed of light in fibers 
-
-  // ==========================================================================
-
   // Methods to access and initialize the private variables
-  void Initialize(int runnumber); 
-
   float GetBCAL_inner_rad() const;
   const float* GetBCAL_radii() const;
   float GetBCAL_center() const;
@@ -81,6 +44,21 @@ public:
   float GetBCAL_middle_rad() const { return BCALMIDRAD; }
   float GetBCAL_middle_cell() const { return BCALMID; }
   float *GetBCAL_cell_radii() { return &(m_radius[0]); }
+  
+  // as-built geometry
+  float GetBCAL_Nmodules() const { return NBCALMODS; }
+  float GetBCAL_Nlayers() const { return NBCALLAYERS; }
+  float GetBCAL_Nsectors() const { return NBCALSECTORS; }
+
+  float GetBCAL_NInnerLayers() const { return NBCALLAYSIN; }
+  float GetBCAL_NOuterLayers() const { return NBCALLAYSOUT; }
+  float GetBCAL_NInnerSectors() const { return NBCALSECSIN; }
+  float GetBCAL_NOuterSectors() const { return NBCALSECSOUT; }
+  // define these for completeness, but they aren't used outside of this class
+  // right now, so comment them out
+  //vector<float> GetBCAL_NSummedInnerLayers() const { return NSUMLAYSIN; }
+  //vector<float> GetBCAL_NSummedOuterLayers() const { return NSUMLAYSOUT; }
+
   
   // nominal effective velocity
   float GetBCAL_c_effective() const { return C_EFFECTIVE; }
@@ -117,6 +95,28 @@ public:
 private:
 
   DBCALGeometry();       // forbid the default constructor
+  void Initialize(int runnumber);   // this is old, but keep it around for now, make sure no one else can call it
+
+  // as-built geometry
+  const int NBCALMODS=48;         ///< number of modules
+  const int NBCALLAYERS=4;         ///< number of layers in a module
+  const int NBCALSECTORS=4;         ///< number of sectors in a module
+
+  //the distinction between inner layers and outer layers is important, since only the inner layers have TDC readout
+  const int NBCALLAYSIN=3;        ///< number of readout layers in inner BCAL (first 6 SiPM layers)
+  const int NBCALLAYSOUT=1;       ///< number of readout layers in outer BCAL (outer 4 SiPM layers)
+
+  // On each module there is a 10x4 (r/phi) array of SiPMs
+  // 1.2.3.4 summing configuration - This is used in the BCAL as built
+  vector<int> NSUMLAYSIN  = {1,2,3};    ///< number of radial SiPM layers summed for digitization in each inner readout layer
+  vector<int> NSUMLAYSOUT = {4};   ///< number of radial SiPM layers summed for digitization in each outer readout layer
+  const int NBCALSECSIN=4;        ///<number of sectors in inner region
+  const int NBCALSECSOUT=4;      ///<number of sectors in outer region
+  // the following are completely deprecated
+  //const int NSUMSECSIN=1;         ///< for the inner layers, the number of SiPM that will be summed in the azimuthal direction
+  //const int NSUMSECSOUT=1;        ///< for the outer layer(s), the number of SiPM that will be summed in the azimuthal direction
+  //const int NBCALSECSIN=4/NSUMSECSIN;        ///<number of sectors in inner region
+  //const int NBCALSECSOUT=4/NSUMSECSOUT;      ///<number of sectors in outer region
 
   float BCALINNERRAD=0.;       ///< innner radius of BCAL in cm
   float fADC_radius[5] = {};   ///< BCAL layer radii (4 layers total)
@@ -129,6 +129,22 @@ private:
   const int BCALMID=7;         ///< first outer layer (default 7)
   float BCALMIDRAD = m_radius[BCALMID-1];    ///< mid radius of BCAL in cm (boundary between inner and outer layers)
   float BCALOUTERRAD=86.17;     ///< outer radius of BCAL in cm
+
+  float C_EFFECTIVE=16.75;      ///< speed of light in fibers 
+  float ATTEN_LENGTH=520.;     ///< attenuation length
+
+  float m_radius[11] = { 64.3, 
+				  66.3,
+				  68.3,
+				  70.3,
+				  72.3,
+				  74.3,
+				  76.3,
+				  78.77,
+				  81.24,
+				  83.70,
+				  86.17};
+  
 
 };
 

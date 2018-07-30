@@ -273,7 +273,7 @@ class DParticleID:public jana::JObject
 		// used to update hit energy & time when matching to un-matched, position-ill-defined bars
 		const DTOFGeometry* dTOFGeometry;
 		vector<double> propagation_speed;
-		double TOF_HALFPADDLE;
+		//double TOF_HALFPADDLE;
 		double dHalfPaddle_OneSided;
 		double TOF_ATTEN_LENGTH;
 		double TOF_E_THRESHOLD;

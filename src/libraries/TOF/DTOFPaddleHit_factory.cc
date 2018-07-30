@@ -39,17 +39,23 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int32_t runnumber)
     //cout<<"DTOFPaddleHit_factory: loading values from TOF data base"<<endl;
 
     C_EFFECTIVE    =    tofparms["TOF_C_EFFECTIVE"];
-    HALFPADDLE     =    tofparms["TOF_HALFPADDLE"];
+    //HALFPADDLE     =    tofparms["TOF_HALFPADDLE"];
     E_THRESHOLD    =    tofparms["TOF_E_THRESHOLD"];
     ATTEN_LENGTH   =    tofparms["TOF_ATTEN_LENGTH"];
   } else {
     cout << "DTOFPaddleHit_factory: Error loading values from TOF data base" <<endl;
 
     C_EFFECTIVE = 15.;    // set to some reasonable value
-    HALFPADDLE = 126;     // set to some reasonable value
+    //HALFPADDLE = 126;     // set to some reasonable value
     E_THRESHOLD = 0.0005; // energy threshold in GeV
     ATTEN_LENGTH = 400.;  // 400cm attenuation length
   }
+
+  // load values from geometry
+  loop->Get(TOFGeom);
+  TOF_NUM_PLANES = TOFGeom[0]->Get_NPlanes();
+  TOF_NUM_BARS = TOFGeom[0]->Get_NBars();
+  HALFPADDLE = TOFGeom[0]->Get_HalfLongBarLength();
 
   ENERGY_ATTEN_FACTOR=exp(HALFPADDLE/ATTEN_LENGTH);
   TIME_COINCIDENCE_CUT=2.*HALFPADDLE/C_EFFECTIVE;
@@ -60,8 +66,6 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int32_t runnumber)
   if (loop->GetCalib("TOF/attenuation_lengths",AttenuationLengths))
     jout << "Error loading /TOF/attenuation_lengths !" <<endl;
 
-
-  loop->Get(TOFGeom);
 
   return NOERROR;
 
@@ -118,7 +122,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
   for (unsigned int i=0; i<P1hitsL.size(); i++){
     int bar = P1hitsL[i]->bar;
-    if ((bar < TOFGeom[0]->FirstShortBar ) || (bar > TOFGeom[0]->LastShortBar)) {
+    if ((bar < TOFGeom[0]->Get_FirstShortBar() ) || (bar > TOFGeom[0]->Get_LastShortBar())) {
       for (unsigned int j=0; j<P1hitsR.size(); j++){      
 	if (bar==P1hitsR[j]->bar 
 	    && fabs(P1hitsR[j]->t-P1hitsL[i]->t)<TIME_COINCIDENCE_CUT
@@ -143,7 +147,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       int bar = P1hitsL[i]->bar;
       int found = 0;
       
-      if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
+      if ((bar < TOFGeom[0]->Get_FirstShortBar()) || (bar > TOFGeom[0]->Get_LastShortBar())) {
       for (unsigned int j=0; j<P1hitsR.size(); j++){      
 	if (bar==P1hitsR[j]->bar){
 	  found = 1;
@@ -172,7 +176,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	   int bar = P1hitsR[i]->bar;
 	   int found = 0;
 	   
-	   if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
+	   if ((bar < TOFGeom[0]->Get_FirstShortBar()) || (bar > TOFGeom[0]->Get_LastShortBar())) {
 	     for (unsigned int j=0; j<P1hitsL.size(); j++){      
 	       if (bar==P1hitsL[j]->bar){
 		 found = 1;
@@ -198,7 +202,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
   for (unsigned int i=0; i<P2hitsL.size(); i++){
     int bar = P2hitsL[i]->bar; 
-    if ((bar <  TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar )){
+    if ((bar <  TOFGeom[0]->Get_FirstShortBar()) || (bar > TOFGeom[0]->Get_LastShortBar() )){
       for (unsigned int j=0; j<P2hitsR.size(); j++){      
 	if (bar==P2hitsR[j]->bar 
 	    && fabs(P2hitsR[j]->t-P2hitsL[i]->t)<TIME_COINCIDENCE_CUT
@@ -223,7 +227,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	   int bar = P2hitsL[i]->bar;
 	   int found = 0;
 
-    if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
+    if ((bar < TOFGeom[0]->Get_FirstShortBar()) || (bar > TOFGeom[0]->Get_LastShortBar())) {
       for (unsigned int j=0; j<P2hitsR.size(); j++){      
 	if (bar==P2hitsR[j]->bar){
 	  found = 1;
@@ -252,7 +256,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     int bar = P2hitsR[i]->bar;
     int found = 0;
 
-    if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
+    if ((bar < TOFGeom[0]->Get_FirstShortBar()) || (bar > TOFGeom[0]->Get_LastShortBar())) {
       for (unsigned int j=0; j<P2hitsL.size(); j++){      
 	if (bar==P2hitsL[j]->bar){
 	  found = 1;
@@ -290,7 +294,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
     
     if (check > 0 ){
-      int id=44*hit->orientation+hit->bar-1;
+      int id=TOF_NUM_BARS*hit->orientation+hit->bar-1;
       double v=propagation_speed[id];
       hit->meantime = (hit->t_north+hit->t_south)/2. - HALFPADDLE/v;
       hit->timediff = (hit->t_south - hit->t_north)/2.;
@@ -302,10 +306,10 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       // use geometrical mean
       //hit->dE = ENERGY_ATTEN_FACTOR*sqrt(hit->E_north*hit->E_south);
 
-      float xl = 126. - pos; // distance to left PMT 
-      float xr = 126. + pos; // distance to right PMT
-      int idl = hit->orientation*88 + hit->bar-1;
-      int idr = idl+44;
+      float xl = HALFPADDLE - pos; // distance to left PMT 
+      float xr = HALFPADDLE + pos; // distance to right PMT
+      int idl = hit->orientation*TOF_NUM_PLANES*TOF_NUM_BARS + hit->bar-1;
+      int idr = idl+TOF_NUM_BARS;
       float d1 = AttenuationLengths[idl][0];
       float d2 = AttenuationLengths[idl][1];
       // reference distance is 144cm from PMT
